@@ -177,10 +177,17 @@ const year = new Date().getUTCFullYear();
 
     <header class="site-header">
       <div class="shell site-header__inner">
+        {/*
+          IMB monogram. The letters are decorative — the anchor carries the real
+          accessible name, so a screen reader announces the full name rather than
+          spelling out three letters.
+        */}
         <a class="wordmark" href="/" aria-label={`${siteName} — home`}>
-          <span class="wordmark__name">Ibrahim</span>
+          <span class="wordmark__mark" aria-hidden="true">
+            <span class="wordmark__i">I</span><span class="wordmark__m">M</span><span
+              class="wordmark__b">B</span>
+          </span>
           <span class="wordmark__rule" aria-hidden="true"></span>
-          <span class="wordmark__last">Al-Bander</span>
         </a>
 
         <nav aria-label="Primary">
@@ -241,13 +248,18 @@ const year = new Date().getUTCFullYear();
     <script>
       // Theme toggle. Respects the OS setting until the reader overrides it.
       //
-      // The swap itself is unchanged and always happens synchronously inside
-      // `apply()`. Everything around it is decoration: where the View Transitions
-      // API exists we let the browser snapshot the old page and wipe the new one
-      // in over it as a circle growing out of the toggle. Where it does not — or
-      // where the reader has asked for less motion — `apply()` just runs and the
-      // theme snaps, exactly as before. The toggle can never end up broken
-      // because the feature detection guards the decoration, not the swap.
+      // This deliberately does NOT use the View Transitions API. It was tried,
+      // and measured on a 4x-throttled phone it cost a 195ms frozen frame plus
+      // three ~95ms long tasks: startViewTransition has to rasterise the whole
+      // document to a texture before it can animate anything, and this page is
+      // long. The effect was pretty and the interaction was junk.
+      //
+      // Instead: one fixed, solid-colour layer painted in the OUTGOING
+      // background, sitting above the page while the theme swaps underneath it,
+      // then faded out. Only `opacity` on a single element animates, so it runs
+      // entirely on the compositor — no snapshot, no relayout, no repaint of the
+      // page beneath. The swap itself is always synchronous, so the toggle
+      // cannot break if anything else fails.
       const btn = document.getElementById('theme-toggle');
 
       btn?.addEventListener('click', () => {
@@ -265,71 +277,49 @@ const year = new Date().getUTCFullYear();
         };
 
         const reduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
-        // @ts-expect-error — startViewTransition is not in every lib.dom yet.
-        const start = document.startViewTransition?.bind(document);
-
-        if (!start || reduced) {
+        if (reduced || !document.body.animate) {
           apply();
           return;
         }
 
-        // Grow the reveal from the centre of the toggle out to the furthest
-        // corner, so the wipe always finishes covering the viewport.
-        const r = btn.getBoundingClientRect();
-        const x = r.left + r.width / 2;
-        const y = r.top + r.height / 2;
-        const radius = Math.hypot(
-          Math.max(x, window.innerWidth - x),
-          Math.max(y, window.innerHeight - y)
+        // Capture the colour we are leaving BEFORE the swap.
+        const from = getComputedStyle(root).getPropertyValue('--paper').trim();
+
+        const veil = document.createElement('div');
+        veil.className = 'theme-veil';
+        veil.style.background = from;
+        document.body.appendChild(veil);
+
+        apply();
+
+        const anim = veil.animate(
+          [{ opacity: 1 }, { opacity: 0 }],
+          { duration: 260, easing: 'cubic-bezier(0.22, 1, 0.36, 1)' }
         );
-
-        root.style.setProperty('--vt-x', `${x}px`);
-        root.style.setProperty('--vt-y', `${y}px`);
-        root.style.setProperty('--vt-r', `${radius}px`);
-        // Scope the ::view-transition rules to this interaction only, so an
-        // Astro page navigation never picks up the theme wipe.
-        root.classList.add('is-theme-vt');
-
-        const transition = start(apply);
-        transition.finished.finally(() => {
-          root.classList.remove('is-theme-vt');
-        });
+        // finally() rather than onfinish: if the animation is cancelled (fast
+        // double-tap), the veil must still be removed or it covers the page.
+        anim.finished.catch(() => {}).finally(() => veil.remove());
       });
     </script>
 
     <style is:global>
       /*
-        ::view-transition-* pseudos live outside the document tree, so these
-        cannot be Astro-scoped styles — a scoping attribute would never match and
-        the rules would silently do nothing.
+        The theme veil is appended to <body> by the toggle script, so it cannot
+        be an Astro-scoped style — a scoping attribute would never match an
+        element created at runtime and the rules would silently do nothing.
+
+        It is a single solid layer. `will-change: opacity` promotes it up front
+        so the fade never triggers a paint of the page underneath, and
+        `pointer-events: none` means it can never eat a click even if a stray
+        one survives.
       */
-      @media (prefers-reduced-motion: no-preference) {
-        /* The old paint just sits there; the new one is clipped in over it.
-           Killing the default cross-fade on both is what stops the two snapshots
-           blending into a muddy half-theme mid-transition. */
-        html.is-theme-vt::view-transition-old(root),
-        html.is-theme-vt::view-transition-new(root) {
-          animation: none;
-          mix-blend-mode: normal;
-        }
-
-        html.is-theme-vt::view-transition-old(root) {
-          z-index: 0;
-        }
-
-        html.is-theme-vt::view-transition-new(root) {
-          z-index: 1;
-          animation: theme-reveal var(--dur-mid) var(--ease-settle) both;
-        }
-      }
-
-      @keyframes theme-reveal {
-        from {
-          clip-path: circle(0 at var(--vt-x) var(--vt-y));
-        }
-        to {
-          clip-path: circle(var(--vt-r) at var(--vt-x) var(--vt-y));
-        }
+      .theme-veil {
+        position: fixed;
+        inset: 0;
+        z-index: 9999;
+        pointer-events: none;
+        will-change: opacity;
+        contain: strict;
       }
     </style>
 
@@ -368,44 +358,95 @@ const year = new Date().getUTCFullYear();
         min-height: 4rem;
       }
 
-      /* The wordmark splits the name with a rule that draws itself on hover —
-         a small piece of personality a component library would not give you. */
+      /*
+        Measured at 320px: the monogram + four links + toggle needed 365px, so the
+        page scrolled sideways and flex crushed the toggle to 14px wide. Below
+        34rem the header becomes two rows — mark and toggle on the first, nav
+        spread across the second. No JS, no hamburger to open, every destination
+        stays one tap away, and nothing is hidden behind an icon.
+      */
+      @media (max-width: 34rem) {
+        .site-header__inner {
+          flex-wrap: wrap;
+          gap: 0 var(--space-s);
+          padding-block: var(--space-2xs);
+        }
+
+        .site-header__inner > nav {
+          order: 3;
+          flex-basis: 100%;
+        }
+
+        .nav {
+          justify-content: space-between;
+          gap: var(--space-2xs);
+        }
+      }
+
+      /*
+        IMB monogram.
+
+        Set in Sora at its heaviest weight with the tracking pulled well past the
+        body scale (-0.07em vs -0.03em). That negative tracking is what separates
+        a logotype from ordinary bold text: at three letters the counters can sit
+        much closer than reading text would ever allow, and the trio starts to
+        read as one drawn mark rather than an abbreviation.
+
+        Optical detail: the I is narrowed and the B is set in the accent, so the
+        eye lands left-to-right on a mark with a weighted terminal rather than
+        three even slabs.
+      */
       .wordmark {
         display: inline-flex;
-        align-items: center;
-        gap: 0.5rem;
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 0.28rem;
         text-decoration: none;
         font-family: var(--font-display);
-        font-weight: 600;
-        letter-spacing: var(--tracking-tight);
+      }
+
+      .wordmark__mark {
+        display: inline-flex;
+        align-items: baseline;
+        font-weight: 800;
+        font-size: 1.32rem;
+        line-height: 1;
+        letter-spacing: -0.07em;
+        color: var(--ink);
+        /* Sora's caps sit slightly left in their box; nudge the lockup so the
+           I aligns optically with the page gutter rather than mathematically. */
+        margin-left: -0.02em;
+      }
+
+      .wordmark__i {
+        /* The I carries far less width than its sidebearings suggest. */
+        margin-right: 0.04em;
+      }
+
+      .wordmark__b {
+        color: var(--accent-ink);
       }
 
       /* Sized to the hover width and scaled DOWN at rest, so the animation is a
          transform rather than an animated `width`. Animating width relayouts the
          header every frame; scaleX is composited. The box never changes size, so
          the nav beside it cannot shift. */
+      /* The rule underlines the monogram and extends on hover. Sized to its full
+         width and scaled down at rest so the animation is a composited transform,
+         never an animated `width` (which would relayout the header every frame). */
       .wordmark__rule {
         display: block;
-        width: 2.6rem;
-        height: 1px;
+        width: 3.1rem;
+        height: 2px;
         background: var(--accent);
-        transform: scaleX(0.538);
+        transform: scaleX(0.62);
         transform-origin: left center;
         transition: transform var(--dur-mid) var(--ease-out);
-      }
-
-      .wordmark__last {
-        color: var(--ink-3);
-        transition: color var(--dur-mid) var(--ease-out);
       }
 
       @media (hover: hover) {
         .wordmark:hover .wordmark__rule {
           transform: none;
-        }
-
-        .wordmark:hover .wordmark__last {
-          color: var(--accent-ink);
         }
       }
 
@@ -469,11 +510,22 @@ const year = new Date().getUTCFullYear();
           min-height: 44px;
           padding-inline: 0.15rem;
         }
+
+        /* Measured 50x28 — the mark is the route home and was under the floor.
+           justify-content keeps it optically top-aligned while the hit area grows
+           downward, so the lockup does not visually drift. */
+        .wordmark {
+          min-height: 44px;
+          justify-content: center;
+        }
       }
 
       .theme-toggle {
         display: grid;
         place-items: center;
+        /* Without this, flex happily shrank it to 14px wide when the header
+           overflowed — a round button squashed into a sliver. */
+        flex: none;
         width: 2.1rem;
         height: 2.1rem;
         border-radius: 999px;
