@@ -1,0 +1,242 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<!-- Google tag (gtag.js), deferred until first interaction (or 15s fallback) to keep it off the critical rendering path -->
+<link rel="preconnect" href="https://www.googletagmanager.com">
+<link rel="preconnect" href="https://www.google-analytics.com">
+<script>
+  window.dataLayer = window.dataLayer || [];
+  function gtag(){dataLayer.push(arguments);}
+  gtag('js', new Date());
+  gtag('config', 'G-LHV76XLD3M');
+
+  (function () {
+    var loaded = false;
+    function loadGtag() {
+      if (loaded) return;
+      loaded = true;
+      events.forEach(function (evt) {
+        window.removeEventListener(evt, loadGtag, { passive: true });
+      });
+      clearTimeout(fallback);
+      var s = document.createElement('script');
+      s.async = true;
+      s.src = 'https://www.googletagmanager.com/gtag/js?id=G-LHV76XLD3M';
+      document.head.appendChild(s);
+    }
+    var events = ['scroll', 'mousemove', 'keydown', 'touchstart', 'click'];
+    events.forEach(function (evt) {
+      window.addEventListener(evt, loadGtag, { passive: true, once: true });
+    });
+    var fallback = setTimeout(loadGtag, 15000);
+  })();
+</script>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Four Layers of Working With AI | Ibrahim Maher Al-Bander</title>
+<meta name="description" content="Prompt engineering is one skill out of four. Here is the difference between prompt, context, harness, and loop engineering, and why most people only ever touch the first.">
+<meta name="keywords" content="prompt engineering vs context engineering, harness engineering, loop engineering, AI agent engineering layers, AI automation skills, working with Claude AI">
+<meta name="author" content="Ibrahim Maher Al-Bander">
+<link rel="canonical" href="https://ibrahimaher.com/blog/four-layers-of-working-with-ai">
+
+<meta property="og:type" content="article">
+<meta property="og:title" content="Prompt, Context, Harness, and Loop Engineering: The Four Layers of Working With AI">
+<meta property="og:description" content="Prompt engineering is one skill out of four. Here is what most people who claim to 'know AI' are missing.">
+<meta property="og:url" content="https://ibrahimaher.com/blog/four-layers-of-working-with-ai">
+<meta property="og:site_name" content="Ibrahim Maher Al-Bander">
+<meta property="og:image" content="https://ibrahimaher.com/assets/og-image.png">
+<meta property="og:locale" content="en_US">
+
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="The Four Layers of Working With AI">
+<meta name="twitter:description" content="Prompt engineering is the layer everyone knows. Context, harness, and loop engineering are where real production work happens.">
+<meta name="twitter:image" content="https://ibrahimaher.com/assets/og-image.png">
+
+<meta name="theme-color" content="#0a0e17">
+<link rel="icon" type="image/svg+xml" href="../assets/favicon.svg">
+<link rel="preload" href="/assets/fonts/sora-latin.woff2" as="font" type="font/woff2" crossorigin>
+<link rel="preload" href="/assets/fonts/inter-latin.woff2" as="font" type="font/woff2" crossorigin>
+<link rel="stylesheet" href="../styles.css?v=9">
+
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "BlogPosting",
+  "headline": "Prompt, Context, Harness, and Loop Engineering: The Four Layers of Working With AI",
+  "description": "Prompt engineering is one skill out of four. Here is the difference between prompt, context, harness, and loop engineering, and why most people only ever touch the first.",
+  "datePublished": "2026-07-14",
+  "dateModified": "2026-07-14",
+  "author": { "@type": "Person", "name": "Ibrahim Maher Al-Bander", "url": "https://ibrahimaher.com" },
+  "publisher": { "@type": "Person", "name": "Ibrahim Maher Al-Bander", "url": "https://ibrahimaher.com" },
+  "image": "https://ibrahimaher.com/assets/og-image.png",
+  "mainEntityOfPage": "https://ibrahimaher.com/blog/four-layers-of-working-with-ai",
+  "articleSection": "AI"
+}
+</script>
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "BreadcrumbList",
+  "itemListElement": [
+    { "@type": "ListItem", "position": 1, "name": "Home", "item": "https://ibrahimaher.com/" },
+    { "@type": "ListItem", "position": 2, "name": "Blog", "item": "https://ibrahimaher.com/blog/" },
+    { "@type": "ListItem", "position": 3, "name": "The Four Layers of Working With AI", "item": "https://ibrahimaher.com/blog/four-layers-of-working-with-ai" }
+  ]
+}
+</script>
+
+<script>
+  (function () {
+    const stored = localStorage.getItem("theme");
+    const theme = stored || (window.matchMedia("(prefers-color-scheme: light)").matches ? "light" : "dark");
+    document.documentElement.setAttribute("data-theme", theme);
+  })();
+</script>
+</head>
+<body data-page="blog">
+
+<div class="bg-glow" aria-hidden="true"></div>
+
+<header class="topbar">
+  <a href="/" class="brand">IB<span class="dot">/</span><span class="brand-sub">AL-BANDER</span></a>
+  <nav class="sectionnav" aria-label="Section navigation">
+    <a class="navbtn" href="/about" data-page="about">About</a>
+    <a class="navbtn" href="/#experience" data-target="experience">Experience</a>
+    <a class="navbtn" href="/#projects" data-target="projects">Projects</a>
+    <a class="navbtn" href="/blog/" data-page="blog">Blog</a>
+    <a class="navbtn" href="/contact" data-page="contact">Contact</a>
+  </nav>
+  <div class="topbar-actions">
+    <button class="themebtn" id="themeToggle" aria-label="Toggle dark and light mode">
+      <svg class="icon-sun" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="4.5"/><path d="M12 2.5v2.2M12 19.3v2.2M4.6 4.6l1.6 1.6M17.8 17.8l1.6 1.6M2.5 12h2.2M19.3 12h2.2M4.6 19.4l1.6-1.6M17.8 6.2l1.6-1.6"/></svg>
+      <svg class="icon-moon" viewBox="0 0 24 24" width="18" height="18" fill="currentColor"><path d="M20.4 14.7A8.5 8.5 0 1 1 9.3 3.6a7 7 0 0 0 11.1 11.1z"/></svg>
+    </button>
+    <button class="navtoggle" id="navToggle" aria-label="Toggle menu">
+      <span></span><span></span><span></span>
+    </button>
+  </div>
+</header>
+
+<main id="top">
+  <section class="section page-header">
+    <nav class="breadcrumbs" aria-label="Breadcrumb">
+      <a href="/">Home</a><span class="sep">/</span><a href="/blog/">Blog</a><span class="sep">/</span><span class="current">The Four Layers of Working With AI</span>
+    </nav>
+    <p class="eyebrow">AI</p>
+    <h1 class="page-title">Prompt, Context, Harness, and Loop Engineering: The Four Layers of Working With AI</h1>
+    <div class="post-meta"><span>July 14, 2026</span><span class="tag">AI</span><span>~8 min read</span></div>
+
+    <div class="post-hero">
+      <svg viewBox="0 0 1200 400" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Four stacked horizontal layers representing prompt, context, harness, and loop engineering">
+        <defs>
+          <linearGradient id="g1" x1="0" y1="0" x2="0" y2="1">
+            <stop offset="0%" stop-color="#d97757" stop-opacity="0.20"/>
+            <stop offset="100%" stop-color="#d97757" stop-opacity="0"/>
+          </linearGradient>
+        </defs>
+        <rect width="1200" height="400" style="fill:var(--surface-2)"/>
+        <rect width="1200" height="400" fill="url(#g1)"/>
+        <rect x="180" y="70" width="840" height="56" rx="12" style="fill:var(--surface)" stroke="#d97757" stroke-width="2.5"/>
+        <rect x="180" y="146" width="840" height="56" rx="12" style="fill:var(--surface)" stroke="#d97757" stroke-width="2" opacity="0.85"/>
+        <rect x="180" y="222" width="840" height="56" rx="12" style="fill:var(--surface)" stroke="#d97757" stroke-width="2" opacity="0.7"/>
+        <rect x="180" y="298" width="840" height="56" rx="12" style="fill:var(--surface)" stroke="#d97757" stroke-width="2" opacity="0.55"/>
+        <g style="fill:var(--ink)">
+          <circle cx="215" cy="98" r="6"/>
+          <circle cx="215" cy="174" r="6"/>
+          <circle cx="215" cy="250" r="6"/>
+          <circle cx="215" cy="326" r="6"/>
+        </g>
+      </svg>
+    </div>
+
+
+    <div class="post-body">
+      <p>
+        Ask most people what "AI skills" means and they will describe prompt engineering: phrasing a
+        request well, assigning a persona, giving clear formatting rules. That is real, but it is one
+        layer out of four, and it is the layer that only covers a single exchange. Building something
+        like <a href="/#projects">DAD LINK</a>, a live e-commerce store I shipped largely with Claude
+        Code, took all four layers working together. Here is what each one actually does.
+      </p>
+
+      <h2>Layer 1: Prompt engineering — optimizing the instruction</h2>
+      <p>
+        This is what most people mean when they say "AI skills." How you phrase a request, what
+        persona you assign the model, what formatting rules and constraints you set for a single
+        interaction. It matters, and a badly written prompt genuinely produces worse output. But it
+        only covers one exchange. It does not survive a long project on its own, the same way giving
+        a new hire a good daily task list does not replace onboarding them properly.
+      </p>
+
+      <h2>Layer 2: Context engineering — optimizing the information</h2>
+      <p>
+        Context engineering manages what the model's context window actually sees: retrieval-augmented
+        generation, memory management, and picking the right documents, code, or prior decisions to
+        surface at the right moment. Bad context engineering is why AI tools "forget" things mid-project
+        — not because the model got worse, but because nobody fed it the right information at the
+        right time. I treat this as a first-class design problem on every project, the same way you
+        would hand a new employee the correct project binders before their first day, not halfway
+        through week two.
+      </p>
+
+      <h2>Layer 3: Harness engineering — optimizing the execution environment</h2>
+      <p>
+        This is the closed-loop system around the model: what tools it can call, what guardrails stop
+        it from doing something destructive, and how its output gets validated before anyone trusts
+        it. This is the layer that turns "the AI wrote something" into "the AI's work is safe to
+        ship," and it is most of what I actually build when I automate a business process with n8n —
+        schema validation, retry logic, and audit logging around every AI call, not just the call
+        itself.
+      </p>
+
+      <h2>Layer 4: Loop engineering — automating the repetition</h2>
+      <p>
+        Loop engineering builds on harness engineering to let agents run for hours without a human
+        watching: spawning helper agents for sub-tasks, checking their own results against a
+        standard, and self-correcting when something is off. Sites like DAD LINK get built this way,
+        in long autonomous passes with checkpoints, not one prompt typed at a time. It is the
+        difference between an employee who needs a task list every hour and one who runs their own
+        workday and only escalates what actually needs a human.
+      </p>
+
+      <blockquote>
+        Anyone can type a clever prompt into a chat window. Getting a model to do real, unattended,
+        production-grade work takes all four layers, and most people who claim to "know AI" have
+        only touched the first one.
+      </blockquote>
+
+      <h2>Why this framework matters practically</h2>
+      <ul>
+        <li>Hiring: if you are hiring for "AI skills," ask which of the four layers a candidate has
+          actually built something in, not whether they can write a clever prompt.</li>
+        <li>Automation: an n8n workflow that calls an AI model without harness engineering around it —
+          no schema check, no retry, no logging — is a liability waiting to happen.</li>
+        <li>Software: <a href="/blog/n8n-vs-zapier-vs-make">tools like n8n</a> earn their complexity
+          precisely because they let you build harness engineering into a workflow properly.</li>
+      </ul>
+
+      <p>
+        I did not learn this framework from a course. It came out of actually building things —
+        automations at Help Tech, freelance n8n projects, and a full production website — and noticing
+        where things kept breaking versus where they held up. More on how that background came
+        together is on the <a href="/about">about page</a>.
+      </p>
+    </div>
+
+    <div class="post-cta">
+      <h3>Building something with AI and it keeps breaking mid-project?</h3>
+      <p>It is usually a context or harness engineering gap, not a prompting problem.</p>
+      <a href="/contact" class="btn btn-primary">Get in touch <span class="arrow">&rarr;</span></a>
+    </div>
+    <div class="post-nav"><a href="/blog/">&larr; Back to all posts</a></div>
+  </section>
+</main>
+
+<footer class="footer">
+  <p>Designed and developed by Ibrahim Maher Al-Bander &middot; <a href="/about">About</a> &middot; <a href="/blog/">Blog</a> &middot; <a href="/contact">Contact</a></p>
+  <p>&copy; 2026</p>
+</footer>
+
+<script src="../script.js?v=9"></script>
+</body>
+</html>

@@ -1,0 +1,243 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<!-- Google tag (gtag.js), deferred until first interaction (or 15s fallback) to keep it off the critical rendering path -->
+<link rel="preconnect" href="https://www.googletagmanager.com">
+<link rel="preconnect" href="https://www.google-analytics.com">
+<script>
+  window.dataLayer = window.dataLayer || [];
+  function gtag(){dataLayer.push(arguments);}
+  gtag('js', new Date());
+  gtag('config', 'G-LHV76XLD3M');
+
+  (function () {
+    var loaded = false;
+    function loadGtag() {
+      if (loaded) return;
+      loaded = true;
+      events.forEach(function (evt) {
+        window.removeEventListener(evt, loadGtag, { passive: true });
+      });
+      clearTimeout(fallback);
+      var s = document.createElement('script');
+      s.async = true;
+      s.src = 'https://www.googletagmanager.com/gtag/js?id=G-LHV76XLD3M';
+      document.head.appendChild(s);
+    }
+    var events = ['scroll', 'mousemove', 'keydown', 'touchstart', 'click'];
+    events.forEach(function (evt) {
+      window.addEventListener(evt, loadGtag, { passive: true, once: true });
+    });
+    var fallback = setTimeout(loadGtag, 15000);
+  })();
+</script>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>n8n vs Zapier vs Make | Ibrahim Maher Al-Bander</title>
+<meta name="description" content="n8n, Zapier, and Make all connect apps. Only one of them lets you write real logic. Here is what actually differs after building production automations with n8n.">
+<meta name="keywords" content="n8n vs Zapier, n8n vs Make, best workflow automation tool, n8n automation developer, n8n certified level 1, workflow automation comparison">
+<meta name="author" content="Ibrahim Maher Al-Bander">
+<link rel="canonical" href="https://ibrahimaher.com/blog/n8n-vs-zapier-vs-make">
+
+<meta property="og:type" content="article">
+<meta property="og:title" content="n8n vs Zapier vs Make: What I Learned Building Production Workflows">
+<meta property="og:description" content="They all connect apps. Only one lets you write real logic. Notes from building production n8n automations.">
+<meta property="og:url" content="https://ibrahimaher.com/blog/n8n-vs-zapier-vs-make">
+<meta property="og:site_name" content="Ibrahim Maher Al-Bander">
+<meta property="og:image" content="https://ibrahimaher.com/assets/og-image.png">
+<meta property="og:locale" content="en_US">
+
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="n8n vs Zapier vs Make">
+<meta name="twitter:description" content="What actually differs once you are building production automations, not just demos.">
+<meta name="twitter:image" content="https://ibrahimaher.com/assets/og-image.png">
+
+<meta name="theme-color" content="#0a0e17">
+<link rel="icon" type="image/svg+xml" href="../assets/favicon.svg">
+<link rel="preload" href="/assets/fonts/sora-latin.woff2" as="font" type="font/woff2" crossorigin>
+<link rel="preload" href="/assets/fonts/inter-latin.woff2" as="font" type="font/woff2" crossorigin>
+<link rel="stylesheet" href="../styles.css?v=9">
+
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "BlogPosting",
+  "headline": "n8n vs Zapier vs Make: What I Learned Building Production Workflows",
+  "description": "n8n, Zapier, and Make all connect apps. Only one of them lets you write real logic. Notes from building production automations with n8n.",
+  "datePublished": "2026-07-14",
+  "dateModified": "2026-07-14",
+  "author": { "@type": "Person", "name": "Ibrahim Maher Al-Bander", "url": "https://ibrahimaher.com" },
+  "publisher": { "@type": "Person", "name": "Ibrahim Maher Al-Bander", "url": "https://ibrahimaher.com" },
+  "image": "https://ibrahimaher.com/assets/og-image.png",
+  "mainEntityOfPage": "https://ibrahimaher.com/blog/n8n-vs-zapier-vs-make",
+  "articleSection": "Technology"
+}
+</script>
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "BreadcrumbList",
+  "itemListElement": [
+    { "@type": "ListItem", "position": 1, "name": "Home", "item": "https://ibrahimaher.com/" },
+    { "@type": "ListItem", "position": 2, "name": "Blog", "item": "https://ibrahimaher.com/blog/" },
+    { "@type": "ListItem", "position": 3, "name": "n8n vs Zapier vs Make", "item": "https://ibrahimaher.com/blog/n8n-vs-zapier-vs-make" }
+  ]
+}
+</script>
+
+<script>
+  (function () {
+    const stored = localStorage.getItem("theme");
+    const theme = stored || (window.matchMedia("(prefers-color-scheme: light)").matches ? "light" : "dark");
+    document.documentElement.setAttribute("data-theme", theme);
+  })();
+</script>
+</head>
+<body data-page="blog">
+
+<div class="bg-glow" aria-hidden="true"></div>
+
+<header class="topbar">
+  <a href="/" class="brand">IB<span class="dot">/</span><span class="brand-sub">AL-BANDER</span></a>
+  <nav class="sectionnav" aria-label="Section navigation">
+    <a class="navbtn" href="/about" data-page="about">About</a>
+    <a class="navbtn" href="/#experience" data-target="experience">Experience</a>
+    <a class="navbtn" href="/#projects" data-target="projects">Projects</a>
+    <a class="navbtn" href="/blog/" data-page="blog">Blog</a>
+    <a class="navbtn" href="/contact" data-page="contact">Contact</a>
+  </nav>
+  <div class="topbar-actions">
+    <button class="themebtn" id="themeToggle" aria-label="Toggle dark and light mode">
+      <svg class="icon-sun" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="4.5"/><path d="M12 2.5v2.2M12 19.3v2.2M4.6 4.6l1.6 1.6M17.8 17.8l1.6 1.6M2.5 12h2.2M19.3 12h2.2M4.6 19.4l1.6-1.6M17.8 6.2l1.6-1.6"/></svg>
+      <svg class="icon-moon" viewBox="0 0 24 24" width="18" height="18" fill="currentColor"><path d="M20.4 14.7A8.5 8.5 0 1 1 9.3 3.6a7 7 0 0 0 11.1 11.1z"/></svg>
+    </button>
+    <button class="navtoggle" id="navToggle" aria-label="Toggle menu">
+      <span></span><span></span><span></span>
+    </button>
+  </div>
+</header>
+
+<main id="top">
+  <section class="section page-header">
+    <nav class="breadcrumbs" aria-label="Breadcrumb">
+      <a href="/">Home</a><span class="sep">/</span><a href="/blog/">Blog</a><span class="sep">/</span><span class="current">n8n vs Zapier vs Make</span>
+    </nav>
+    <p class="eyebrow">Technology</p>
+    <h1 class="page-title">n8n vs Zapier vs Make: What I Learned Building Production Workflows</h1>
+    <div class="post-meta"><span>July 14, 2026</span><span class="tag">Technology</span><span>~7 min read</span></div>
+
+    <div class="post-hero">
+      <svg viewBox="0 0 1200 400" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Three workflow node diagrams shown side by side for comparison">
+        <defs>
+          <radialGradient id="g1" cx="50%" cy="20%" r="90%">
+            <stop offset="0%" stop-color="#d97757" stop-opacity="0.14"/>
+            <stop offset="100%" stop-color="#d97757" stop-opacity="0"/>
+          </radialGradient>
+        </defs>
+        <rect width="1200" height="400" style="fill:var(--surface-2)"/>
+        <rect width="1200" height="400" fill="url(#g1)"/>
+        <g style="stroke:var(--border)" stroke-width="1.5">
+          <line x1="400" y1="60" x2="400" y2="340"/>
+          <line x1="800" y1="60" x2="800" y2="340"/>
+        </g>
+        <g fill="none" stroke-width="2.5" style="stroke:#d97757">
+          <path d="M120 200 L 220 140 L 320 200"/>
+          <path d="M520 200 L 620 260 L 720 200 L 620 140 Z"/>
+          <path d="M920 140 L 920 260 M 880 200 L 1080 200"/>
+        </g>
+        <g style="fill:var(--ink)">
+          <circle cx="120" cy="200" r="10"/><circle cx="220" cy="140" r="10"/><circle cx="320" cy="200" r="10"/>
+          <circle cx="620" cy="260" r="10"/><circle cx="620" cy="140" r="10"/>
+          <circle cx="920" cy="140" r="10"/><circle cx="920" cy="260" r="10"/>
+        </g>
+      </svg>
+    </div>
+
+
+    <div class="post-body">
+      <p>
+        Zapier, Make, and n8n all promise the same thing: connect your apps without writing a full
+        backend. After building production automations for clients on n8n, including workflows that
+        run unattended 24/7 handling real money and real leads, my honest answer is that the three
+        tools are not actually competing for the same job once your automation gets past "when X
+        happens, do Y."
+      </p>
+
+      <h2>Where Zapier and Make win</h2>
+      <p>
+        For a simple, linear automation — a new form submission adds a row to a spreadsheet and sends
+        a Slack message — Zapier and Make are genuinely faster to get running, and their polished
+        UIs and huge app libraries mean less setup friction for non-technical users. If that is the
+        whole job, either tool will do it well, and I would not talk anyone out of using them for that.
+      </p>
+
+      <h2>Where n8n takes over</h2>
+      <p>
+        The moment a workflow needs real conditional logic, custom JavaScript for field mapping and
+        data validation, self-hosting for cost or data control, or genuinely complex branching — like
+        routing a lead through three different pipelines based on an AI-generated score — n8n is in a
+        different category. It is closer to a visual programming environment than a "connect two
+        apps" tool. I write custom JavaScript function nodes constantly: for date math, edge-case
+        handling, and field mapping that no built-in node covers cleanly.
+      </p>
+
+      <h2>The features that actually matter in production</h2>
+      <ul>
+        <li><strong>Self-hosting.</strong> n8n can run on your own infrastructure, which matters a lot when
+          a workflow is touching financial data or customer PII and a client does not want that
+          routed through a third party's cloud by default.</li>
+        <li><strong>Custom code nodes.</strong> Real JavaScript, not a restricted formula language, for the
+          10 percent of logic that never fits a pre-built connector.</li>
+        <li><strong>Error handling and retries.</strong> Production workflows fail sometimes — an API
+          times out, a webhook arrives malformed. n8n's error workflows and retry logic are what let
+          my automations run unattended without silently dropping data.</li>
+        <li><strong>Human-in-the-loop steps.</strong> Gmail Send-and-Wait style approval steps, where a
+          workflow pauses for a real person's decision before continuing, are something I lean on
+          heavily for finance and operations flows like my
+          <a href="/#projects">Multi-Stage Invoice Approval Pipeline</a>.</li>
+      </ul>
+
+      <h2>Where AI models fit into the comparison</h2>
+      <p>
+        All three tools can call OpenAI, Claude, or Gemini through HTTP nodes or native integrations.
+        The difference shows up in how much control you have over what happens around that AI call:
+        validating the model's JSON output against a schema, retrying on a malformed response, and
+        logging the decision for an audit trail. That is where n8n's flexibility earns its keep, and
+        it is most of what I actually build when clients ask for "an AI automation."
+      </p>
+
+      <blockquote>
+        Anyone can wire an AI model into a no-code tool. Getting it to run unattended for months
+        without silently failing is a different skill, and it is the one that actually matters.
+      </blockquote>
+
+      <h2>My honest recommendation</h2>
+      <p>
+        If you are automating something simple and you want it running in twenty minutes, Zapier or
+        Make will get you there faster. If you are building something that needs to survive contact
+        with messy real-world data, complex business rules, or a genuine requirement to self-host,
+        n8n is worth the slightly steeper learning curve. I hold n8n's Automation Level 1
+        certification and build almost exclusively on it now, for exactly that reason — see my
+        <a href="/#projects">projects</a> for what that looks like in production, or read about the
+        broader skill layers involved in
+        <a href="/blog/four-layers-of-working-with-ai">working with AI systems properly</a>.
+      </p>
+    </div>
+
+    <div class="post-cta">
+      <h3>Outgrowing what your current automation tool can do?</h3>
+      <p>If Zapier or Make has hit a wall on logic or scale, n8n is usually the fix.</p>
+      <a href="/contact" class="btn btn-primary">Get in touch <span class="arrow">&rarr;</span></a>
+    </div>
+    <div class="post-nav"><a href="/blog/">&larr; Back to all posts</a></div>
+  </section>
+</main>
+
+<footer class="footer">
+  <p>Designed and developed by Ibrahim Maher Al-Bander &middot; <a href="/about">About</a> &middot; <a href="/blog/">Blog</a> &middot; <a href="/contact">Contact</a></p>
+  <p>&copy; 2026</p>
+</footer>
+
+<script src="../script.js?v=9"></script>
+</body>
+</html>

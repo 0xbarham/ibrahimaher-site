@@ -1,0 +1,36 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="robots" content="noindex, nofollow">
+<title>Admin &middot; ibrahimaher.com</title>
+<link rel="stylesheet" href="/styles.css">
+<link rel="stylesheet" href="/admin/admin.css">
+</head>
+<body>
+  <header class="admin-header">
+    <span class="admin-title">ibrahimaher.com content</span>
+    <button id="logout-btn" class="admin-logout">Log out</button>
+  </header>
+
+  <nav class="admin-tabs" id="admin-tabs">
+    <button class="admin-tab active" data-table="jobs">Jobs</button>
+    <button class="admin-tab" data-table="projects">Projects</button>
+    <button class="admin-tab" data-table="skills">Skills</button>
+    <button class="admin-tab" data-table="certifications">Certifications</button>
+    <button class="admin-tab" data-table="education">Education</button>
+    <button class="admin-tab" data-table="posts">Posts</button>
+  </nav>
+
+  <main class="admin-main">
+    <div class="admin-toolbar">
+      <button id="add-row-btn" class="admin-btn admin-btn-primary">+ Add row</button>
+      <span id="admin-status" class="admin-status"></span>
+    </div>
+    <div id="rows-container" class="rows-container"></div>
+  </main>
+
+  <script src="/admin/admin.js"></script>
+</body>
+</html>

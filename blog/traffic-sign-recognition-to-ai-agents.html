@@ -1,0 +1,249 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<!-- Google tag (gtag.js), deferred until first interaction (or 15s fallback) to keep it off the critical rendering path -->
+<link rel="preconnect" href="https://www.googletagmanager.com">
+<link rel="preconnect" href="https://www.google-analytics.com">
+<script>
+  window.dataLayer = window.dataLayer || [];
+  function gtag(){dataLayer.push(arguments);}
+  gtag('js', new Date());
+  gtag('config', 'G-LHV76XLD3M');
+
+  (function () {
+    var loaded = false;
+    function loadGtag() {
+      if (loaded) return;
+      loaded = true;
+      events.forEach(function (evt) {
+        window.removeEventListener(evt, loadGtag, { passive: true });
+      });
+      clearTimeout(fallback);
+      var s = document.createElement('script');
+      s.async = true;
+      s.src = 'https://www.googletagmanager.com/gtag/js?id=G-LHV76XLD3M';
+      document.head.appendChild(s);
+    }
+    var events = ['scroll', 'mousemove', 'keydown', 'touchstart', 'click'];
+    events.forEach(function (evt) {
+      window.addEventListener(evt, loadGtag, { passive: true, once: true });
+    });
+    var fallback = setTimeout(loadGtag, 15000);
+  })();
+</script>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>From Traffic Signs to AI Agents | Ibrahim Maher Al-Bander</title>
+<meta name="description" content="A CNN capstone project in 2021 turned into production n8n automations and a live AI-built e-commerce site by 2026. Here is the actual path, not the highlight reel.">
+<meta name="keywords" content="path into AI automation, CNN traffic sign recognition, computer engineering to AI career, n8n automation career, self-taught AI developer Iraq, Northern Technical University">
+<meta name="author" content="Ibrahim Maher Al-Bander">
+<link rel="canonical" href="https://ibrahimaher.com/blog/traffic-sign-recognition-to-ai-agents">
+
+<meta property="og:type" content="article">
+<meta property="og:title" content="From a Traffic-Sign Recognition Capstone to Production AI Agents: My Path Into Automation">
+<meta property="og:description" content="A CNN capstone project in 2021 turned into production n8n automations and a live AI-built e-commerce site by 2026. Here is the actual path, not the highlight reel.">
+<meta property="og:url" content="https://ibrahimaher.com/blog/traffic-sign-recognition-to-ai-agents">
+<meta property="og:site_name" content="Ibrahim Maher Al-Bander">
+<meta property="og:image" content="https://ibrahimaher.com/assets/og-image.png">
+<meta property="og:locale" content="en_US">
+
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="From a Traffic-Sign Recognition Capstone to Production AI Agents">
+<meta name="twitter:description" content="A CNN capstone project in 2021 turned into production n8n automations and a live AI-built e-commerce site by 2026.">
+<meta name="twitter:image" content="https://ibrahimaher.com/assets/og-image.png">
+
+<meta name="theme-color" content="#0a0e17">
+<link rel="icon" type="image/svg+xml" href="../assets/favicon.svg">
+<link rel="preload" href="/assets/fonts/sora-latin.woff2" as="font" type="font/woff2" crossorigin>
+<link rel="preload" href="/assets/fonts/inter-latin.woff2" as="font" type="font/woff2" crossorigin>
+<link rel="stylesheet" href="../styles.css?v=9">
+
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "BlogPosting",
+  "headline": "From a Traffic-Sign Recognition Capstone to Production AI Agents: My Path Into Automation",
+  "description": "A CNN capstone project in 2021 turned into production n8n automations and a live AI-built e-commerce site by 2026. Here is the actual path, not the highlight reel.",
+  "datePublished": "2026-07-14",
+  "dateModified": "2026-07-14",
+  "author": { "@type": "Person", "name": "Ibrahim Maher Al-Bander", "url": "https://ibrahimaher.com" },
+  "publisher": { "@type": "Person", "name": "Ibrahim Maher Al-Bander", "url": "https://ibrahimaher.com" },
+  "image": "https://ibrahimaher.com/assets/og-image.png",
+  "mainEntityOfPage": "https://ibrahimaher.com/blog/traffic-sign-recognition-to-ai-agents",
+  "articleSection": "Technology"
+}
+</script>
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "BreadcrumbList",
+  "itemListElement": [
+    { "@type": "ListItem", "position": 1, "name": "Home", "item": "https://ibrahimaher.com/" },
+    { "@type": "ListItem", "position": 2, "name": "Blog", "item": "https://ibrahimaher.com/blog/" },
+    { "@type": "ListItem", "position": 3, "name": "From a Traffic-Sign Recognition Capstone to Production AI Agents: My Path Into Automation", "item": "https://ibrahimaher.com/blog/traffic-sign-recognition-to-ai-agents" }
+  ]
+}
+</script>
+
+<script>
+  (function () {
+    const stored = localStorage.getItem("theme");
+    const theme = stored || (window.matchMedia("(prefers-color-scheme: light)").matches ? "light" : "dark");
+    document.documentElement.setAttribute("data-theme", theme);
+  })();
+</script>
+</head>
+<body data-page="blog">
+
+<div class="bg-glow" aria-hidden="true"></div>
+
+<header class="topbar">
+  <a href="/" class="brand">IB<span class="dot">/</span><span class="brand-sub">AL-BANDER</span></a>
+  <nav class="sectionnav" aria-label="Section navigation">
+    <a class="navbtn" href="/about" data-page="about">About</a>
+    <a class="navbtn" href="/#experience" data-target="experience">Experience</a>
+    <a class="navbtn" href="/#projects" data-target="projects">Projects</a>
+    <a class="navbtn" href="/blog/" data-page="blog">Blog</a>
+    <a class="navbtn" href="/contact" data-page="contact">Contact</a>
+  </nav>
+  <div class="topbar-actions">
+    <button class="themebtn" id="themeToggle" aria-label="Toggle dark and light mode">
+      <svg class="icon-sun" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="4.5"/><path d="M12 2.5v2.2M12 19.3v2.2M4.6 4.6l1.6 1.6M17.8 17.8l1.6 1.6M2.5 12h2.2M19.3 12h2.2M4.6 19.4l1.6-1.6M17.8 6.2l1.6-1.6"/></svg>
+      <svg class="icon-moon" viewBox="0 0 24 24" width="18" height="18" fill="currentColor"><path d="M20.4 14.7A8.5 8.5 0 1 1 9.3 3.6a7 7 0 0 0 11.1 11.1z"/></svg>
+    </button>
+    <button class="navtoggle" id="navToggle" aria-label="Toggle menu">
+      <span></span><span></span><span></span>
+    </button>
+  </div>
+</header>
+
+<main id="top">
+
+  <section class="section page-header">
+    <nav class="breadcrumbs" aria-label="Breadcrumb">
+      <a href="/">Home</a><span class="sep">/</span><a href="/blog/">Blog</a><span class="sep">/</span><span class="current">From a Traffic-Sign Recognition Capstone to Production AI Agents</span>
+    </nav>
+    <p class="eyebrow">Technology</p>
+    <h1 class="page-title">From a Traffic-Sign Recognition Capstone to Production AI Agents: My Path Into Automation</h1>
+    <div class="post-meta"><span>July 14, 2026</span><span class="tag">Technology</span><span>~7 min read</span></div>
+
+    <div class="post-hero">
+      <svg viewBox="0 0 1200 400" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="A triangular traffic sign silhouette transitioning into a neural network node graphic">
+        <defs>
+          <radialGradient id="g1" cx="30%" cy="35%" r="80%">
+            <stop offset="0%" stop-color="#d97757" stop-opacity="0.16"/>
+            <stop offset="100%" stop-color="#d97757" stop-opacity="0"/>
+          </radialGradient>
+        </defs>
+        <rect width="1200" height="400" style="fill:var(--surface-2)"/>
+        <rect width="1200" height="400" fill="url(#g1)"/>
+        <path d="M330 110 L 430 290 L 230 290 Z" fill="none" style="stroke:var(--ink)" stroke-width="5" stroke-linejoin="round"/>
+        <g style="stroke:var(--muted-2)" stroke-width="1.5" opacity="0.7">
+          <line x1="460" y1="200" x2="560" y2="150"/>
+          <line x1="460" y1="200" x2="560" y2="200"/>
+          <line x1="460" y1="200" x2="560" y2="250"/>
+          <line x1="560" y1="150" x2="700" y2="180"/>
+          <line x1="560" y1="200" x2="700" y2="180"/>
+          <line x1="560" y1="200" x2="700" y2="230"/>
+          <line x1="560" y1="250" x2="700" y2="230"/>
+          <line x1="700" y1="180" x2="860" y2="200"/>
+          <line x1="700" y1="230" x2="860" y2="200"/>
+        </g>
+        <circle cx="460" cy="200" r="9" style="fill:var(--ink)"/>
+        <circle cx="560" cy="150" r="9" style="fill:#d97757"/>
+        <circle cx="560" cy="200" r="9" style="fill:#d97757"/>
+        <circle cx="560" cy="250" r="9" style="fill:#d97757"/>
+        <circle cx="700" cy="180" r="9" style="fill:#d97757"/>
+        <circle cx="700" cy="230" r="9" style="fill:#d97757"/>
+        <circle cx="860" cy="200" r="12" style="fill:var(--ink)"/>
+      </svg>
+    </div>
+
+
+    <div class="post-body">
+      <p>
+        In 2021, my capstone project at Northern Technical University was a CNN-based traffic-sign
+        recognition system built in Python: data preprocessing, model training, evaluation, the full
+        pipeline. I graduated ranked 9th in my class with a GPA of 2.81 out of 4.0, a solid but
+        unremarkable result on paper. Five years later, I am running production AI automations for
+        real businesses and helped ship a live e-commerce site built largely with an AI coding agent.
+        The line between those two points is not a straight one, and I think the messy version is
+        more useful than the polished one.
+      </p>
+
+      <h2>What the capstone actually gave me</h2>
+      <p>
+        Building that traffic-sign recognition system meant sitting with the actual mechanics of how
+        a neural network learns: how data quality shapes model performance, how training and
+        evaluation are two different problems, and how a model that looks accurate on paper can still
+        fail in ways that matter. That foundation is the reason I was never intimidated by AI models
+        later on, when ChatGPT, Claude, and Gemini became mainstream tools. I had already spent months
+        elbow-deep in a simpler version of the same underlying idea.
+      </p>
+
+      <h2>The unglamorous years in between</h2>
+      <p>
+        After graduating, I did not walk into an AI engineering role. I did freelance software
+        testing on Upwork, testing a live survey application end to end. I built Telegram bots for
+        fun and for small clients, contact-splitter bots, image processing tools, notification
+        automations, using AI-assisted development to accelerate the work. None of that was
+        glamorous, and none of it looked like a straight line toward "AI automation developer" as a
+        job title. It was just consistent tinkering with real, if small, problems.
+      </p>
+
+      <h2>Where the marketing and accounting work fits in</h2>
+      <p>
+        At the same time, I was running social media marketing and, later, accounts and inventory
+        management at Help Tech Co. Ltd. Those roles are not unrelated detours from the automation
+        work; they are where the automation work actually came from. I started using n8n specifically
+        to stop doing the same weekly reporting by hand. That practical need, not a career plan, is
+        what turned into the automation practice I run today. You can see the full arc across roles
+        in <a href="/#experience">Experience</a>.
+      </p>
+
+      <h2>From automation scripts to production AI agents</h2>
+      <p>
+        The current chapter is production n8n workflows: an <a
+        href="/blog/invoice-fraud-firewall-case-study">Invoice Fraud Firewall</a>, an AI Lead
+        Intelligence and Auto-Response system, a Multi-Stage Invoice Approval Pipeline, all
+        integrating OpenAI, Claude, and Gemini into real business processes with proper error
+        handling, retry logic, and audit logging. Alongside that, <a href="/#projects">DAD LINK</a>
+        is a live e-commerce store built largely with Claude Code, proof that AI-assisted development
+        can ship something a real business actually runs on, not just a demo.
+      </p>
+
+      <blockquote>
+        None of this happened because I planned a career path toward "AI automation developer."
+        It happened because I kept saying yes to the next unfamiliar problem, and eventually the
+        problems all pointed the same direction.
+      </blockquote>
+
+      <h2>What I would tell someone starting where I started</h2>
+      <p>
+        If you are a computer engineering or computer science graduate wondering whether your degree
+        "counts" without a big-name internship or a straight-line career plan, my honest answer is
+        that the degree gets you the foundation, but the actual skill gets built in the unglamorous
+        years of freelance testing, small bots nobody remembers, and jobs that were not officially
+        about AI at all. If you want to talk about how to apply that kind of path to your own
+        automation or development needs, or just compare notes, <a href="/contact">reach out</a>.
+      </p>
+    </div>
+
+    <div class="post-cta">
+      <h3>Curious how this applies to your business?</h3>
+      <p>I bring the same practical, learn-it-under-deadline approach to every automation and AI project I take on.</p>
+      <a href="/contact" class="btn btn-primary">Get in touch <span class="arrow">&rarr;</span></a>
+    </div>
+    <div class="post-nav"><a href="/blog/">&larr; Back to all posts</a></div>
+  </section>
+
+</main>
+
+<footer class="footer">
+  <p>Designed and developed by Ibrahim Maher Al-Bander &middot; <a href="/about">About</a> &middot; <a href="/blog/">Blog</a> &middot; <a href="/contact">Contact</a></p>
+  <p>&copy; 2026</p>
+</footer>
+
+<script src="../script.js?v=9"></script>
+</body>
+</html>

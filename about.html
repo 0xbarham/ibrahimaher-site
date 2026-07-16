@@ -1,0 +1,235 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<!-- Google tag (gtag.js), deferred until first interaction (or 15s fallback) to keep it off the critical rendering path -->
+<link rel="preconnect" href="https://www.googletagmanager.com">
+<link rel="preconnect" href="https://www.google-analytics.com">
+<script>
+  window.dataLayer = window.dataLayer || [];
+  function gtag(){dataLayer.push(arguments);}
+  gtag('js', new Date());
+  gtag('config', 'G-LHV76XLD3M');
+
+  (function () {
+    var loaded = false;
+    function loadGtag() {
+      if (loaded) return;
+      loaded = true;
+      events.forEach(function (evt) {
+        window.removeEventListener(evt, loadGtag, { passive: true });
+      });
+      clearTimeout(fallback);
+      var s = document.createElement('script');
+      s.async = true;
+      s.src = 'https://www.googletagmanager.com/gtag/js?id=G-LHV76XLD3M';
+      document.head.appendChild(s);
+    }
+    var events = ['scroll', 'mousemove', 'keydown', 'touchstart', 'click'];
+    events.forEach(function (evt) {
+      window.addEventListener(evt, loadGtag, { passive: true, once: true });
+    });
+    var fallback = setTimeout(loadGtag, 15000);
+  })();
+</script>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>About Ibrahim Maher Al-Bander | Marketer &amp; AI Developer</title>
+<meta name="description" content="The story behind Ibrahim Maher Al-Bander: how a computer engineering graduate in Erbil, Iraq ended up running social media, accounting, and AI automation at once, and why he builds with n8n and Claude Code.">
+<meta name="keywords" content="Ibrahim Maher Al-Bander, about Ibrahim Al-Bander, Erbil Iraq marketer, AI automation developer bio, n8n developer story, Northern Technical University graduate, Help Tech Co Ltd">
+<meta name="author" content="Ibrahim Maher Al-Bander">
+<link rel="canonical" href="https://ibrahimaher.com/about">
+
+<meta property="og:type" content="profile">
+<meta property="og:title" content="About Ibrahim Maher Al-Bander">
+<meta property="og:description" content="How a computer engineering graduate in Erbil, Iraq ended up running social media marketing, accounting, and AI automation at once.">
+<meta property="og:url" content="https://ibrahimaher.com/about">
+<meta property="og:site_name" content="Ibrahim Maher Al-Bander">
+<meta property="og:image" content="https://ibrahimaher.com/assets/og-image.png">
+<meta property="og:locale" content="en_US">
+
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="About Ibrahim Maher Al-Bander">
+<meta name="twitter:description" content="Marketer, accounts officer, and AI automation developer based in Erbil, Iraq. Here is how I got here.">
+<meta name="twitter:image" content="https://ibrahimaher.com/assets/og-image.png">
+
+<meta name="theme-color" content="#0a0e17">
+<link rel="icon" type="image/svg+xml" href="assets/favicon.svg">
+<link rel="preload" href="/assets/fonts/sora-latin.woff2" as="font" type="font/woff2" crossorigin>
+<link rel="preload" href="/assets/fonts/inter-latin.woff2" as="font" type="font/woff2" crossorigin>
+<link rel="stylesheet" href="styles.css?v=9">
+
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "AboutPage",
+  "url": "https://ibrahimaher.com/about",
+  "name": "About Ibrahim Maher Al-Bander",
+  "mainEntity": {
+    "@type": "Person",
+    "name": "Ibrahim Maher Al-Bander",
+    "url": "https://ibrahimaher.com",
+    "jobTitle": "Social Media Marketing Specialist & AI Automation Developer",
+    "worksFor": { "@type": "Organization", "name": "Help Tech Co. Ltd." },
+    "alumniOf": { "@type": "CollegeOrUniversity", "name": "Northern Technical University" },
+    "email": "mailto:me@ibrahimaher.com",
+    "address": { "@type": "PostalAddress", "addressLocality": "Erbil", "addressCountry": "IQ" }
+  }
+}
+</script>
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "BreadcrumbList",
+  "itemListElement": [
+    { "@type": "ListItem", "position": 1, "name": "Home", "item": "https://ibrahimaher.com/" },
+    { "@type": "ListItem", "position": 2, "name": "About", "item": "https://ibrahimaher.com/about" }
+  ]
+}
+</script>
+
+<script>
+  (function () {
+    const stored = localStorage.getItem("theme");
+    const theme = stored || (window.matchMedia("(prefers-color-scheme: light)").matches ? "light" : "dark");
+    document.documentElement.setAttribute("data-theme", theme);
+  })();
+</script>
+</head>
+<body data-page="about">
+
+<div class="bg-glow" aria-hidden="true"></div>
+
+<header class="topbar">
+  <a href="/" class="brand">IB<span class="dot">/</span><span class="brand-sub">AL-BANDER</span></a>
+  <nav class="sectionnav" aria-label="Section navigation">
+    <a class="navbtn" href="/about" data-page="about">About</a>
+    <a class="navbtn" href="/#experience" data-target="experience">Experience</a>
+    <a class="navbtn" href="/#projects" data-target="projects">Projects</a>
+    <a class="navbtn" href="/blog/" data-page="blog">Blog</a>
+    <a class="navbtn" href="/contact" data-page="contact">Contact</a>
+  </nav>
+  <div class="topbar-actions">
+    <button class="themebtn" id="themeToggle" aria-label="Toggle dark and light mode">
+      <svg class="icon-sun" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="4.5"/><path d="M12 2.5v2.2M12 19.3v2.2M4.6 4.6l1.6 1.6M17.8 17.8l1.6 1.6M2.5 12h2.2M19.3 12h2.2M4.6 19.4l1.6-1.6M17.8 6.2l1.6-1.6"/></svg>
+      <svg class="icon-moon" viewBox="0 0 24 24" width="18" height="18" fill="currentColor"><path d="M20.4 14.7A8.5 8.5 0 1 1 9.3 3.6a7 7 0 0 0 11.1 11.1z"/></svg>
+    </button>
+    <button class="navtoggle" id="navToggle" aria-label="Toggle menu">
+      <span></span><span></span><span></span>
+    </button>
+  </div>
+</header>
+
+<main id="top">
+
+  <section class="section page-header">
+    <nav class="breadcrumbs" aria-label="Breadcrumb">
+      <a href="/">Home</a><span class="sep">/</span><span class="current">About</span>
+    </nav>
+    <p class="eyebrow">About</p>
+    <h1 class="page-title">Three jobs, one thread: <span class="accent">learn it fast, ship it properly</span></h1>
+    <p class="page-lead">
+      I am Ibrahim Maher Al-Bander, a social media marketer, accounts and inventory officer, and
+      freelance AI automation developer based in Erbil, Iraq. I currently hold three roles at once
+      at Help Tech Co. Ltd., and run an independent n8n automation practice on the side. None of
+      that was the plan when I started. It is just what happens when you say yes to the next
+      unfamiliar problem often enough.
+    </p>
+
+    <div class="story-block reveal">
+      <h2 class="section-title" style="font-size:1.5rem;">Where it started</h2>
+      <p>
+        I studied Computer Engineering Technology at Northern Technical University in Mosul,
+        graduating ranked 9th in my class with a capstone project building a CNN-based traffic-sign
+        recognition system in Python. That project is the reason I was never intimidated by AI models
+        later on; I had already spent months elbow-deep in how they actually learn, long before
+        ChatGPT made that fashionable.
+      </p>
+      <p>
+        After graduating, I did what a lot of engineering graduates in Iraq do: I took the work that
+        was in front of me. That meant freelance software testing on Upwork, building Telegram bots
+        and small automations for fun, and eventually a marketing internship at YourVisio Media that
+        turned into a full-time offer at Help Tech Co. Ltd.
+      </p>
+    </div>
+
+    <div class="story-block reveal">
+      <h2 class="section-title" style="font-size:1.5rem;">How three jobs became one job</h2>
+      <p>
+        I joined Help Tech as an Assistant Sales Manager, handling procurement and vendor
+        negotiation. A few months in, I picked up social media marketing because nobody else on
+        the team wanted to touch it, and grew the company Facebook page more than 500 percent.
+        Then the accounts and inventory role opened up with no system in place, so I built the
+        company's QuickBooks bookkeeping process from scratch, with no formal accounting
+        background, because someone had to and I was already the person who figured things out.
+      </p>
+      <p>
+        Somewhere in the middle of that, I started using n8n to stop doing the same reporting work
+        by hand every week. That habit turned into a genuine skill, then into freelance client work,
+        then into a small, real practice building production automations with OpenAI, Claude, and
+        Gemini behind them. I am not trying to collect job titles. Every one of these roles showed
+        up because something in the business needed doing and I was willing to learn it under
+        deadline instead of waiting for someone more qualified to show up.
+      </p>
+    </div>
+
+    <div class="value-grid">
+      <div class="value-card reveal">
+        <h3>Ownership of unfamiliar problems</h3>
+        <p>
+          I have never waited for training before taking on a role. QuickBooks, n8n, prompt
+          engineering, they were all things I learned on the job, under deadline, because the
+          business needed them solved now.
+        </p>
+      </div>
+      <div class="value-card reveal">
+        <h3>Documentation over heroics</h3>
+        <p>
+          A system only I understand is not a finished system. Every automation I ship comes with
+          a README and a one-click import, and every process I set up gets handed off in a way
+          colleagues can actually run without me.
+        </p>
+      </div>
+      <div class="value-card reveal">
+        <h3>Numbers and words, together</h3>
+        <p>
+          Bookkeeping made my marketing reporting sharper. Marketing made my automations more
+          useful to actual humans, not just technically correct. I do not see accounting,
+          marketing, and automation as separate skillsets; they inform each other constantly.
+        </p>
+      </div>
+    </div>
+
+    <div class="story-block reveal">
+      <h2 class="section-title" style="font-size:1.5rem;">Why AI tools are central to how I work now</h2>
+      <p>
+        I use ChatGPT, Claude, and Gemini daily, not as novelty but as working tools with specific
+        jobs: content drafting and campaign analysis in marketing, structured data extraction in
+        automation, and increasingly, direct software development. The clearest proof point is
+        <a href="/#projects">DAD LINK</a>, a live e-commerce store I designed and shipped on Odoo
+        with Claude Code doing most of the build work: product catalog, category pages, on-page
+        SEO, and blog content, not a demo, a real store with real distributors.
+      </p>
+      <p>
+        I think about AI work in four layers: prompt engineering, context engineering, harness
+        engineering, and loop engineering. Most people who say they "know AI" have only touched the
+        first one. I write more about that distinction, and about the automation and marketing work
+        itself, on <a href="/blog/">the blog</a>.
+      </p>
+    </div>
+
+    <div class="about-cta reveal">
+      <a href="/#experience" class="btn btn-ghost">See the full work history <span class="arrow">&rarr;</span></a>
+      <a href="/contact" class="btn btn-primary">Get in touch <span class="arrow">&rarr;</span></a>
+    </div>
+  </section>
+
+</main>
+
+<footer class="footer">
+  <p>Designed and developed by Ibrahim Maher Al-Bander &middot; <a href="/about">About</a> &middot; <a href="/blog/">Blog</a> &middot; <a href="/contact">Contact</a></p>
+  <p>&copy; 2026</p>
+</footer>
+
+<script src="script.js?v=9"></script>
+</body>
+</html>

@@ -1,0 +1,8 @@
+name = "ibrahimaher"
+pages_build_output_dir = "."
+compatibility_date = "2026-07-14"
+
+[[d1_databases]]
+binding = "DB"
+database_name = "ibrahimaher-content"
+database_id = "91a1959f-be34-4dc2-9507-adb7be1357c7"

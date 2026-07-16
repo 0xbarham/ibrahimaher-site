@@ -1,0 +1,222 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<!-- Google tag (gtag.js), deferred until first interaction (or 15s fallback) to keep it off the critical rendering path -->
+<link rel="preconnect" href="https://www.googletagmanager.com">
+<link rel="preconnect" href="https://www.google-analytics.com">
+<script>
+  window.dataLayer = window.dataLayer || [];
+  function gtag(){dataLayer.push(arguments);}
+  gtag('js', new Date());
+  gtag('config', 'G-LHV76XLD3M');
+
+  (function () {
+    var loaded = false;
+    function loadGtag() {
+      if (loaded) return;
+      loaded = true;
+      events.forEach(function (evt) {
+        window.removeEventListener(evt, loadGtag, { passive: true });
+      });
+      clearTimeout(fallback);
+      var s = document.createElement('script');
+      s.async = true;
+      s.src = 'https://www.googletagmanager.com/gtag/js?id=G-LHV76XLD3M';
+      document.head.appendChild(s);
+    }
+    var events = ['scroll', 'mousemove', 'keydown', 'touchstart', 'click'];
+    events.forEach(function (evt) {
+      window.addEventListener(evt, loadGtag, { passive: true, once: true });
+    });
+    var fallback = setTimeout(loadGtag, 15000);
+  })();
+</script>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Blog | Ibrahim Maher Al-Bander &mdash; AI Automation, Social Media &amp; Tech</title>
+<meta name="description" content="Notes on AI automation, n8n workflows, social media marketing, and AI-assisted software development from Ibrahim Maher Al-Bander, written from doing the work in Erbil, Iraq.">
+<meta name="keywords" content="Ibrahim Al-Bander blog, AI automation blog, n8n blog, social media marketing blog, AI assisted development, Erbil Iraq tech blog">
+<meta name="author" content="Ibrahim Maher Al-Bander">
+<link rel="canonical" href="https://ibrahimaher.com/blog/">
+
+<meta property="og:type" content="website">
+<meta property="og:title" content="Blog | Ibrahim Maher Al-Bander">
+<meta property="og:description" content="Notes on AI automation, n8n workflows, social media marketing, and AI-assisted software development, written from doing the work.">
+<meta property="og:url" content="https://ibrahimaher.com/blog/">
+<meta property="og:site_name" content="Ibrahim Maher Al-Bander">
+<meta property="og:image" content="https://ibrahimaher.com/assets/og-image.png">
+<meta property="og:locale" content="en_US">
+
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="Blog | Ibrahim Maher Al-Bander">
+<meta name="twitter:description" content="AI automation, n8n, social media marketing, and AI-assisted development notes.">
+<meta name="twitter:image" content="https://ibrahimaher.com/assets/og-image.png">
+
+<meta name="theme-color" content="#0a0e17">
+<link rel="icon" type="image/svg+xml" href="../assets/favicon.svg">
+<link rel="preload" href="/assets/fonts/sora-latin.woff2" as="font" type="font/woff2" crossorigin>
+<link rel="preload" href="/assets/fonts/inter-latin.woff2" as="font" type="font/woff2" crossorigin>
+<link rel="stylesheet" href="../styles.css?v=9">
+
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "Blog",
+  "url": "https://ibrahimaher.com/blog/",
+  "name": "Ibrahim Maher Al-Bander's Blog",
+  "description": "Notes on AI automation, n8n workflows, social media marketing, and AI-assisted software development.",
+  "author": { "@type": "Person", "name": "Ibrahim Maher Al-Bander", "url": "https://ibrahimaher.com" },
+  "blogPost": [
+    { "@type": "BlogPosting", "headline": "What AI Automation Actually Means in a Small Business (Not Just Chatbots)", "url": "https://ibrahimaher.com/blog/ai-automation-beyond-chatbots" },
+    { "@type": "BlogPosting", "headline": "How I Grew a Small Business Facebook Page by 500% Without an Agency", "url": "https://ibrahimaher.com/blog/growing-a-facebook-page-500-percent" },
+    { "@type": "BlogPosting", "headline": "n8n vs Zapier vs Make: What I Learned Building Production Workflows", "url": "https://ibrahimaher.com/blog/n8n-vs-zapier-vs-make" },
+    { "@type": "BlogPosting", "headline": "Prompt, Context, Harness, and Loop Engineering: The Four Layers of Working With AI", "url": "https://ibrahimaher.com/blog/four-layers-of-working-with-ai" },
+    { "@type": "BlogPosting", "headline": "Why I Set Up QuickBooks AP/AR From Scratch With No Accounting Background", "url": "https://ibrahimaher.com/blog/quickbooks-ap-ar-from-scratch" },
+    { "@type": "BlogPosting", "headline": "Building an Invoice Fraud Firewall With n8n and Gemini: A Case Study", "url": "https://ibrahimaher.com/blog/invoice-fraud-firewall-case-study" },
+    { "@type": "BlogPosting", "headline": "The Hidden Meta Ads Targeting Data Most Small-Business Marketers Never See", "url": "https://ibrahimaher.com/blog/hidden-meta-ads-targeting-data" },
+    { "@type": "BlogPosting", "headline": "AI-Assisted Development: How I Built and Shipped Real Software Without a CS Degree", "url": "https://ibrahimaher.com/blog/ai-assisted-development-no-cs-degree" },
+    { "@type": "BlogPosting", "headline": "Human-in-the-Loop: Why the Best AI Automations Still Need a Person in the Approval Chain", "url": "https://ibrahimaher.com/blog/human-in-the-loop-ai-automation" },
+    { "@type": "BlogPosting", "headline": "From a Traffic-Sign Recognition Capstone to Production AI Agents: My Path Into Automation", "url": "https://ibrahimaher.com/blog/traffic-sign-recognition-to-ai-agents" }
+  ]
+}
+</script>
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "BreadcrumbList",
+  "itemListElement": [
+    { "@type": "ListItem", "position": 1, "name": "Home", "item": "https://ibrahimaher.com/" },
+    { "@type": "ListItem", "position": 2, "name": "Blog", "item": "https://ibrahimaher.com/blog/" }
+  ]
+}
+</script>
+
+<script>
+  (function () {
+    const stored = localStorage.getItem("theme");
+    const theme = stored || (window.matchMedia("(prefers-color-scheme: light)").matches ? "light" : "dark");
+    document.documentElement.setAttribute("data-theme", theme);
+  })();
+</script>
+</head>
+<body data-page="blog">
+
+<div class="bg-glow" aria-hidden="true"></div>
+
+<header class="topbar">
+  <a href="/" class="brand">IB<span class="dot">/</span><span class="brand-sub">AL-BANDER</span></a>
+  <nav class="sectionnav" aria-label="Section navigation">
+    <a class="navbtn" href="/about" data-page="about">About</a>
+    <a class="navbtn" href="/#experience" data-target="experience">Experience</a>
+    <a class="navbtn" href="/#projects" data-target="projects">Projects</a>
+    <a class="navbtn" href="/blog/" data-page="blog">Blog</a>
+    <a class="navbtn" href="/contact" data-page="contact">Contact</a>
+  </nav>
+  <div class="topbar-actions">
+    <button class="themebtn" id="themeToggle" aria-label="Toggle dark and light mode">
+      <svg class="icon-sun" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="4.5"/><path d="M12 2.5v2.2M12 19.3v2.2M4.6 4.6l1.6 1.6M17.8 17.8l1.6 1.6M2.5 12h2.2M19.3 12h2.2M4.6 19.4l1.6-1.6M17.8 6.2l1.6-1.6"/></svg>
+      <svg class="icon-moon" viewBox="0 0 24 24" width="18" height="18" fill="currentColor"><path d="M20.4 14.7A8.5 8.5 0 1 1 9.3 3.6a7 7 0 0 0 11.1 11.1z"/></svg>
+    </button>
+    <button class="navtoggle" id="navToggle" aria-label="Toggle menu">
+      <span></span><span></span><span></span>
+    </button>
+  </div>
+</header>
+
+<main id="top">
+
+  <section class="section page-header">
+    <nav class="breadcrumbs" aria-label="Breadcrumb">
+      <a href="/">Home</a><span class="sep">/</span><span class="current">Blog</span>
+    </nav>
+    <p class="eyebrow">Writing</p>
+    <h1 class="page-title">Notes from <span class="accent">doing the work</span></h1>
+    <p class="page-lead">
+      AI automation, n8n workflows, social media marketing, and what it actually takes to build
+      and ship software with AI tools instead of a CS degree. Written from experience, not from
+      a content calendar.
+    </p>
+
+    <div class="blog-grid">
+      <a class="blog-card reveal" href="/blog/ai-automation-beyond-chatbots">
+        <span class="blog-card-category">Automation</span>
+        <h3>What AI Automation Actually Means in a Small Business (Not Just Chatbots)</h3>
+        <p>Automation is not a chatbot bolted onto your website. It is invoice routing, lead scoring, and reporting that runs unattended and does not break quietly.</p>
+        <span class="blog-card-meta">July 14, 2026 &middot; ~6 min read</span>
+      </a>
+
+      <a class="blog-card reveal" href="/blog/growing-a-facebook-page-500-percent">
+        <span class="blog-card-category">Social Media</span>
+        <h3>How I Grew a Small Business Facebook Page by 500% Without an Agency</h3>
+        <p>No agency retainer, no ad budget to start. Just consistent content, an audience data tool I built myself, and paying attention to what actually worked.</p>
+        <span class="blog-card-meta">July 14, 2026 &middot; ~6 min read</span>
+      </a>
+
+      <a class="blog-card reveal" href="/blog/n8n-vs-zapier-vs-make">
+        <span class="blog-card-category">Technology</span>
+        <h3>n8n vs Zapier vs Make: What I Learned Building Production Workflows</h3>
+        <p>I have shipped real client automations on n8n. Here is where it genuinely wins over Zapier and Make, and where it does not.</p>
+        <span class="blog-card-meta">July 14, 2026 &middot; ~6 min read</span>
+      </a>
+
+      <a class="blog-card reveal" href="/blog/four-layers-of-working-with-ai">
+        <span class="blog-card-category">AI</span>
+        <h3>Prompt, Context, Harness, and Loop Engineering: The Four Layers of Working With AI</h3>
+        <p>Most people who say they "know AI" have only touched prompting. Here is what the other three layers actually mean, and why they matter more.</p>
+        <span class="blog-card-meta">July 14, 2026 &middot; ~6 min read</span>
+      </a>
+
+      <a class="blog-card reveal" href="/blog/quickbooks-ap-ar-from-scratch">
+        <span class="blog-card-category">Career</span>
+        <h3>Why I Set Up QuickBooks AP/AR From Scratch With No Accounting Background</h3>
+        <p>Nobody trained me to do this. Here is how I built a company's entire bookkeeping system under deadline anyway, and what it taught me about learning fast.</p>
+        <span class="blog-card-meta">July 14, 2026 &middot; ~6 min read</span>
+      </a>
+
+      <a class="blog-card reveal" href="/blog/invoice-fraud-firewall-case-study">
+        <span class="blog-card-category">Automation</span>
+        <h3>Building an Invoice Fraud Firewall With n8n and Gemini: A Case Study</h3>
+        <p>A walkthrough of the automation that screens payment emails for vendor mismatches and IBAN fraud before money ever moves.</p>
+        <span class="blog-card-meta">July 14, 2026 &middot; ~6 min read</span>
+      </a>
+
+      <a class="blog-card reveal" href="/blog/hidden-meta-ads-targeting-data">
+        <span class="blog-card-category">Social Media</span>
+        <h3>The Hidden Meta Ads Targeting Data Most Small-Business Marketers Never See</h3>
+        <p>Ads Manager does not show you everything. Here is the audience data I had to go build a tool to surface myself.</p>
+        <span class="blog-card-meta">July 14, 2026 &middot; ~6 min read</span>
+      </a>
+
+      <a class="blog-card reveal" href="/blog/ai-assisted-development-no-cs-degree">
+        <span class="blog-card-category">Technology</span>
+        <h3>AI-Assisted Development: How I Built and Shipped Real Software Without a CS Degree</h3>
+        <p>DAD LINK is a live e-commerce store, not a demo. Here is what it actually takes to ship something real with Claude Code instead of a computer science degree.</p>
+        <span class="blog-card-meta">July 14, 2026 &middot; ~6 min read</span>
+      </a>
+
+      <a class="blog-card reveal" href="/blog/human-in-the-loop-ai-automation">
+        <span class="blog-card-category">AI</span>
+        <h3>Human-in-the-Loop: Why the Best AI Automations Still Need a Person in the Approval Chain</h3>
+        <p>Full autonomy is not always the goal. Why I build approval gates into automations that handle money or client-facing decisions.</p>
+        <span class="blog-card-meta">July 14, 2026 &middot; ~6 min read</span>
+      </a>
+
+      <a class="blog-card reveal" href="/blog/traffic-sign-recognition-to-ai-agents">
+        <span class="blog-card-category">Technology</span>
+        <h3>From a Traffic-Sign Recognition Capstone to Production AI Agents: My Path Into Automation</h3>
+        <p>My university capstone was a CNN that read road signs. Here is the line from that project to the automations I build for clients today.</p>
+        <span class="blog-card-meta">July 14, 2026 &middot; ~6 min read</span>
+      </a>
+    </div>
+  </section>
+
+</main>
+
+<footer class="footer">
+  <p>Designed and developed by Ibrahim Maher Al-Bander &middot; <a href="/about">About</a> &middot; <a href="/blog/">Blog</a> &middot; <a href="/contact">Contact</a></p>
+  <p>&copy; 2026</p>
+</footer>
+
+<script src="../script.js?v=9"></script>
+</body>
+</html>

@@ -1,0 +1,230 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<!-- Google tag (gtag.js), deferred until first interaction (or 15s fallback) to keep it off the critical rendering path -->
+<link rel="preconnect" href="https://www.googletagmanager.com">
+<link rel="preconnect" href="https://www.google-analytics.com">
+<script>
+  window.dataLayer = window.dataLayer || [];
+  function gtag(){dataLayer.push(arguments);}
+  gtag('js', new Date());
+  gtag('config', 'G-LHV76XLD3M');
+
+  (function () {
+    var loaded = false;
+    function loadGtag() {
+      if (loaded) return;
+      loaded = true;
+      events.forEach(function (evt) {
+        window.removeEventListener(evt, loadGtag, { passive: true });
+      });
+      clearTimeout(fallback);
+      var s = document.createElement('script');
+      s.async = true;
+      s.src = 'https://www.googletagmanager.com/gtag/js?id=G-LHV76XLD3M';
+      document.head.appendChild(s);
+    }
+    var events = ['scroll', 'mousemove', 'keydown', 'touchstart', 'click'];
+    events.forEach(function (evt) {
+      window.addEventListener(evt, loadGtag, { passive: true, once: true });
+    });
+    var fallback = setTimeout(loadGtag, 15000);
+  })();
+</script>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Coding Without a CS Degree | Ibrahim Maher Al-Bander</title>
+<meta name="description" content="I have a computer engineering technology degree, not a computer science one, yet I have shipped a live e-commerce site and a dozen automations with AI-assisted development. Here is how.">
+<meta name="keywords" content="AI-assisted development, Claude Code developer, learn to code with AI, no CS degree software developer, vibe coding, AI pair programming, self-taught developer">
+<meta name="author" content="Ibrahim Maher Al-Bander">
+<link rel="canonical" href="https://ibrahimaher.com/blog/ai-assisted-development-no-cs-degree">
+
+<meta property="og:type" content="article">
+<meta property="og:title" content="AI-Assisted Development: How I Built and Shipped Real Software Without a CS Degree">
+<meta property="og:description" content="I have a computer engineering technology degree, not a computer science one, yet I have shipped a live e-commerce site and a dozen automations with AI-assisted development. Here is how.">
+<meta property="og:url" content="https://ibrahimaher.com/blog/ai-assisted-development-no-cs-degree">
+<meta property="og:site_name" content="Ibrahim Maher Al-Bander">
+<meta property="og:image" content="https://ibrahimaher.com/assets/og-image.png">
+<meta property="og:locale" content="en_US">
+
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="AI-Assisted Development Without a CS Degree">
+<meta name="twitter:description" content="How I shipped a live e-commerce site and a dozen automations with AI-assisted development, without a traditional software engineering background.">
+<meta name="twitter:image" content="https://ibrahimaher.com/assets/og-image.png">
+
+<meta name="theme-color" content="#0a0e17">
+<link rel="icon" type="image/svg+xml" href="../assets/favicon.svg">
+<link rel="preload" href="/assets/fonts/sora-latin.woff2" as="font" type="font/woff2" crossorigin>
+<link rel="preload" href="/assets/fonts/inter-latin.woff2" as="font" type="font/woff2" crossorigin>
+<link rel="stylesheet" href="../styles.css?v=9">
+
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "BlogPosting",
+  "headline": "AI-Assisted Development: How I Built and Shipped Real Software Without a CS Degree",
+  "description": "I have a computer engineering technology degree, not a computer science one, yet I have shipped a live e-commerce site and a dozen automations with AI-assisted development. Here is how.",
+  "datePublished": "2026-07-14",
+  "dateModified": "2026-07-14",
+  "author": { "@type": "Person", "name": "Ibrahim Maher Al-Bander", "url": "https://ibrahimaher.com" },
+  "publisher": { "@type": "Person", "name": "Ibrahim Maher Al-Bander", "url": "https://ibrahimaher.com" },
+  "image": "https://ibrahimaher.com/assets/og-image.png",
+  "mainEntityOfPage": "https://ibrahimaher.com/blog/ai-assisted-development-no-cs-degree",
+  "articleSection": "Technology"
+}
+</script>
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "BreadcrumbList",
+  "itemListElement": [
+    { "@type": "ListItem", "position": 1, "name": "Home", "item": "https://ibrahimaher.com/" },
+    { "@type": "ListItem", "position": 2, "name": "Blog", "item": "https://ibrahimaher.com/blog/" },
+    { "@type": "ListItem", "position": 3, "name": "AI-Assisted Development: How I Built and Shipped Real Software Without a CS Degree", "item": "https://ibrahimaher.com/blog/ai-assisted-development-no-cs-degree" }
+  ]
+}
+</script>
+
+<script>
+  (function () {
+    const stored = localStorage.getItem("theme");
+    const theme = stored || (window.matchMedia("(prefers-color-scheme: light)").matches ? "light" : "dark");
+    document.documentElement.setAttribute("data-theme", theme);
+  })();
+</script>
+</head>
+<body data-page="blog">
+
+<div class="bg-glow" aria-hidden="true"></div>
+
+<header class="topbar">
+  <a href="/" class="brand">IB<span class="dot">/</span><span class="brand-sub">AL-BANDER</span></a>
+  <nav class="sectionnav" aria-label="Section navigation">
+    <a class="navbtn" href="/about" data-page="about">About</a>
+    <a class="navbtn" href="/#experience" data-target="experience">Experience</a>
+    <a class="navbtn" href="/#projects" data-target="projects">Projects</a>
+    <a class="navbtn" href="/blog/" data-page="blog">Blog</a>
+    <a class="navbtn" href="/contact" data-page="contact">Contact</a>
+  </nav>
+  <div class="topbar-actions">
+    <button class="themebtn" id="themeToggle" aria-label="Toggle dark and light mode">
+      <svg class="icon-sun" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="4.5"/><path d="M12 2.5v2.2M12 19.3v2.2M4.6 4.6l1.6 1.6M17.8 17.8l1.6 1.6M2.5 12h2.2M19.3 12h2.2M4.6 19.4l1.6-1.6M17.8 6.2l1.6-1.6"/></svg>
+      <svg class="icon-moon" viewBox="0 0 24 24" width="18" height="18" fill="currentColor"><path d="M20.4 14.7A8.5 8.5 0 1 1 9.3 3.6a7 7 0 0 0 11.1 11.1z"/></svg>
+    </button>
+    <button class="navtoggle" id="navToggle" aria-label="Toggle menu">
+      <span></span><span></span><span></span>
+    </button>
+  </div>
+</header>
+
+<main id="top">
+
+  <section class="section page-header">
+    <nav class="breadcrumbs" aria-label="Breadcrumb">
+      <a href="/">Home</a><span class="sep">/</span><a href="/blog/">Blog</a><span class="sep">/</span><span class="current">AI-Assisted Development: How I Built and Shipped Real Software Without a CS Degree</span>
+    </nav>
+    <p class="eyebrow">Technology</p>
+    <h1 class="page-title">AI-Assisted Development: How I Built and Shipped Real Software Without a CS Degree</h1>
+    <div class="post-meta"><span>July 14, 2026</span><span class="tag">Technology</span><span>~7 min read</span></div>
+
+    <div class="post-hero">
+      <svg viewBox="0 0 1200 400" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Code brackets merging with a spark motif representing AI-assisted development">
+        <defs>
+          <radialGradient id="g1" cx="50%" cy="30%" r="80%">
+            <stop offset="0%" stop-color="#d97757" stop-opacity="0.17"/>
+            <stop offset="100%" stop-color="#d97757" stop-opacity="0"/>
+          </radialGradient>
+        </defs>
+        <rect width="1200" height="400" style="fill:var(--surface-2)"/>
+        <rect width="1200" height="400" fill="url(#g1)"/>
+        <path d="M470 120 L 400 200 L 470 280" fill="none" style="stroke:var(--ink)" stroke-width="8" stroke-linecap="round" stroke-linejoin="round"/>
+        <path d="M730 120 L 800 200 L 730 280" fill="none" style="stroke:var(--ink)" stroke-width="8" stroke-linecap="round" stroke-linejoin="round"/>
+        <path d="M600 130 L 615 190 L 660 200 L 615 210 L 600 270 L 585 210 L 540 200 L 585 190 Z" style="fill:#d97757"/>
+      </svg>
+    </div>
+
+
+    <div class="post-body">
+      <p>
+        My degree is in Computer Engineering Technology, not Computer Science. I never sat through a
+        formal software engineering curriculum, never learned proper design patterns in a classroom,
+        and never worked on a team with senior engineers reviewing my pull requests. And yet a live,
+        production B2B e-commerce store exists today, built mostly with AI-assisted development,
+        because I learned how to work with these tools properly instead of just typing questions
+        into a chat window.
+      </p>
+
+      <h2>Where this actually started</h2>
+      <p>
+        My capstone project at Northern Technical University was a CNN-based traffic-sign
+        recognition system, built in Python. That gave me a real, hands-on foundation in how machine
+        learning models actually work, which mattered later, but it did not teach me production
+        software engineering. Between 2021 and 2023, I built five-plus Telegram bots and small n8n
+        automations freelance, using AI tools to accelerate development, prompting, debugging, and
+        iterating on working code without going through a traditional software engineering workflow.
+        That is where the muscle actually got built.
+      </p>
+
+      <h2>DAD LINK: the proof point</h2>
+      <p>
+        The clearest example of what AI-assisted development can actually deliver is <a
+        href="/#projects">DAD LINK</a>, a live B2B e-commerce site for network cabling equipment
+        that I designed and shipped on Odoo, the open source e-commerce and ERP platform, with
+        Claude Code doing most of the heavy lifting. That included the product catalog structure,
+        category pages, on-page SEO, blog content on cabling standards, and the storefront layout
+        itself. It is a real production store today, listing authorized distributors across Baghdad
+        and Erbil, not a demo or a portfolio mockup.
+      </p>
+
+      <h2>Why "just prompting" is not what actually happened</h2>
+      <p>
+        People who have not built anything real with AI tools tend to assume it is just typing a
+        clever request and copying the output. Shipping something that stays online, handles real
+        traffic, and does not quietly break in three weeks takes more than that. I think about it as
+        four layers, and I go deeper into this on the blog in <a href="/blog/">the four-layers post</a>:
+      </p>
+      <ul>
+        <li>Prompt engineering: phrasing the instruction clearly, with the right constraints.</li>
+        <li>Context engineering: making sure the model sees the right prior decisions, files, and product details at the right time, not just the last message.</li>
+        <li>Harness engineering: the guardrails and validation around what the model is allowed to do and how its output gets checked before it ships.</li>
+        <li>Loop engineering: letting an agent run for a long stretch, checking its own work, and correcting course, rather than babysitting every single step.</li>
+      </ul>
+
+      <h2>Where a CS degree would have helped, and where it would not have</h2>
+      <p>
+        I will not pretend a formal software engineering background is worthless; it would have
+        given me cleaner instincts around architecture and testing discipline earlier. But it would
+        not have changed the core skill that actually mattered here: knowing how to give an AI model
+        the right information, the right guardrails, and the right validation loop to produce
+        something trustworthy. That skill is not gated behind a specific degree. It is built by
+        doing real work, under real deadlines, and paying attention to what breaks.
+      </p>
+
+      <h2>What this means if you are hiring or building</h2>
+      <p>
+        If you are trying to decide whether AI-assisted development can actually deliver a
+        production result for your business, not a proof-of-concept, DAD LINK is the answer, not a
+        hypothetical. I would rather talk through your specific project than make abstract claims
+        about what AI tools "can do" in general. You can read more about <a href="/about">how I
+        got here</a>, or just reach out directly if you have something that needs building.
+      </p>
+    </div>
+
+    <div class="post-cta">
+      <h3>Have a project that needs building?</h3>
+      <p>I build real, production software and automation with AI tools doing the heavy lifting, not demos.</p>
+      <a href="/contact" class="btn btn-primary">Get in touch <span class="arrow">&rarr;</span></a>
+    </div>
+    <div class="post-nav"><a href="/blog/">&larr; Back to all posts</a></div>
+  </section>
+
+</main>
+
+<footer class="footer">
+  <p>Designed and developed by Ibrahim Maher Al-Bander &middot; <a href="/about">About</a> &middot; <a href="/blog/">Blog</a> &middot; <a href="/contact">Contact</a></p>
+  <p>&copy; 2026</p>
+</footer>
+
+<script src="../script.js?v=9"></script>
+</body>
+</html>
