@@ -1,0 +1,562 @@
+---
+/**
+ * Generic row editor for the simple content tables.
+ *
+ * Driven entirely by TABLE_COLUMNS, which is the same allowlist the API
+ * validates against — so the form can never offer a column the API will reject.
+ */
+import Admin from '../../../layouts/Admin.astro';
+import { TABLE_COLUMNS, isTable } from '../../../lib/schema';
+
+const { table } = Astro.params;
+
+// Only the CV-ish tables belong here. posts has its own editor; authors,
+// redirects and media are not part of this page's remit, so they are rejected
+// rather than half-rendered.
+const ALLOWED = ['jobs', 'projects', 'skills', 'certifications', 'education'];
+
+if (!table || !isTable(table) || !ALLOWED.includes(table)) {
+  return Astro.rewrite('/404');
+}
+
+const columns = TABLE_COLUMNS[table] as readonly string[];
+const label = table.charAt(0).toUpperCase() + table.slice(1);
+
+/** Column name -> control. Mirrors the conventions the schema encodes. */
+function kindOf(col: string): string {
+  if (col === 'sort_order') return 'number';
+  if (col === 'featured') return 'boolean';
+  if (col === 'tags_json') return 'tags';
+  if (col.endsWith('_html')) return 'html';
+  if (col.endsWith('_url')) return 'url';
+  return 'text';
+}
+
+const humanize = (c: string) =>
+  c
+    .replace(/_json$/, '')
+    .replace(/_html$/, '')
+    .replace(/_/g, ' ')
+    .replace(/^./, (m) => m.toUpperCase());
+
+/** The column that best identifies a row in its collapsed header. */
+const titleCol = columns.includes('title') ? 'title' : columns.includes('category') ? 'category' : columns[1];
+
+const fieldMeta = columns.map((c) => ({ name: c, kind: kindOf(c), label: humanize(c) }));
+---
+
+<Admin title={label} section="content" table={table}>
+  <button slot="header-actions" class="btn btn--primary btn--sm" id="add-row" type="button">
+    Add {label.replace(/s$/, '')}
+  </button>
+
+  <div class="stack">
+    <div class="cluster">
+      <p class="muted" style="margin:0;">
+        Rows are ordered by <code>sort_order</code> (low to high). Use the arrows to reorder — that
+        swaps the two rows' sort values and saves both.
+      </p>
+      <p class="status" id="page-status" role="status" aria-live="polite" style="margin-left:auto;">
+      </p>
+    </div>
+
+    <div id="rows" class="stack" aria-busy="true">
+      <p class="muted" id="loading">Loading {table}…</p>
+    </div>
+  </div>
+</Admin>
+
+<script define:vars={{ table, fieldMeta, titleCol }}>
+  window.__TABLE__ = { table, fieldMeta, titleCol };
+</script>
+
+<script>
+  const CFG = (window as any).__TABLE__ as {
+    table: string;
+    fieldMeta: { name: string; kind: string; label: string }[];
+    titleCol: string;
+  };
+
+  const rowsEl = document.getElementById('rows')!;
+  const statusEl = document.getElementById('page-status')!;
+  let rows: Record<string, any>[] = [];
+
+  let statusTimer: number | undefined;
+  function setStatus(msg: string, kind?: 'ok' | 'err' | 'busy', sticky = false) {
+    window.clearTimeout(statusTimer);
+    statusEl.textContent = msg;
+    statusEl.className = 'status' + (kind ? ` status--${kind}` : '');
+    if (msg && !sticky) {
+      statusTimer = window.setTimeout(() => {
+        if (statusEl.textContent === msg) setStatus('');
+      }, 4000);
+    }
+  }
+
+  function sessionExpired() {
+    setStatus('Session expired. ', 'err', true);
+    const a = document.createElement('a');
+    a.href = `/admin/login?next=${encodeURIComponent(location.pathname)}`;
+    a.textContent = 'Log in again';
+    statusEl.append(a);
+  }
+
+  async function api(path: string, options: RequestInit = {}) {
+    const res = await fetch(path, {
+      ...options,
+      headers: { 'Content-Type': 'application/json', ...(options.headers || {}) },
+    });
+    if (res.status === 401) {
+      sessionExpired();
+      throw new Error('Not authenticated');
+    }
+    const data = await res.json().catch(() => ({}) as any);
+    if (!res.ok || !data.ok) throw new Error(data.error || `Request failed (${res.status})`);
+    return data;
+  }
+
+  function parseTags(json: string): string[] {
+    if (!json) return [];
+    try {
+      const p = JSON.parse(json);
+      return Array.isArray(p) ? p.filter((t) => typeof t === 'string') : [];
+    } catch {
+      return json.split(',').map((s) => s.trim()).filter(Boolean);
+    }
+  }
+
+  // --- Tag input --------------------------------------------------------
+  function tagInput(name: string, initial: string, onChange: () => void) {
+    const wrap = document.createElement('div');
+    wrap.className = 'tags';
+
+    const hidden = document.createElement('input');
+    hidden.type = 'hidden';
+    hidden.dataset.field = name;
+    hidden.dataset.kind = 'tags';
+    hidden.value = initial || '[]';
+
+    const input = document.createElement('input');
+    input.className = 'tags__input';
+    input.type = 'text';
+    input.placeholder = 'Add a tag…';
+    input.autocomplete = 'off';
+
+    let tags = parseTags(initial);
+
+    function sync() {
+      hidden.value = JSON.stringify(tags);
+      onChange();
+    }
+
+    function render() {
+      wrap.querySelectorAll('.tag').forEach((n) => n.remove());
+      tags.forEach((tag, i) => {
+        const el = document.createElement('span');
+        el.className = 'tag';
+        const t = document.createElement('span');
+        t.className = 'tag__text';
+        t.textContent = tag; // DB value
+        const x = document.createElement('button');
+        x.type = 'button';
+        x.className = 'tag__x';
+        x.setAttribute('aria-label', `Remove tag ${tag}`);
+        x.textContent = '×';
+        x.addEventListener('click', () => {
+          tags.splice(i, 1);
+          render();
+          sync();
+          input.focus();
+        });
+        el.append(t, x);
+        wrap.insertBefore(el, input);
+      });
+    }
+
+    function add(raw: string) {
+      raw.split(',').map((s) => s.trim()).filter(Boolean).forEach((t) => {
+        if (!tags.includes(t)) tags.push(t);
+      });
+      input.value = '';
+      render();
+      sync();
+    }
+
+    input.addEventListener('keydown', (e) => {
+      if (e.key === 'Enter' || e.key === ',') {
+        e.preventDefault();
+        if (input.value.trim()) add(input.value);
+      } else if (e.key === 'Backspace' && !input.value && tags.length) {
+        tags.pop();
+        render();
+        sync();
+      }
+    });
+    input.addEventListener('blur', () => input.value.trim() && add(input.value));
+
+    wrap.append(input);
+    render();
+
+    const holder = document.createElement('div');
+    holder.append(wrap, hidden);
+    return holder;
+  }
+
+  // --- Row rendering ----------------------------------------------------
+  function buildRow(row: Record<string, any>, isNew = false): HTMLElement {
+    const card = document.createElement('section');
+    card.className = 'row' + (isNew ? ' row--new' : '');
+    card.dataset.id = row.id ?? '';
+    if (isNew) card.dataset.new = 'true';
+
+    const markDirty = () => {
+      card.classList.add('row--dirty');
+      const save = card.querySelector<HTMLButtonElement>('[data-save]');
+      if (save) save.disabled = false;
+    };
+
+    // Head
+    const head = document.createElement('div');
+    head.className = 'row__head';
+
+    const handle = document.createElement('span');
+    handle.className = 'row__handle';
+    handle.textContent = isNew ? 'new' : `#${row.id}`;
+
+    const name = document.createElement('span');
+    name.className = 'row__name';
+    name.textContent = row[CFG.titleCol] || (isNew ? 'New row' : '(untitled)');
+
+    const spacer = document.createElement('span');
+    spacer.className = 'row__spacer';
+
+    head.append(handle, name, spacer);
+
+    if (!isNew) {
+      const up = document.createElement('button');
+      up.type = 'button';
+      up.className = 'btn btn--sm btn--icon';
+      up.dataset.move = 'up';
+      up.setAttribute('aria-label', `Move ${name.textContent} up`);
+      up.textContent = '↑';
+
+      const down = document.createElement('button');
+      down.type = 'button';
+      down.className = 'btn btn--sm btn--icon';
+      down.dataset.move = 'down';
+      down.setAttribute('aria-label', `Move ${name.textContent} down`);
+      down.textContent = '↓';
+
+      head.append(up, down);
+    }
+
+    const save = document.createElement('button');
+    save.type = 'button';
+    save.className = 'btn btn--sm btn--primary';
+    save.dataset.save = '';
+    save.textContent = isNew ? 'Create' : 'Save';
+    save.disabled = !isNew;
+
+    const del = document.createElement('button');
+    del.type = 'button';
+    del.className = 'btn btn--sm btn--danger';
+    del.dataset.delete = '';
+    del.textContent = isNew ? 'Discard' : 'Delete';
+
+    head.append(save, del);
+    card.append(head);
+
+    // Fields
+    const grid = document.createElement('div');
+    grid.className = 'field-grid';
+
+    for (const f of CFG.fieldMeta) {
+      const uid = `${CFG.table}-${row.id ?? 'new'}-${f.name}`;
+      const field = document.createElement('div');
+      field.className = 'field';
+
+      if (f.kind === 'boolean') {
+        field.className = 'field field--check';
+        const input = document.createElement('input');
+        input.className = 'checkbox';
+        input.type = 'checkbox';
+        input.id = uid;
+        input.dataset.field = f.name;
+        input.dataset.kind = 'boolean';
+        input.checked = Number(row[f.name]) === 1;
+        input.addEventListener('change', markDirty);
+        const lab = document.createElement('label');
+        lab.className = 'field__label';
+        lab.htmlFor = uid;
+        lab.textContent = f.label;
+        field.append(input, lab);
+        grid.append(field);
+        continue;
+      }
+
+      const lab = document.createElement('label');
+      lab.className = 'field__label';
+      lab.htmlFor = uid;
+      lab.textContent = f.label;
+      field.append(lab);
+
+      if (f.kind === 'tags') {
+        field.className = 'field field--wide';
+        const holder = tagInput(f.name, row[f.name] ?? '[]', markDirty);
+        const inner = holder.querySelector<HTMLInputElement>('.tags__input')!;
+        inner.id = uid;
+        field.append(holder);
+      } else if (f.kind === 'html') {
+        field.className = 'field field--wide';
+        const t = document.createElement('textarea');
+        t.className = 'textarea textarea--mono';
+        t.id = uid;
+        t.rows = 4;
+        t.dataset.field = f.name;
+        t.dataset.kind = 'html';
+        t.value = row[f.name] ?? '';
+        t.addEventListener('input', markDirty);
+        field.append(t);
+        const hint = document.createElement('p');
+        hint.className = 'field__hint';
+        hint.textContent = 'Raw HTML — rendered as-is on the public site.';
+        field.append(hint);
+      } else {
+        const i = document.createElement('input');
+        i.className = 'input';
+        i.id = uid;
+        i.type = f.kind === 'number' ? 'number' : f.kind === 'url' ? 'url' : 'text';
+        i.dataset.field = f.name;
+        i.dataset.kind = f.kind;
+        i.value = row[f.name] ?? '';
+        i.addEventListener('input', () => {
+          markDirty();
+          if (f.name === CFG.titleCol) name.textContent = i.value || '(untitled)';
+        });
+        field.append(i);
+      }
+
+      grid.append(field);
+    }
+
+    card.append(grid);
+    return card;
+  }
+
+  function collect(card: HTMLElement) {
+    const body: Record<string, any> = {};
+    card.querySelectorAll<HTMLElement>('[data-field]').forEach((el) => {
+      const kind = el.dataset.kind;
+      if (kind === 'boolean') body[el.dataset.field!] = (el as HTMLInputElement).checked ? 1 : 0;
+      else if (kind === 'number') {
+        const v = (el as HTMLInputElement).value;
+        body[el.dataset.field!] = v === '' ? null : Number(v);
+      } else body[el.dataset.field!] = (el as HTMLInputElement).value;
+    });
+    return body;
+  }
+
+  // --- Actions ----------------------------------------------------------
+  async function saveRow(card: HTMLElement) {
+    const body = collect(card);
+    const isNew = card.dataset.new === 'true';
+    const btn = card.querySelector<HTMLButtonElement>('[data-save]')!;
+    btn.disabled = true;
+    setStatus('Saving…', 'busy', true);
+
+    try {
+      if (isNew) {
+        const data = await api(`/api/content/${CFG.table}`, {
+          method: 'POST',
+          body: JSON.stringify(body),
+        });
+        setStatus('Row created.', 'ok');
+        card.dataset.id = String(data.id);
+        delete card.dataset.new;
+        card.classList.remove('row--new', 'row--dirty');
+        // Rebuild so it gains its id, arrows and real Save/Delete labels.
+        await load();
+      } else {
+        await api(`/api/content/${CFG.table}`, {
+          method: 'PUT',
+          body: JSON.stringify({ ...body, id: Number(card.dataset.id) }),
+        });
+        card.classList.remove('row--dirty');
+        setStatus('Saved.', 'ok');
+      }
+    } catch (err) {
+      setStatus(err instanceof Error ? err.message : 'Save failed.', 'err', true);
+      btn.disabled = false;
+    }
+  }
+
+  async function deleteRow(card: HTMLElement) {
+    if (card.dataset.new === 'true') {
+      card.remove();
+      return;
+    }
+    setStatus('Deleting…', 'busy', true);
+    try {
+      await api(`/api/content/${CFG.table}?id=${encodeURIComponent(card.dataset.id!)}`, {
+        method: 'DELETE',
+      });
+      card.remove();
+      rows = rows.filter((r) => String(r.id) !== card.dataset.id);
+      setStatus('Deleted.', 'ok');
+    } catch (err) {
+      setStatus(err instanceof Error ? err.message : 'Delete failed.', 'err', true);
+    }
+  }
+
+  /**
+   * Reorder by swapping the two rows' sort_order values.
+   *
+   * Two PUTs, not one: the API updates a single row at a time, so a swap is
+   * inherently non-atomic here. If the second fails the first is rolled back by
+   * hand, otherwise two rows would share a sort_order and the order would go
+   * quietly wrong.
+   */
+  async function move(card: HTMLElement, dir: 'up' | 'down') {
+    const cards = Array.from(rowsEl.querySelectorAll<HTMLElement>('.row:not([data-new])'));
+    const i = cards.indexOf(card);
+    const j = dir === 'up' ? i - 1 : i + 1;
+    if (j < 0 || j >= cards.length) return;
+
+    const other = cards[j];
+    const a = collect(card);
+    const b = collect(other);
+    const aOrder = a.sort_order;
+    const bOrder = b.sort_order;
+
+    setStatus('Reordering…', 'busy', true);
+    try {
+      await api(`/api/content/${CFG.table}`, {
+        method: 'PUT',
+        body: JSON.stringify({ ...a, sort_order: bOrder, id: Number(card.dataset.id) }),
+      });
+      try {
+        await api(`/api/content/${CFG.table}`, {
+          method: 'PUT',
+          body: JSON.stringify({ ...b, sort_order: aOrder, id: Number(other.dataset.id) }),
+        });
+      } catch (inner) {
+        await api(`/api/content/${CFG.table}`, {
+          method: 'PUT',
+          body: JSON.stringify({ ...a, sort_order: aOrder, id: Number(card.dataset.id) }),
+        }).catch(() => {});
+        throw inner;
+      }
+      setStatus('Reordered.', 'ok');
+      await load();
+      // Keep the keyboard where the reader left it.
+      const moved = rowsEl.querySelector<HTMLElement>(`.row[data-id="${card.dataset.id}"]`);
+      moved?.querySelector<HTMLButtonElement>(`[data-move="${dir}"]`)?.focus();
+    } catch (err) {
+      setStatus(err instanceof Error ? err.message : 'Reorder failed.', 'err', true);
+    }
+  }
+
+  // --- Inline confirm ---------------------------------------------------
+  let openConfirm: HTMLElement | null = null;
+
+  function closeConfirm() {
+    if (!openConfirm) return;
+    openConfirm.remove();
+    openConfirm = null;
+  }
+
+  function confirmDelete(trigger: HTMLButtonElement, card: HTMLElement) {
+    closeConfirm();
+    const box = document.createElement('span');
+    box.className = 'confirm';
+    const text = document.createElement('span');
+    text.className = 'confirm__text';
+    text.textContent = 'Delete this row?';
+
+    const yes = document.createElement('button');
+    yes.type = 'button';
+    yes.className = 'btn btn--sm btn--danger';
+    yes.textContent = 'Delete';
+    yes.addEventListener('click', () => {
+      closeConfirm();
+      void deleteRow(card);
+    });
+
+    const no = document.createElement('button');
+    no.type = 'button';
+    no.className = 'btn btn--sm';
+    no.textContent = 'Cancel';
+    no.addEventListener('click', () => {
+      closeConfirm();
+      trigger.focus();
+    });
+
+    box.append(text, yes, no);
+    trigger.after(box);
+    openConfirm = box;
+    yes.focus();
+  }
+
+  rowsEl.addEventListener('click', (e) => {
+    const t = e.target as HTMLElement;
+    const card = t.closest<HTMLElement>('.row');
+    if (!card) return;
+
+    if (t.closest('[data-save]')) void saveRow(card);
+    else if (t.closest('[data-delete]')) {
+      const btn = t.closest('[data-delete]') as HTMLButtonElement;
+      if (card.dataset.new === 'true') card.remove();
+      else confirmDelete(btn, card);
+    } else if (t.closest('[data-move]')) {
+      void move(card, (t.closest('[data-move]') as HTMLElement).dataset.move as 'up' | 'down');
+    }
+  });
+
+  document.addEventListener('keydown', (e) => {
+    if (e.key === 'Escape' && openConfirm) {
+      e.stopPropagation();
+      closeConfirm();
+    }
+  });
+
+  document.getElementById('add-row')?.addEventListener('click', () => {
+    const blank: Record<string, any> = {};
+    for (const f of CFG.fieldMeta) blank[f.name] = f.kind === 'boolean' ? 0 : '';
+    // Put it at the end by default rather than fighting existing rows for slot 0.
+    blank.sort_order = rows.length
+      ? Math.max(...rows.map((r) => Number(r.sort_order) || 0)) + 1
+      : 0;
+    const card = buildRow(blank, true);
+    rowsEl.append(card);
+    card.querySelector<HTMLInputElement>('input, textarea')?.focus();
+    card.scrollIntoView({ behavior: 'smooth', block: 'center' });
+  });
+
+  // --- Load -------------------------------------------------------------
+  async function load() {
+    rowsEl.setAttribute('aria-busy', 'true');
+    try {
+      const { data } = await api(`/api/content/${CFG.table}`);
+      rows = data;
+      rowsEl.textContent = '';
+      if (!rows.length) {
+        const p = document.createElement('p');
+        p.className = 'muted';
+        p.textContent = 'No rows yet. Use the button in the header to add the first one.';
+        rowsEl.append(p);
+      } else {
+        rows.forEach((r) => rowsEl.append(buildRow(r)));
+      }
+    } catch (err) {
+      rowsEl.textContent = '';
+      const p = document.createElement('p');
+      p.className = 'status status--err';
+      p.textContent = err instanceof Error ? err.message : 'Could not load rows.';
+      rowsEl.append(p);
+    } finally {
+      rowsEl.removeAttribute('aria-busy');
+    }
+  }
+
+  void load();
+</script>

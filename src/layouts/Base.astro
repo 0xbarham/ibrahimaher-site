@@ -11,6 +11,17 @@ interface Props {
   ogType?: 'website' | 'article' | 'profile';
   keywords?: string;
   noindex?: boolean;
+  /**
+   * Share-card overrides. Each falls back to the page title/description when
+   * blank, which is what lets the admin leave them empty and still ship correct
+   * tags — but when set they MUST win, or the admin's Social panel would be
+   * writing to fields nothing renders.
+   */
+  ogTitle?: string;
+  ogDescription?: string;
+  twitterTitle?: string;
+  twitterDescription?: string;
+  twitterImage?: string;
   /** JSON-LD graph node(s) for this page. */
   jsonLd?: Record<string, unknown> | Record<string, unknown>[];
 }
@@ -23,6 +34,11 @@ const {
   ogType = 'website',
   keywords,
   noindex = false,
+  ogTitle,
+  ogDescription,
+  twitterTitle,
+  twitterDescription,
+  twitterImage,
   jsonLd,
 } = Astro.props;
 
@@ -37,6 +53,13 @@ const abs = (p: string) =>
 
 const canonicalUrl = canonical ? abs(canonical) : abs(Astro.url.pathname);
 const shareImage = abs(ogImage || defaultOg);
+
+// Resolve the share card once, so og:* and twitter:* cannot drift apart.
+const shareTitle = ogTitle || title;
+const shareDesc = ogDescription || description;
+const xTitle = twitterTitle || shareTitle;
+const xDesc = twitterDescription || shareDesc;
+const xImage = twitterImage ? abs(twitterImage) : shareImage;
 
 const ldArray = jsonLd ? (Array.isArray(jsonLd) ? jsonLd : [jsonLd]) : [];
 
@@ -64,17 +87,17 @@ const year = new Date().getUTCFullYear();
     {noindex && <meta name="robots" content="noindex, nofollow" />}
 
     <meta property="og:type" content={ogType} />
-    <meta property="og:title" content={title} />
-    <meta property="og:description" content={description} />
+    <meta property="og:title" content={shareTitle} />
+    <meta property="og:description" content={shareDesc} />
     <meta property="og:url" content={canonicalUrl} />
     <meta property="og:site_name" content={siteName} />
     <meta property="og:image" content={shareImage} />
     <meta property="og:locale" content="en_US" />
 
     <meta name="twitter:card" content="summary_large_image" />
-    <meta name="twitter:title" content={title} />
-    <meta name="twitter:description" content={description} />
-    <meta name="twitter:image" content={shareImage} />
+    <meta name="twitter:title" content={xTitle} />
+    <meta name="twitter:description" content={xDesc} />
+    <meta name="twitter:image" content={xImage} />
 
     <meta name="theme-color" content="#faf8f5" media="(prefers-color-scheme: light)" />
     <meta name="theme-color" content="#12100e" media="(prefers-color-scheme: dark)" />

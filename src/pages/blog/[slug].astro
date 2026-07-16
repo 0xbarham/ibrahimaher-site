@@ -98,6 +98,11 @@ const jsonLd = [
   keywords={post.seo_keywords}
   ogType="article"
   ogImage={post.og_image || post.hero_image || undefined}
+  ogTitle={post.og_title || undefined}
+  ogDescription={post.og_description || undefined}
+  twitterTitle={post.twitter_title || undefined}
+  twitterDescription={post.twitter_description || undefined}
+  twitterImage={post.twitter_image || undefined}
   noindex={post.noindex === 1}
   jsonLd={jsonLd}
 >

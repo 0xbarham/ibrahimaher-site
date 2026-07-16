@@ -888,7 +888,7 @@ kbd {
 }
 
 .counter--warn {
-  color: #b26a00;
+  color: var(--warning);
 }
 
 @media (prefers-color-scheme: dark) {

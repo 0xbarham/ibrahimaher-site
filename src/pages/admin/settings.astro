@@ -1,0 +1,267 @@
+---
+/**
+ * Site settings.
+ *
+ * The rows come from the API rather than the db helper because `getSettings()`
+ * flattens to a key/value map and throws away `type`, `grp`, `label` and `hint`
+ * — which are exactly what this page needs to render a control per row.
+ */
+import Admin from '../../layouts/Admin.astro';
+---
+
+<Admin title="Settings" section="settings">
+  <div class="stack">
+    <div class="cluster">
+      <p class="muted" style="margin:0;">
+        Each setting saves on its own. Changes go live immediately — pages read
+        these on every render.
+      </p>
+      <p class="status" id="page-status" role="status" aria-live="polite" style="margin-left:auto;">
+      </p>
+    </div>
+
+    <div id="groups" class="stack" aria-busy="true">
+      <p class="muted" id="loading">Loading settings…</p>
+    </div>
+  </div>
+</Admin>
+
+<script>
+  interface Row {
+    key: string;
+    value: string;
+    type: string;
+    grp: string;
+    label: string;
+    hint: string;
+    sort_order: number;
+  }
+
+  const groupsEl = document.getElementById('groups')!;
+  const statusEl = document.getElementById('page-status')!;
+
+  const GROUP_LABELS: Record<string, string> = {
+    general: 'General',
+    seo: 'SEO',
+    analytics: 'Analytics',
+    social: 'Social',
+  };
+  // Known groups first, in this order; anything new the migrations add still
+  // renders, just at the end, rather than vanishing.
+  const GROUP_ORDER = ['general', 'seo', 'analytics', 'social'];
+
+  let statusTimer: number | undefined;
+  function setStatus(msg: string, kind?: 'ok' | 'err' | 'busy', sticky = false) {
+    window.clearTimeout(statusTimer);
+    statusEl.textContent = msg;
+    statusEl.className = 'status' + (kind ? ` status--${kind}` : '');
+    if (msg && !sticky) {
+      statusTimer = window.setTimeout(() => {
+        if (statusEl.textContent === msg) setStatus('');
+      }, 4000);
+    }
+  }
+
+  function sessionExpired() {
+    setStatus('Session expired. ', 'err', true);
+    const a = document.createElement('a');
+    a.href = `/admin/login?next=${encodeURIComponent(location.pathname)}`;
+    a.textContent = 'Log in again';
+    statusEl.append(a);
+  }
+
+  async function api(path: string, options: RequestInit = {}) {
+    const res = await fetch(path, {
+      ...options,
+      headers: { 'Content-Type': 'application/json', ...(options.headers || {}) },
+    });
+    if (res.status === 401) {
+      sessionExpired();
+      throw new Error('Not authenticated');
+    }
+    const data = await res.json().catch(() => ({}) as any);
+    if (!res.ok || !data.ok) throw new Error(data.error || `Request failed (${res.status})`);
+    return data;
+  }
+
+  async function saveKey(key: string, value: string, btn: HTMLButtonElement, live: HTMLElement) {
+    btn.disabled = true;
+    live.textContent = 'Saving…';
+    live.className = 'status status--busy';
+    try {
+      await api('/api/settings', { method: 'PUT', body: JSON.stringify({ key, value }) });
+      live.textContent = 'Saved';
+      live.className = 'status status--ok';
+      window.setTimeout(() => {
+        if (live.textContent === 'Saved') live.textContent = '';
+      }, 2500);
+    } catch (err) {
+      live.textContent = err instanceof Error ? err.message : 'Save failed';
+      live.className = 'status status--err';
+      btn.disabled = false;
+    }
+  }
+
+  function buildSetting(row: Row): HTMLElement {
+    const wrap = document.createElement('div');
+    wrap.className = 'setting';
+    const uid = `set-${row.key}`;
+
+    const left = document.createElement('div');
+    left.className = 'setting__control';
+
+    const label = document.createElement('label');
+    label.className = 'field__label';
+    label.htmlFor = uid;
+    label.textContent = row.label || row.key;
+    left.append(label);
+
+    const code = document.createElement('code');
+    code.style.cssText = 'font-size:0.7rem;color:var(--ink-3);margin-left:0.4rem;';
+    code.textContent = row.key;
+    label.append(code);
+
+    if (row.hint) {
+      const hint = document.createElement('p');
+      hint.className = 'field__hint';
+      hint.textContent = row.hint;
+      left.append(hint);
+    }
+
+    let input: HTMLInputElement | HTMLTextAreaElement;
+    const type = (row.type || 'text').toLowerCase();
+
+    if (type === 'textarea' || type === 'text_long') {
+      input = document.createElement('textarea');
+      (input as HTMLTextAreaElement).rows = 3;
+      input.className = 'textarea';
+      input.value = row.value ?? '';
+    } else if (type === 'boolean' || type === 'bool') {
+      input = document.createElement('input');
+      input.className = 'checkbox';
+      (input as HTMLInputElement).type = 'checkbox';
+      (input as HTMLInputElement).checked = row.value === '1' || row.value === 'true';
+    } else {
+      input = document.createElement('input');
+      input.className = 'input';
+      (input as HTMLInputElement).type =
+        type === 'number' ? 'number' : type === 'url' ? 'url' : type === 'email' ? 'email' : 'text';
+      input.value = row.value ?? '';
+    }
+    input.id = uid;
+    left.append(input);
+
+    /**
+     * The GA warning is a genuine footgun guard: Base.astro renders the whole
+     * analytics block only `{gaId && ...}`, so an empty string here silently
+     * turns off tracking sitewide with no other signal anywhere.
+     */
+    if (row.key === 'ga_measurement_id') {
+      const warn = document.createElement('div');
+      warn.className = 'warn-box';
+      const s = document.createElement('span');
+      s.innerHTML =
+        '<strong>Careful:</strong> clearing this disables Google Analytics across the entire site — ' +
+        'no tracking script is emitted on any page. Leave it set unless you mean to go dark.';
+      warn.append(s);
+      left.append(warn);
+    }
+
+    const right = document.createElement('div');
+    right.className = 'cluster';
+    const live = document.createElement('span');
+    live.className = 'status';
+    live.setAttribute('role', 'status');
+    live.setAttribute('aria-live', 'polite');
+
+    const btn = document.createElement('button');
+    btn.type = 'button';
+    btn.className = 'btn btn--sm btn--primary';
+    btn.textContent = 'Save';
+    btn.disabled = true;
+    btn.setAttribute('aria-label', `Save ${row.label || row.key}`);
+
+    const read = () =>
+      type === 'boolean' || type === 'bool'
+        ? (input as HTMLInputElement).checked
+          ? '1'
+          : '0'
+        : input.value;
+
+    const original = read();
+    const onChange = () => {
+      btn.disabled = read() === original;
+      if (live.textContent === 'Saved') live.textContent = '';
+    };
+    input.addEventListener('input', onChange);
+    input.addEventListener('change', onChange);
+
+    btn.addEventListener('click', () => void saveKey(row.key, read(), btn, live));
+    input.addEventListener('keydown', (e) => {
+      if (e.key === 'Enter' && input.tagName !== 'TEXTAREA' && !btn.disabled) {
+        e.preventDefault();
+        void saveKey(row.key, read(), btn, live);
+      }
+    });
+
+    right.append(live, btn);
+    wrap.append(left, right);
+    return wrap;
+  }
+
+  async function load() {
+    try {
+      const { data } = (await api('/api/settings')) as { data: Row[] };
+
+      const byGroup = new Map<string, Row[]>();
+      for (const row of data) {
+        const g = row.grp || 'general';
+        if (!byGroup.has(g)) byGroup.set(g, []);
+        byGroup.get(g)!.push(row);
+      }
+
+      const keys = [...byGroup.keys()].sort((a, b) => {
+        const ia = GROUP_ORDER.indexOf(a);
+        const ib = GROUP_ORDER.indexOf(b);
+        return (ia === -1 ? 99 : ia) - (ib === -1 ? 99 : ib) || a.localeCompare(b);
+      });
+
+      groupsEl.textContent = '';
+
+      if (!data.length) {
+        const p = document.createElement('p');
+        p.className = 'muted';
+        p.textContent = 'No settings rows found. They are created by migrations.';
+        groupsEl.append(p);
+        return;
+      }
+
+      for (const g of keys) {
+        const section = document.createElement('section');
+        section.className = 'card';
+
+        const h = document.createElement('h2');
+        h.className = 'card__title';
+        h.textContent = GROUP_LABELS[g] || g.charAt(0).toUpperCase() + g.slice(1);
+        section.append(h);
+
+        const rows = byGroup
+          .get(g)!
+          .sort((a, b) => (a.sort_order ?? 0) - (b.sort_order ?? 0) || a.key.localeCompare(b.key));
+
+        for (const row of rows) section.append(buildSetting(row));
+        groupsEl.append(section);
+      }
+    } catch (err) {
+      groupsEl.textContent = '';
+      const p = document.createElement('p');
+      p.className = 'status status--err';
+      p.textContent = err instanceof Error ? err.message : 'Could not load settings.';
+      groupsEl.append(p);
+    } finally {
+      groupsEl.removeAttribute('aria-busy');
+    }
+  }
+
+  void load();
+</script>

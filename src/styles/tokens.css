@@ -100,6 +100,7 @@
      states never rely on wording alone. */
   --danger: #b3261e;
   --success: #1f6f4a;
+  --warning: #b26a00;
 
   /* --- Motion ----------------------------------------------------------
      Editorial motion is *paced*, not bouncy: things settle rather than spring.
@@ -142,6 +143,7 @@
   /* Status colours also need lifting to stay legible on dark paper. */
   --danger: #f2837b;
   --success: #6fc79b;
+  --warning: #e0a458;
 }
 
 @media (prefers-color-scheme: dark) {
@@ -159,5 +161,6 @@
     --accent-soft: rgba(224, 138, 105, 0.16);
     --danger: #f2837b;
     --success: #6fc79b;
+    --warning: #e0a458;
   }
 }

@@ -1,0 +1,1236 @@
+---
+/**
+ * Post editor.
+ *
+ * Every control is generated from POST_FIELDS — adding a column to schema.ts
+ * makes it appear here with no edit to this file. Nothing about the field list
+ * is hardcoded; only the *behaviour* of each `kind` is.
+ */
+import Admin from '../../../layouts/Admin.astro';
+import { getAllPosts, getSettings, setting, db } from '../../../lib/db';
+import type { Author, Post } from '../../../lib/db';
+import { POST_FIELDS } from '../../../lib/schema';
+import type { FieldSpec } from '../../../lib/schema';
+
+const { id } = Astro.params;
+const isNew = id === 'new';
+
+let post: Partial<Post> = {};
+
+if (!isNew) {
+  // The API is the writer; reads here go straight to D1 so the form is filled
+  // on first paint rather than after a round trip.
+  const numeric = Number(id);
+  if (!Number.isInteger(numeric)) return Astro.rewrite('/404');
+  const found = (await getAllPosts()).find((p) => p.id === numeric);
+  if (!found) return Astro.rewrite('/404');
+  post = found;
+}
+
+const [settings, authorRes] = await Promise.all([
+  getSettings(),
+  db().prepare('SELECT * FROM authors ORDER BY sort_order ASC').all<Author>(),
+]);
+const authors = authorRes.results ?? [];
+
+const siteUrl = setting(settings, 'site_url', 'https://ibrahimaher.com').replace(/\/$/, '');
+const siteName = setting(settings, 'site_name', 'Ibrahim Maher Al-Bander');
+const defaultOg = setting(settings, 'default_og_image', '/assets/og-image.png');
+
+// Mirrors blog/[slug].astro: authorName = author?.name ?? site_name.
+const authorName = authors.find((a) => a.id === post.author_id)?.name ?? siteName;
+
+const GROUPS = [
+  { key: 'content', label: 'Content' },
+  { key: 'seo', label: 'SEO' },
+  { key: 'social', label: 'Social' },
+  { key: 'meta', label: 'Meta' },
+] as const;
+
+const entries = Object.entries(POST_FIELDS) as [string, FieldSpec][];
+const byGroup = (g: string) => entries.filter(([, f]) => (f.group ?? 'meta') === g);
+
+const value = (name: string): string => {
+  const v = (post as Record<string, unknown>)[name];
+  return v === null || v === undefined ? '' : String(v);
+};
+
+const isWide = (f: FieldSpec) =>
+  f.kind === 'markdown' || f.kind === 'textarea' || f.kind === 'tags';
+
+/** Columns the editor owns but must not let you type into freely. */
+const READONLY = new Set(['created_at', 'updated_at']);
+
+const authorHint = authors.length
+  ? `Authors: ${authors.map((a) => `${a.id} = ${a.name}`).join(', ')}`
+  : undefined;
+
+const title = isNew ? 'New post' : post.title || '(untitled)';
+---
+
+<Admin title={title} section="posts">
+  <Fragment slot="header-actions">
+    <p class="status" id="save-status" role="status" aria-live="polite"></p>
+    {
+      !isNew && (
+        <a
+          class="btn btn--sm"
+          href={`/blog/${post.slug}`}
+          target="_blank"
+          rel="noopener"
+          title={
+            post.status === 'published'
+              ? 'Open the live post'
+              : 'Drafts 404 publicly until published'
+          }
+        >
+          View ↗
+        </a>
+      )
+    }
+    <button class="btn btn--primary btn--sm" id="save-btn" type="button">Save</button>
+  </Fragment>
+
+  <form
+    id="post-form"
+    data-id={isNew ? '' : String(post.id)}
+    data-new={isNew ? 'true' : 'false'}
+    data-original-slug={value('slug')}
+    novalidate
+  >
+    <div class="tabs" role="tablist" aria-label="Post sections">
+      {
+        GROUPS.map((g, i) => (
+          <button
+            class="tab"
+            type="button"
+            role="tab"
+            id={`tab-${g.key}`}
+            aria-controls={`panel-${g.key}`}
+            aria-selected={i === 0 ? 'true' : 'false'}
+            tabindex={i === 0 ? 0 : -1}
+            data-tab={g.key}
+          >
+            {g.label}
+          </button>
+        ))
+      }
+    </div>
+
+    {
+      GROUPS.map((g, gi) => (
+        <div
+          class="panel"
+          id={`panel-${g.key}`}
+          role="tabpanel"
+          aria-labelledby={`tab-${g.key}`}
+          tabindex="0"
+          hidden={gi !== 0}
+        >
+          {g.key === 'social' && (
+            <div class="warn-box" style="margin-bottom: var(--space-s);">
+              <span>
+                <strong>Heads up:</strong> the live post page currently only reads{' '}
+                <code>og_image</code> from this panel. The share title and description tags are
+                generated from the SEO title and description instead, so the other fields here are
+                stored but not yet rendered. The preview below shows what actually ships.
+              </span>
+            </div>
+          )}
+
+          {g.key === 'meta' && (
+            <p class="muted" style="margin-top:0;">
+              Bookkeeping. <code>updated_at</code> is set automatically every time you save.
+            </p>
+          )}
+
+          <div class={g.key === 'seo' ? 'editor__grid' : ''}>
+            <div class="field-grid">
+              {byGroup(g.key).map(([name, f]) => {
+                const fid = `f-${name}`;
+                const wide = isWide(f);
+
+                /* Markdown gets a whole editor rather than a control. */
+                if (f.kind === 'markdown') {
+                  return (
+                    <div class="field field--wide">
+                      <label class="field__label" for={fid}>
+                        {f.label}
+                        <span class="counter" id={`count-${name}`} />
+                      </label>
+                      {f.hint && <p class="field__hint">{f.hint}</p>}
+
+                      <div class="md" id="md-editor">
+                        <div class="md__bar" role="toolbar" aria-label="Formatting">
+                          <button class="md__tool" type="button" data-md="bold" title="Bold (Ctrl+B)" aria-label="Bold">
+                            <strong>B</strong>
+                          </button>
+                          <button class="md__tool" type="button" data-md="italic" title="Italic (Ctrl+I)" aria-label="Italic">
+                            <em>I</em>
+                          </button>
+                          <span class="md__sep" aria-hidden="true" />
+                          <button class="md__tool" type="button" data-md="h2" title="Heading 2" aria-label="Heading 2">
+                            H2
+                          </button>
+                          <button class="md__tool" type="button" data-md="h3" title="Heading 3" aria-label="Heading 3">
+                            H3
+                          </button>
+                          <span class="md__sep" aria-hidden="true" />
+                          <button class="md__tool" type="button" data-md="link" title="Link (Ctrl+K)" aria-label="Insert link">
+                            Link
+                          </button>
+                          <button class="md__tool" type="button" data-md="image" title="Image" aria-label="Insert image">
+                            Img
+                          </button>
+                          <button class="md__tool" type="button" data-md="list" title="Bulleted list" aria-label="Bulleted list">
+                            List
+                          </button>
+                          <button class="md__tool" type="button" data-md="quote" title="Blockquote" aria-label="Blockquote">
+                            Quote
+                          </button>
+                          <button class="md__tool" type="button" data-md="code" title="Code block" aria-label="Code block">
+                            Code
+                          </button>
+                          <button class="md__tool" type="button" data-md="table" title="Table" aria-label="Insert table">
+                            Table
+                          </button>
+
+                          <span class="md__spacer" />
+                          <button class="md__tool" type="button" data-view="split" title="Split view" aria-pressed="true">
+                            Split
+                          </button>
+                          <button class="md__tool" type="button" data-view="write" title="Write only" aria-pressed="false">
+                            Write
+                          </button>
+                          <button class="md__tool" type="button" data-view="preview" title="Preview only" aria-pressed="false">
+                            Preview
+                          </button>
+                        </div>
+
+                        <div class="md__panes" id="md-panes" data-view="split">
+                          <div class="md__write-pane">
+                            <textarea
+                              class="md__textarea"
+                              id={fid}
+                              data-field={name}
+                              data-kind="markdown"
+                              spellcheck="true"
+                              set:text={value(name)}
+                            />
+                          </div>
+                          <div class="md__preview-pane">
+                            <div class="prose" id="md-preview" aria-live="off" />
+                          </div>
+                        </div>
+
+                        <p class="md__hint">
+                          <kbd>Tab</kbd> indents. Press <kbd>Esc</kbd> then <kbd>Tab</kbd> to leave
+                          the editor. <kbd>Ctrl</kbd>+<kbd>B</kbd> / <kbd>I</kbd> / <kbd>K</kbd> for
+                          bold, italic, link.
+                        </p>
+                      </div>
+                    </div>
+                  );
+                }
+
+                if (f.kind === 'boolean') {
+                  return (
+                    <div class="field field--check">
+                      <input
+                        class="checkbox"
+                        type="checkbox"
+                        id={fid}
+                        data-field={name}
+                        data-kind="boolean"
+                        checked={value(name) === '1'}
+                      />
+                      <label class="field__label" for={fid}>
+                        {f.label}
+                      </label>
+                      {f.hint && <p class="field__hint" style="flex-basis:100%;">{f.hint}</p>}
+                    </div>
+                  );
+                }
+
+                if (f.kind === 'tags') {
+                  return (
+                    <div class="field field--wide">
+                      <label class="field__label" for={fid}>
+                        {f.label}
+                      </label>
+                      {f.hint && <p class="field__hint">{f.hint}</p>}
+                      <div class="tags" data-tags-for={name}>
+                        <input
+                          class="tags__input"
+                          type="text"
+                          id={fid}
+                          placeholder="Add a tag and press Enter"
+                          autocomplete="off"
+                          aria-describedby={`${fid}-help`}
+                        />
+                      </div>
+                      <p class="field__hint" id={`${fid}-help`}>
+                        Enter or comma adds a tag. Backspace on an empty box removes the last one.
+                      </p>
+                      <input type="hidden" data-field={name} data-kind="tags" value={value(name)} />
+                    </div>
+                  );
+                }
+
+                if (f.kind === 'select') {
+                  return (
+                    <div class="field">
+                      <label class="field__label" for={fid}>
+                        {f.label}
+                      </label>
+                      {f.hint && <p class="field__hint">{f.hint}</p>}
+                      <select class="select" id={fid} data-field={name} data-kind="select">
+                        {(f.options ?? []).map((o) => (
+                          <option value={o} selected={value(name) === o}>
+                            {o}
+                          </option>
+                        ))}
+                      </select>
+                    </div>
+                  );
+                }
+
+                if (f.kind === 'textarea') {
+                  return (
+                    <div class="field field--wide">
+                      <label class="field__label" for={fid}>
+                        {f.label}
+                        {(name === 'seo_description' || name === 'excerpt') && (
+                          <span class="counter" id={`count-${name}`} />
+                        )}
+                      </label>
+                      {f.hint && <p class="field__hint">{f.hint}</p>}
+                      <textarea
+                        class="textarea"
+                        id={fid}
+                        data-field={name}
+                        data-kind="textarea"
+                        rows={f.rows ?? 3}
+                        set:text={value(name)}
+                      />
+                      <p class="fallback-note" id={`fb-${name}`} hidden />
+                    </div>
+                  );
+                }
+
+                /* text | number | date | url | image */
+                const type =
+                  f.kind === 'number'
+                    ? 'number'
+                    : f.kind === 'date'
+                      ? 'date'
+                      : f.kind === 'url'
+                        ? 'url'
+                        : 'text';
+
+                return (
+                  <div class={wide ? 'field field--wide' : 'field'}>
+                    <label class="field__label" for={fid}>
+                      {f.label}
+                      {name === 'seo_title' && <span class="counter" id="count-seo_title" />}
+                    </label>
+                    {(f.hint || (name === 'author_id' && authorHint)) && (
+                      <p class="field__hint">
+                        {f.hint}
+                        {name === 'author_id' && authorHint ? ` ${authorHint}` : ''}
+                      </p>
+                    )}
+                    <input
+                      class={f.kind === 'image' || READONLY.has(name) ? 'input input--mono' : 'input'}
+                      type={type}
+                      id={fid}
+                      data-field={name}
+                      data-kind={f.kind}
+                      value={value(name)}
+                      readonly={READONLY.has(name) || undefined}
+                      inputmode={f.kind === 'number' ? 'numeric' : undefined}
+                    />
+                    {f.kind === 'image' && (
+                      <img
+                        id={`thumb-${name}`}
+                        alt=""
+                        hidden
+                        style="max-height:5rem;width:auto;border-radius:4px;border:1px solid var(--rule-color);margin-top:0.3rem;"
+                      />
+                    )}
+                    <p class="fallback-note" id={`fb-${name}`} hidden />
+                    {name === 'slug' && (
+                      <p class="status" id="slug-warn" role="status" aria-live="polite" />
+                    )}
+                  </div>
+                );
+              })}
+            </div>
+
+            {/* Previews live beside the SEO fields so cause and effect are adjacent. */}
+            {g.key === 'seo' && (
+              <aside class="editor__side" aria-label="Search preview">
+                <div>
+                  <h3 class="field__label" style="margin-bottom:0.3rem;">Google result</h3>
+                  <div class="serp">
+                    <p class="serp__crumb" id="serp-crumb" />
+                    <p class="serp__title" id="serp-title" />
+                    <p class="serp__desc" id="serp-desc" />
+                  </div>
+                  <p class="fallback-note" id="serp-note" style="margin-top:0.3rem;" />
+                </div>
+              </aside>
+            )}
+          </div>
+
+          {g.key === 'social' && (
+            <div style="max-width: 24rem; margin-top: var(--space-s);">
+              <h3 class="field__label" style="margin-bottom:0.3rem;">Shared link preview</h3>
+              <div class="ogcard">
+                <div class="ogcard__img" id="og-img-wrap">
+                  <img id="og-img" alt="" hidden />
+                  <p class="ogcard__placeholder" id="og-placeholder">No share image resolved</p>
+                </div>
+                <div class="ogcard__body">
+                  <p class="ogcard__host" id="og-host" />
+                  <p class="ogcard__title" id="og-title-p" />
+                  <p class="ogcard__desc" id="og-desc-p" />
+                </div>
+              </div>
+              <p class="fallback-note" id="og-note" style="margin-top:0.3rem;" />
+            </div>
+          )}
+        </div>
+      ))
+    }
+  </form>
+
+  {/* Slug-change redirect offer. Hidden until the slug actually changes. */}
+  <div id="redirect-offer" class="card" hidden style="margin-top: var(--space-m); border-color: var(--accent);">
+    <h2 class="card__title">Keep the old URL working?</h2>
+    <p class="muted" id="redirect-desc"></p>
+    <div class="cluster">
+      <button class="btn btn--primary btn--sm" id="redirect-yes" type="button">
+        Add 301 redirect
+      </button>
+      <button class="btn btn--sm" id="redirect-no" type="button">No thanks</button>
+      <span class="status" id="redirect-status" role="status" aria-live="polite"></span>
+    </div>
+  </div>
+</Admin>
+
+<script
+  define:vars={{
+    isNew,
+    postId: isNew ? null : post.id,
+    siteUrl,
+    siteName,
+    defaultOg,
+    authorName,
+    originalSlug: value('slug'),
+  }}
+>
+  window.__EDITOR__ = { isNew, postId, siteUrl, siteName, defaultOg, authorName, originalSlug };
+</script>
+
+<script>
+  /**
+   * Markdown preview strategy
+   * -------------------------
+   * `marked` is already a dependency and is pure JS with no Node built-ins —
+   * which is precisely why src/lib/markdown.ts chose it for the Worker. So the
+   * browser can run the *same parser* the server does. It is imported directly
+   * from the package (Vite bundles it locally; no CDN, so the CSP is happy),
+   * NOT via src/lib/markdown.ts, which is a Worker module.
+   *
+   * The two post-processing steps from renderMarkdown() are re-implemented below
+   * so the preview matches production markup instead of merely resembling it.
+   * The duplication is deliberate and small; the alternative was a server
+   * round-trip per keystroke for a preview that must feel instant.
+   */
+  import { marked } from 'marked';
+
+  marked.setOptions({ gfm: true, breaks: false });
+
+  const CFG = (window as any).__EDITOR__ as {
+    isNew: boolean;
+    postId: number | null;
+    siteUrl: string;
+    siteName: string;
+    defaultOg: string;
+    authorName: string;
+    originalSlug: string;
+  };
+
+  const form = document.getElementById('post-form') as HTMLFormElement;
+  const saveBtn = document.getElementById('save-btn') as HTMLButtonElement;
+  const statusEl = document.getElementById('save-status')!;
+
+  const fields = () =>
+    Array.from(form.querySelectorAll<HTMLElement>('[data-field]'));
+
+  const byName = (name: string) =>
+    form.querySelector<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>(
+      `[data-field="${name}"]`
+    );
+
+  // --- Status -----------------------------------------------------------
+  let statusTimer: number | undefined;
+  function setStatus(msg: string, kind?: 'ok' | 'err' | 'busy', sticky = false) {
+    window.clearTimeout(statusTimer);
+    statusEl.textContent = msg;
+    statusEl.className = 'status' + (kind ? ` status--${kind}` : '');
+    if (msg && !sticky) {
+      statusTimer = window.setTimeout(() => {
+        if (statusEl.textContent === msg) setStatus('');
+      }, 4000);
+    }
+  }
+
+  /** A 401 must never cost the writer their words. */
+  function sessionExpired() {
+    setStatus('Session expired — your text is safe here. ', 'err', true);
+    const a = document.createElement('a');
+    a.href = `/admin/login?next=${encodeURIComponent(location.pathname)}`;
+    a.textContent = 'Log in again';
+    a.target = '_blank';
+    a.rel = 'noopener';
+    statusEl.append(a);
+    statusEl.append(
+      document.createTextNode(' — then press Save again. Nothing has been lost.')
+    );
+  }
+
+  // --- Value plumbing ---------------------------------------------------
+  function getValue(el: HTMLElement): string | number | null {
+    const kind = el.dataset.kind;
+    if (kind === 'boolean') return (el as HTMLInputElement).checked ? 1 : 0;
+    const raw = (el as HTMLInputElement).value;
+    if (kind === 'number') return raw === '' ? null : Number(raw);
+    return raw;
+  }
+
+  function payload(): Record<string, unknown> {
+    const out: Record<string, unknown> = {};
+    for (const el of fields()) out[el.dataset.field!] = getValue(el);
+    return out;
+  }
+
+  // --- Tabs (roving tabindex, arrow keys) -------------------------------
+  const tabs = Array.from(document.querySelectorAll<HTMLButtonElement>('.tab'));
+
+  function selectTab(key: string, focus = true) {
+    for (const t of tabs) {
+      const on = t.dataset.tab === key;
+      t.setAttribute('aria-selected', String(on));
+      t.tabIndex = on ? 0 : -1;
+      const panel = document.getElementById(`panel-${t.dataset.tab}`);
+      if (panel) panel.hidden = !on;
+      if (on && focus) t.focus();
+    }
+    try {
+      history.replaceState(null, '', `#${key}`);
+    } catch {}
+  }
+
+  tabs.forEach((t, i) => {
+    t.addEventListener('click', () => selectTab(t.dataset.tab!, false));
+    t.addEventListener('keydown', (e) => {
+      const dir = e.key === 'ArrowRight' ? 1 : e.key === 'ArrowLeft' ? -1 : 0;
+      if (!dir) return;
+      e.preventDefault();
+      selectTab(tabs[(i + dir + tabs.length) % tabs.length].dataset.tab!);
+    });
+  });
+
+  if (location.hash) {
+    const key = location.hash.slice(1);
+    if (tabs.some((t) => t.dataset.tab === key)) selectTab(key, false);
+  }
+
+  // --- Tag inputs -------------------------------------------------------
+  function parseTags(json: string): string[] {
+    if (!json) return [];
+    try {
+      const p = JSON.parse(json);
+      return Array.isArray(p) ? p.filter((t) => typeof t === 'string') : [];
+    } catch {
+      // Legacy/typo'd values shouldn't wipe the field silently — treat a bare
+      // comma list as what the writer probably meant.
+      return json
+        .split(',')
+        .map((s) => s.trim())
+        .filter(Boolean);
+    }
+  }
+
+  /** Lets the localStorage restore path rebuild the chips from the hidden inputs. */
+  const tagRenderers: Array<() => void> = [];
+
+  document.querySelectorAll<HTMLElement>('[data-tags-for]').forEach((box) => {
+    const name = box.dataset.tagsFor!;
+    const hidden = form.querySelector<HTMLInputElement>(`input[data-field="${name}"]`)!;
+    const input = box.querySelector<HTMLInputElement>('.tags__input')!;
+    let tags = parseTags(hidden.value);
+
+    function sync() {
+      hidden.value = JSON.stringify(tags);
+      markDirty();
+    }
+
+    function render() {
+      box.querySelectorAll('.tag').forEach((n) => n.remove());
+      tags.forEach((tag, i) => {
+        const el = document.createElement('span');
+        el.className = 'tag';
+        const text = document.createElement('span');
+        text.className = 'tag__text';
+        text.textContent = tag; // DB value — never innerHTML
+        const x = document.createElement('button');
+        x.type = 'button';
+        x.className = 'tag__x';
+        x.setAttribute('aria-label', `Remove tag ${tag}`);
+        x.textContent = '×';
+        x.addEventListener('click', () => {
+          tags.splice(i, 1);
+          render();
+          sync();
+          input.focus();
+        });
+        el.append(text, x);
+        box.insertBefore(el, input);
+      });
+    }
+
+    function add(raw: string) {
+      raw
+        .split(',')
+        .map((s) => s.trim())
+        .filter(Boolean)
+        .forEach((t) => {
+          if (!tags.includes(t)) tags.push(t);
+        });
+      input.value = '';
+      render();
+      sync();
+    }
+
+    input.addEventListener('keydown', (e) => {
+      if (e.key === 'Enter' || e.key === ',') {
+        e.preventDefault();
+        if (input.value.trim()) add(input.value);
+      } else if (e.key === 'Backspace' && !input.value && tags.length) {
+        tags.pop();
+        render();
+        sync();
+      }
+    });
+    input.addEventListener('blur', () => input.value.trim() && add(input.value));
+    box.addEventListener('click', (e) => {
+      if (e.target === box) input.focus();
+    });
+
+    // Re-read the hidden input and redraw — used after a local draft restore.
+    tagRenderers.push(() => {
+      tags = parseTags(hidden.value);
+      render();
+    });
+
+    render();
+  });
+
+  // --- Markdown editor --------------------------------------------------
+  const ta = document.getElementById('f-body_md') as HTMLTextAreaElement | null;
+  const preview = document.getElementById('md-preview');
+  const panes = document.getElementById('md-panes');
+
+  /** Mirrors addHeadingAnchors() in src/lib/markdown.ts. */
+  function addHeadingAnchors(html: string): string {
+    const seen = new Map<string, number>();
+    return html.replace(/<(h[23])>([\s\S]*?)<\/\1>/g, (m, tag: string, inner: string) => {
+      const base = inner
+        .toLowerCase()
+        .replace(/<[^>]*>/g, '')
+        .replace(/&[a-z]+;/g, '')
+        .replace(/[^\w\s-]/g, '')
+        .trim()
+        .replace(/\s+/g, '-')
+        .slice(0, 80);
+      if (!base) return m;
+      const n = seen.get(base) ?? 0;
+      seen.set(base, n + 1);
+      return `<${tag} id="${n === 0 ? base : `${base}-${n + 1}`}">${inner}</${tag}>`;
+    });
+  }
+
+  /** Mirrors wrapTables() in src/lib/markdown.ts. */
+  const wrapTables = (html: string) =>
+    html.replace(/<table>[\s\S]*?<\/table>/g, (m) => `<div class="table-scroll">${m}</div>`);
+
+  function renderPreview() {
+    if (!ta || !preview) return;
+    // Deliberate innerHTML: this is the one place raw HTML is the product, and
+    // the author is the only writer — exactly the trust model markdown.ts states.
+    preview.innerHTML = wrapTables(addHeadingAnchors(marked.parse(ta.value, { async: false }) as string));
+  }
+
+  /** Crude text extraction — mirrors markdownToText() for the description fallback. */
+  function mdToText(md: string, limit = 200): string {
+    const text = (md || '')
+      .replace(/```[\s\S]*?```/g, ' ')
+      .replace(/`[^`]*`/g, ' ')
+      .replace(/!\[[^\]]*\]\([^)]*\)/g, ' ')
+      .replace(/\[([^\]]*)\]\([^)]*\)/g, '$1')
+      .replace(/<[^>]*>/g, ' ')
+      .replace(/^[#>\-*+]\s+/gm, '')
+      .replace(/[*_~]/g, '')
+      .replace(/\s+/g, ' ')
+      .trim();
+    if (text.length <= limit) return text;
+    const cut = text.lastIndexOf(' ', limit);
+    return text.slice(0, cut > 0 ? cut : limit).trimEnd() + '…';
+  }
+
+  // Toolbar / shortcut primitives
+  function surround(before: string, after = before) {
+    if (!ta) return;
+    const { selectionStart: s, selectionEnd: e, value: v } = ta;
+    const sel = v.slice(s, e);
+    ta.setRangeText(before + sel + after, s, e, 'end');
+    if (!sel) ta.setSelectionRange(s + before.length, s + before.length);
+    ta.focus();
+    onBodyInput();
+  }
+
+  function linePrefix(prefix: string) {
+    if (!ta) return;
+    const { selectionStart: s, selectionEnd: e, value: v } = ta;
+    const start = v.lastIndexOf('\n', s - 1) + 1;
+    const end = v.indexOf('\n', e) === -1 ? v.length : v.indexOf('\n', e);
+    const block = v
+      .slice(start, end)
+      .split('\n')
+      .map((l) => (l.startsWith(prefix) ? l.slice(prefix.length) : prefix + l))
+      .join('\n');
+    ta.setRangeText(block, start, end, 'end');
+    ta.focus();
+    onBodyInput();
+  }
+
+  function insert(text: string) {
+    if (!ta) return;
+    const { selectionStart: s, selectionEnd: e } = ta;
+    ta.setRangeText(text, s, e, 'end');
+    ta.focus();
+    onBodyInput();
+  }
+
+  const ACTIONS: Record<string, () => void> = {
+    bold: () => surround('**'),
+    italic: () => surround('_'),
+    h2: () => linePrefix('## '),
+    h3: () => linePrefix('### '),
+    list: () => linePrefix('- '),
+    quote: () => linePrefix('> '),
+    link: () => {
+      if (!ta) return;
+      const sel = ta.value.slice(ta.selectionStart, ta.selectionEnd);
+      if (sel) surround('[', '](https://)');
+      else insert('[text](https://)');
+    },
+    image: () => insert('![alt text](/assets/image.png)'),
+    code: () => {
+      if (!ta) return;
+      const sel = ta.value.slice(ta.selectionStart, ta.selectionEnd);
+      surround(sel.includes('\n') || !sel ? '```\n' : '`', sel.includes('\n') || !sel ? '\n```' : '`');
+    },
+    table: () =>
+      insert('\n| Column | Column |\n| --- | --- |\n| Cell | Cell |\n| Cell | Cell |\n'),
+  };
+
+  document.querySelectorAll<HTMLButtonElement>('[data-md]').forEach((btn) => {
+    btn.addEventListener('click', () => ACTIONS[btn.dataset.md!]?.());
+  });
+
+  document.querySelectorAll<HTMLButtonElement>('[data-view]').forEach((btn) => {
+    btn.addEventListener('click', () => {
+      const v = btn.dataset.view!;
+      panes?.setAttribute('data-view', v);
+      document
+        .querySelectorAll<HTMLButtonElement>('[data-view]')
+        .forEach((b) => b.setAttribute('aria-pressed', String(b === btn)));
+      if (v !== 'write') renderPreview();
+    });
+  });
+
+  /**
+   * Tab inserts indentation instead of leaving the field — but a keyboard user
+   * must never be trapped. Escape arms an exit: the next Tab behaves normally.
+   */
+  let escaped = false;
+
+  ta?.addEventListener('keydown', (e) => {
+    const mod = e.ctrlKey || e.metaKey;
+
+    if (mod && !e.altKey) {
+      const k = e.key.toLowerCase();
+      if (k === 'b' || k === 'i' || k === 'k') {
+        e.preventDefault();
+        ACTIONS[k === 'b' ? 'bold' : k === 'i' ? 'italic' : 'link']();
+        return;
+      }
+      if (k === 's') {
+        e.preventDefault();
+        void save();
+        return;
+      }
+    }
+
+    if (e.key === 'Escape') {
+      escaped = true;
+      setStatus('Tab will now move out of the editor.', 'busy');
+      return;
+    }
+
+    if (e.key === 'Tab') {
+      if (escaped) {
+        escaped = false; // let the browser do its normal thing
+        return;
+      }
+      e.preventDefault();
+      if (e.shiftKey) {
+        const { selectionStart: s, value: v } = ta!;
+        const lineStart = v.lastIndexOf('\n', s - 1) + 1;
+        if (v.slice(lineStart, lineStart + 2) === '  ') {
+          ta!.setRangeText('', lineStart, lineStart + 2, 'end');
+          onBodyInput();
+        }
+      } else {
+        insert('  ');
+      }
+      return;
+    }
+
+    escaped = false;
+  });
+
+  ta?.addEventListener('blur', () => (escaped = false));
+
+  // --- Live derived UI --------------------------------------------------
+  const LIMITS: Record<string, number> = { seo_title: 60, seo_description: 160, excerpt: 200 };
+
+  function updateCounter(name: string) {
+    const el = document.getElementById(`count-${name}`);
+    const src = byName(name);
+    if (!el || !src) return;
+
+    if (name === 'body_md') {
+      const words = mdToText(src.value, Number.MAX_SAFE_INTEGER).split(/\s+/).filter(Boolean).length;
+      el.textContent = `${words} words · ~${Math.max(1, Math.round(words / 200))} min`;
+      return;
+    }
+
+    const len = src.value.length;
+    const limit = LIMITS[name];
+    el.textContent = `${len}/${limit}`;
+    el.className =
+      'counter' + (len > limit ? ' counter--over' : len > limit * 0.9 ? ' counter--warn' : '');
+  }
+
+  function setFallbackNote(name: string, note: string) {
+    const el = document.getElementById(`fb-${name}`);
+    if (!el) return;
+    el.textContent = note;
+    el.hidden = !note;
+  }
+
+  /** The single source of truth for what the public page will actually render. */
+  function resolved() {
+    const v = (n: string) => (byName(n)?.value ?? '').trim();
+    const title = v('title');
+    const metaTitle = v('seo_title') || `${title || 'Untitled'} | ${CFG.authorName}`;
+    const metaDesc = v('seo_description') || v('excerpt') || mdToText(v('body_md'), 160);
+    const canonical = v('canonical_url') || `/blog/${v('slug')}`;
+    const ogImage = v('og_image') || v('hero_image') || CFG.defaultOg;
+    return { title, metaTitle, metaDesc, canonical, ogImage };
+  }
+
+  function updatePreviews() {
+    const r = resolved();
+    const v = (n: string) => (byName(n)?.value ?? '').trim();
+
+    // SERP
+    const crumb = document.getElementById('serp-crumb');
+    const st = document.getElementById('serp-title');
+    const sd = document.getElementById('serp-desc');
+    if (crumb) crumb.textContent = `${CFG.siteUrl.replace(/^https?:\/\//, '')} › blog › ${v('slug')}`;
+    if (st) st.textContent = r.metaTitle;
+    if (sd) sd.textContent = r.metaDesc || 'No description resolved yet.';
+
+    const notes: string[] = [];
+    if (!v('seo_title')) notes.push('Title tag is empty → falls back to “<post title> | author”.');
+    if (!v('seo_description')) {
+      notes.push(
+        v('excerpt')
+          ? 'Meta description is empty → falls back to the excerpt.'
+          : 'Meta description and excerpt are both empty → falls back to the first ~160 characters of the body.'
+      );
+    }
+    // A checkbox's .value is always "on" — only .checked carries the state.
+    if ((byName('noindex') as HTMLInputElement | null)?.checked) {
+      notes.push('This post is set to noindex — it will not appear in search or the sitemap.');
+    }
+    const sn = document.getElementById('serp-note');
+    if (sn) {
+      sn.textContent = notes.join(' ');
+      sn.hidden = notes.length === 0;
+    }
+
+    setFallbackNote('seo_title', !v('seo_title') ? `Empty → “${r.metaTitle}”` : '');
+    setFallbackNote('seo_description', !v('seo_description') ? `Empty → “${r.metaDesc}”` : '');
+    setFallbackNote(
+      'canonical_url',
+      !v('canonical_url') ? `Empty → ${CFG.siteUrl}${r.canonical}` : ''
+    );
+    setFallbackNote('read_time', !v('read_time') ? 'Empty → calculated from the body on render.' : '');
+
+    // OG card. Reflects what Base.astro really emits: og:title = the resolved
+    // meta title, NOT og_title. Showing og_title here would be a comfortable lie.
+    const oh = document.getElementById('og-host');
+    const ot = document.getElementById('og-title-p');
+    const od = document.getElementById('og-desc-p');
+    if (oh) oh.textContent = CFG.siteUrl.replace(/^https?:\/\//, '');
+    if (ot) ot.textContent = r.metaTitle;
+    if (od) od.textContent = r.metaDesc;
+
+    const img = document.getElementById('og-img') as HTMLImageElement | null;
+    const ph = document.getElementById('og-placeholder');
+    if (img && ph) {
+      if (r.ogImage) {
+        img.src = r.ogImage;
+        img.hidden = false;
+        ph.hidden = true;
+        img.onerror = () => {
+          img.hidden = true;
+          ph.hidden = false;
+          ph.textContent = `Image not found: ${r.ogImage}`;
+        };
+      } else {
+        img.hidden = true;
+        ph.hidden = false;
+      }
+    }
+
+    const on = document.getElementById('og-note');
+    if (on) {
+      const bits: string[] = [];
+      if (!v('og_image')) {
+        bits.push(
+          v('hero_image')
+            ? 'Share image empty → falls back to the hero image.'
+            : `Share image and hero image empty → falls back to the site default (${CFG.defaultOg}).`
+        );
+      }
+      if (v('og_title') || v('og_description') || v('twitter_title') || v('twitter_description')) {
+        bits.push('Note: the share title/description fields are stored but not rendered yet.');
+      }
+      on.textContent = bits.join(' ');
+      on.hidden = bits.length === 0;
+    }
+
+    // Image thumbnails
+    ['hero_image', 'og_image', 'twitter_image'].forEach((n) => {
+      const t = document.getElementById(`thumb-${n}`) as HTMLImageElement | null;
+      const val = v(n);
+      if (!t) return;
+      if (val) {
+        t.src = val;
+        t.hidden = false;
+        t.onerror = () => (t.hidden = true);
+      } else t.hidden = true;
+    });
+  }
+
+  function onBodyInput() {
+    renderPreview();
+    updateCounter('body_md');
+    updatePreviews();
+    markDirty();
+  }
+
+  ta?.addEventListener('input', onBodyInput);
+
+  // --- Slug change warning ---------------------------------------------
+  const slugEl = byName('slug');
+  const offer = document.getElementById('redirect-offer');
+
+  function checkSlug() {
+    const warn = document.getElementById('slug-warn');
+    if (!warn || !slugEl) return;
+    const changed = !CFG.isNew && slugEl.value !== CFG.originalSlug && CFG.originalSlug;
+    if (changed) {
+      warn.textContent = `Was “/blog/${CFG.originalSlug}”. Changing it breaks any indexed or shared link unless you add a redirect.`;
+      warn.className = 'status status--err';
+    } else {
+      warn.textContent = '';
+      warn.className = 'status';
+    }
+    if (offer && !changed) offer.hidden = true;
+  }
+
+  slugEl?.addEventListener('input', checkSlug);
+
+  async function offerRedirect(oldSlug: string, newSlug: string) {
+    if (!offer) return;
+    const desc = document.getElementById('redirect-desc')!;
+    desc.textContent = `/blog/${oldSlug} → /blog/${newSlug} (301). Without this, anyone following an old link gets a 404.`;
+    offer.hidden = false;
+    offer.scrollIntoView({ behavior: 'smooth', block: 'center' });
+
+    const yes = document.getElementById('redirect-yes') as HTMLButtonElement;
+    const no = document.getElementById('redirect-no') as HTMLButtonElement;
+    const rs = document.getElementById('redirect-status')!;
+
+    yes.onclick = async () => {
+      yes.disabled = true;
+      rs.textContent = 'Adding…';
+      rs.className = 'status status--busy';
+      try {
+        const res = await fetch('/api/content/redirects', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            source: `/blog/${oldSlug}`,
+            destination: `/blog/${newSlug}`,
+            code: 301,
+            created_at: stamp(),
+          }),
+        });
+        const data = await res.json().catch(() => ({}));
+        if (!res.ok || !data.ok) throw new Error(data.error || `Failed (${res.status})`);
+        rs.textContent = 'Redirect added.';
+        rs.className = 'status status--ok';
+        CFG.originalSlug = newSlug;
+        checkSlug();
+        window.setTimeout(() => (offer.hidden = true), 1500);
+      } catch (err) {
+        rs.textContent = err instanceof Error ? err.message : 'Could not add the redirect.';
+        rs.className = 'status status--err';
+        yes.disabled = false;
+      }
+    };
+
+    no.onclick = () => {
+      offer.hidden = true;
+      CFG.originalSlug = newSlug;
+      checkSlug();
+    };
+  }
+
+  // --- Dirty tracking + localStorage autosave ---------------------------
+  const LS_KEY = `admin:post:${CFG.isNew ? 'new' : CFG.postId}`;
+  let dirty = false;
+  let lsTimer: number | undefined;
+
+  function markDirty() {
+    dirty = true;
+    window.clearTimeout(lsTimer);
+    lsTimer = window.setTimeout(saveLocal, 600);
+  }
+
+  function saveLocal() {
+    try {
+      localStorage.setItem(
+        LS_KEY,
+        JSON.stringify({ at: Date.now(), data: payload() })
+      );
+    } catch {
+      // Quota or private mode. The server save is the real one; losing the local
+      // cache is survivable, so this must not interrupt writing.
+    }
+  }
+
+  function clearLocal() {
+    try {
+      localStorage.removeItem(LS_KEY);
+    } catch {}
+  }
+
+  form.addEventListener('input', (e) => {
+    const t = e.target as HTMLElement;
+    if (t.dataset?.field || t.classList.contains('tags__input')) markDirty();
+    if (t.dataset?.field) {
+      const n = t.dataset.field;
+      if (LIMITS[n]) updateCounter(n);
+      updatePreviews();
+    }
+  });
+  form.addEventListener('change', () => {
+    markDirty();
+    updatePreviews();
+  });
+
+  window.addEventListener('beforeunload', (e) => {
+    if (!dirty) return;
+    e.preventDefault();
+    e.returnValue = '';
+  });
+
+  /** Offer to restore a local draft that is newer than what the server sent. */
+  function restorePrompt() {
+    let saved: { at: number; data: Record<string, unknown> } | null = null;
+    try {
+      saved = JSON.parse(localStorage.getItem(LS_KEY) || 'null');
+    } catch {}
+    if (!saved?.data) return;
+
+    const differs = fields().some((el) => {
+      const cur = getValue(el);
+      const was = saved!.data[el.dataset.field!];
+      return String(cur ?? '') !== String(was ?? '');
+    });
+    if (!differs) {
+      clearLocal();
+      return;
+    }
+
+    const bar = document.createElement('div');
+    bar.className = 'card';
+    bar.style.cssText = 'margin-bottom: var(--space-s); border-color: var(--accent);';
+    const p = document.createElement('p');
+    p.className = 'muted';
+    p.style.marginTop = '0';
+    p.textContent = `You have unsaved local changes from ${new Date(saved.at).toLocaleString()}. They were never sent to the server.`;
+    const row = document.createElement('div');
+    row.className = 'cluster';
+
+    const restore = document.createElement('button');
+    restore.type = 'button';
+    restore.className = 'btn btn--sm btn--primary';
+    restore.textContent = 'Restore them';
+    restore.addEventListener('click', () => {
+      for (const el of fields()) {
+        const v = saved!.data[el.dataset.field!];
+        if (v === undefined) continue;
+        if (el.dataset.kind === 'boolean') (el as HTMLInputElement).checked = Number(v) === 1;
+        else (el as HTMLInputElement).value = v === null ? '' : String(v);
+      }
+      bar.remove();
+      // Chips live outside the hidden input, so they need an explicit redraw.
+      tagRenderers.forEach((r) => r());
+      renderPreview();
+      updateAll();
+      dirty = true; // restored text is unsaved by definition
+      setStatus('Local draft restored — press Save to send it to the server.', 'ok');
+    });
+
+    const discard = document.createElement('button');
+    discard.type = 'button';
+    discard.className = 'btn btn--sm';
+    discard.textContent = 'Discard';
+    discard.addEventListener('click', () => {
+      clearLocal();
+      bar.remove();
+    });
+
+    row.append(restore, discard);
+    bar.append(p, row);
+    form.parentElement?.insertBefore(bar, form);
+  }
+
+  // --- Save -------------------------------------------------------------
+  const stamp = () => new Date().toISOString().replace(/\.\d{3}Z$/, 'Z');
+
+  async function save() {
+    const body = payload();
+    const isCreate = CFG.isNew || !CFG.postId;
+
+    if (!String(body.title || '').trim()) {
+      setStatus('Give the post a title before saving.', 'err');
+      selectTab('content', false);
+      byName('title')?.focus();
+      return;
+    }
+    if (!String(body.slug || '').trim()) {
+      setStatus('A slug is required — it is the post’s URL.', 'err');
+      selectTab('content', false);
+      byName('slug')?.focus();
+      return;
+    }
+
+    body.updated_at = stamp();
+    if (isCreate) body.created_at = stamp();
+    else delete body.created_at; // never rewrite history on an edit
+
+    saveBtn.disabled = true;
+    setStatus('Saving…', 'busy', true);
+
+    const slugChanged =
+      !isCreate && CFG.originalSlug && body.slug !== CFG.originalSlug ? String(body.slug) : null;
+
+    try {
+      const res = await fetch('/api/content/posts', {
+        method: isCreate ? 'POST' : 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(isCreate ? body : { ...body, id: CFG.postId }),
+      });
+
+      if (res.status === 401) {
+        sessionExpired();
+        return;
+      }
+
+      const data = await res.json().catch(() => ({}) as any);
+      if (!res.ok || !data.ok) throw new Error(data.error || `Save failed (${res.status})`);
+
+      dirty = false;
+      clearLocal();
+
+      if (isCreate && data.id) {
+        setStatus('Created. Opening the post…', 'ok');
+        window.location.href = `/admin/posts/${data.id}`;
+        return;
+      }
+
+      setStatus('Saved.', 'ok');
+      const u = byName('updated_at');
+      if (u) u.value = String(body.updated_at);
+
+      if (slugChanged) await offerRedirect(CFG.originalSlug, slugChanged);
+    } catch (err) {
+      setStatus(err instanceof Error ? err.message : 'Save failed.', 'err', true);
+    } finally {
+      saveBtn.disabled = false;
+    }
+  }
+
+  saveBtn.addEventListener('click', () => void save());
+
+  // Ctrl/Cmd+S anywhere in the form, not just the markdown box.
+  document.addEventListener('keydown', (e) => {
+    if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 's') {
+      e.preventDefault();
+      void save();
+    }
+  });
+
+  // Enter must not submit-and-reload; the form is driven by fetch.
+  form.addEventListener('submit', (e) => {
+    e.preventDefault();
+    void save();
+  });
+
+  // --- Boot -------------------------------------------------------------
+  function updateAll() {
+    Object.keys(LIMITS).forEach(updateCounter);
+    updateCounter('body_md');
+    updatePreviews();
+    checkSlug();
+  }
+
+  renderPreview();
+  updateAll();
+  restorePrompt();
+  // The boot pass above fires no input events, so nothing is dirty yet.
+  dirty = false;
+</script>
