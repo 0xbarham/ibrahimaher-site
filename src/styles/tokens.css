@@ -89,6 +89,17 @@
   --content-max: 72rem;
   --rule: 1px;
 
+  /* --- Radius ----------------------------------------------------------
+     Editorial pages are mostly rules and type, so radius only appears where
+     something is genuinely a *panel* or a *frame*. Kept on one scale so a
+     framed screenshot and the panel around it can share a corner language:
+     --radius-lg on the outer frame, --radius-md on the image it insets. */
+  --radius-xs: 4px;
+  --radius-sm: 8px;
+  --radius-md: 14px;
+  --radius-lg: 22px;
+  --radius-pill: 999px;
+
   /* --- Accent: carried over from the old site (terracotta) -------------- */
   --accent: #d97757;
   --accent-ink: #a8442a;
@@ -107,9 +118,13 @@
      One shared easing keeps the whole site feeling like one hand made it. */
   --ease-out: cubic-bezier(0.22, 1, 0.36, 1);
   --ease-in-out: cubic-bezier(0.65, 0, 0.35, 1);
+  /* A longer, flatter tail than --ease-out: for big surfaces (the theme wipe,
+     a card lifting) where the eye has time to notice the deceleration. */
+  --ease-settle: cubic-bezier(0.16, 1, 0.3, 1);
   --dur-fast: 160ms;
   --dur-mid: 320ms;
   --dur-slow: 620ms;
+  --dur-slower: 900ms;
 
   color-scheme: light dark;
 }

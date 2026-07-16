@@ -72,6 +72,10 @@ export interface Project {
   featured_logo: string | null;
   external_url: string | null;
   external_label: string | null;
+  image: string | null;
+  image_alt: string;
+  /** Hidden from the public site but kept editable in the admin. */
+  hidden: number;
 }
 
 export interface Skill {
@@ -135,7 +139,12 @@ export const getCertifications = () =>
   all<Certification>('SELECT * FROM certifications ORDER BY sort_order ASC');
 export const getEducation = () =>
   all<Education>('SELECT * FROM education ORDER BY sort_order ASC');
+/** Public listing: hidden projects must never render on the live site. */
 export const getProjects = () =>
+  all<Project>('SELECT * FROM projects WHERE hidden = 0 ORDER BY sort_order ASC');
+
+/** Admin listing: hidden projects included, so they can be brought back. */
+export const getAllProjects = () =>
   all<Project>('SELECT * FROM projects ORDER BY sort_order ASC');
 
 export const getAuthor = (id: number) =>

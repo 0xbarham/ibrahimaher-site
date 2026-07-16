@@ -18,6 +18,7 @@ export const TABLE_COLUMNS = {
   projects: [
     'sort_order', 'title', 'body_html', 'tags_json', 'icon_light', 'icon_dark',
     'featured', 'featured_logo', 'external_url', 'external_label',
+    'image', 'image_alt', 'hidden',
   ],
   skills: ['sort_order', 'category', 'subtitle', 'tags_json'],
   certifications: ['sort_order', 'title', 'issuer'],

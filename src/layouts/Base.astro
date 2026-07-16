@@ -240,19 +240,98 @@ const year = new Date().getUTCFullYear();
 
     <script>
       // Theme toggle. Respects the OS setting until the reader overrides it.
+      //
+      // The swap itself is unchanged and always happens synchronously inside
+      // `apply()`. Everything around it is decoration: where the View Transitions
+      // API exists we let the browser snapshot the old page and wipe the new one
+      // in over it as a circle growing out of the toggle. Where it does not — or
+      // where the reader has asked for less motion — `apply()` just runs and the
+      // theme snaps, exactly as before. The toggle can never end up broken
+      // because the feature detection guards the decoration, not the swap.
       const btn = document.getElementById('theme-toggle');
+
       btn?.addEventListener('click', () => {
         const root = document.documentElement;
         const current =
           root.dataset.theme ||
           (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light');
         const next = current === 'dark' ? 'light' : 'dark';
-        root.dataset.theme = next;
-        try {
-          localStorage.setItem('theme', next);
-        } catch {}
+
+        const apply = () => {
+          root.dataset.theme = next;
+          try {
+            localStorage.setItem('theme', next);
+          } catch {}
+        };
+
+        const reduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+        // @ts-expect-error — startViewTransition is not in every lib.dom yet.
+        const start = document.startViewTransition?.bind(document);
+
+        if (!start || reduced) {
+          apply();
+          return;
+        }
+
+        // Grow the reveal from the centre of the toggle out to the furthest
+        // corner, so the wipe always finishes covering the viewport.
+        const r = btn.getBoundingClientRect();
+        const x = r.left + r.width / 2;
+        const y = r.top + r.height / 2;
+        const radius = Math.hypot(
+          Math.max(x, window.innerWidth - x),
+          Math.max(y, window.innerHeight - y)
+        );
+
+        root.style.setProperty('--vt-x', `${x}px`);
+        root.style.setProperty('--vt-y', `${y}px`);
+        root.style.setProperty('--vt-r', `${radius}px`);
+        // Scope the ::view-transition rules to this interaction only, so an
+        // Astro page navigation never picks up the theme wipe.
+        root.classList.add('is-theme-vt');
+
+        const transition = start(apply);
+        transition.finished.finally(() => {
+          root.classList.remove('is-theme-vt');
+        });
       });
     </script>
+
+    <style is:global>
+      /*
+        ::view-transition-* pseudos live outside the document tree, so these
+        cannot be Astro-scoped styles — a scoping attribute would never match and
+        the rules would silently do nothing.
+      */
+      @media (prefers-reduced-motion: no-preference) {
+        /* The old paint just sits there; the new one is clipped in over it.
+           Killing the default cross-fade on both is what stops the two snapshots
+           blending into a muddy half-theme mid-transition. */
+        html.is-theme-vt::view-transition-old(root),
+        html.is-theme-vt::view-transition-new(root) {
+          animation: none;
+          mix-blend-mode: normal;
+        }
+
+        html.is-theme-vt::view-transition-old(root) {
+          z-index: 0;
+        }
+
+        html.is-theme-vt::view-transition-new(root) {
+          z-index: 1;
+          animation: theme-reveal var(--dur-slow) var(--ease-settle) both;
+        }
+      }
+
+      @keyframes theme-reveal {
+        from {
+          clip-path: circle(0 at var(--vt-x) var(--vt-y));
+        }
+        to {
+          clip-path: circle(var(--vt-r) at var(--vt-x) var(--vt-y));
+        }
+      }
+    </style>
 
     <style>
       .site-header {

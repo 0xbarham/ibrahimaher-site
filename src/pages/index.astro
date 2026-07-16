@@ -2,6 +2,7 @@
 export const prerender = false;
 
 import Base from '../layouts/Base.astro';
+import SocialIcon, { type SocialName } from '../components/SocialIcon.astro';
 import {
   getJobs,
   getProjects,
@@ -132,11 +133,11 @@ const aiTools = [
 
 /* Contact rows, verbatim from the old contact section. The form itself stays
    on /contact — these are just the details, set as labelled rows. */
-const socials = [
-  { label: 'LinkedIn', url: 'https://www.linkedin.com/in/ibrahimaher' },
-  { label: 'Facebook', url: 'https://www.facebook.com/ibmabr' },
-  { label: 'Instagram', url: 'https://www.instagram.com/ibmabr' },
-  { label: 'Telegram', url: 'https://t.me/ibmabr' },
+const socials: { name: SocialName; label: string; url: string }[] = [
+  { name: 'linkedin', label: 'LinkedIn', url: 'https://www.linkedin.com/in/ibrahimaher' },
+  { name: 'facebook', label: 'Facebook', url: 'https://www.facebook.com/ibmabr' },
+  { name: 'instagram', label: 'Instagram', url: 'https://www.instagram.com/ibmabr' },
+  { name: 'telegram', label: 'Telegram', url: 'https://t.me/ibmabr' },
 ];
 
 const contactEmail = setting(settings, 'contact_email', 'me@ibrahimaher.com');
@@ -426,66 +427,22 @@ if (featured?.external_url) {
         <p class="eyebrow">Automation</p>
         <div>
           <h2 class="section-title" id="projects-h">Projects</h2>
-          <p class="lede">A few n8n builds I am genuinely proud of, outside of client work.</p>
-
-          {/* An index, not a card grid: title, rule, description. */}
-          <ul class="projects">
-            {
-              smallProjects.map((p) => (
-                <li class="project reveal">
-                  {p.icon_light && (
-                    <span class="project__icon">
-                      <img
-                        class="logo-light"
-                        src={asset(p.icon_light)}
-                        alt=""
-                        aria-hidden="true"
-                        loading="lazy"
-                        decoding="async"
-                        width="26"
-                        height="26"
-                      />
-                      {p.icon_dark && (
-                        <img
-                          class="logo-dark"
-                          src={asset(p.icon_dark)}
-                          alt=""
-                          aria-hidden="true"
-                          loading="lazy"
-                          decoding="async"
-                          width="26"
-                          height="26"
-                        />
-                      )}
-                    </span>
-                  )}
-                  <div class="project__main">
-                    <h3 class="project__title">{decode(p.title)}</h3>
-                    <div class="project__body" set:html={p.body_html} />
-                    {parseTags(p.tags_json).length > 0 && (
-                      <ul class="tags">
-                        {parseTags(p.tags_json).map((t) => (
-                          <li class="tag">{decode(t)}</li>
-                        ))}
-                      </ul>
-                    )}
-                  </div>
-                </li>
-              ))
-            }
-          </ul>
 
           {
+            /*
+              DAD LINK leads the section. It is the only shipped *product* here,
+              so it goes first and takes the panel treatment — a surface, a
+              generous radius and an accent edge — while the workflow cards below
+              stay flat on the paper. It has no screenshot, so its weight has to
+              come from scale and space rather than from an image.
+            */
             featured && (
-              <article class="featured reveal" aria-labelledby="featured-h">
-                <p class="eyebrow">Featured build</p>
-                <h3 class="featured__title" id="featured-h">
-                  {decode(featured.title)}
-                </h3>
+              <article class="headline reveal" aria-labelledby="featured-h">
+                <p class="eyebrow headline__eyebrow">Featured build</p>
 
                 {featured.featured_logo && (
                   <img
-                    class="featured__logo"
+                    class="headline__logo"
                     src={asset(featured.featured_logo)}
                     alt="DAD LINK logo"
                     loading="lazy"
@@ -495,7 +452,22 @@ if (featured?.external_url) {
                   />
                 )}
 
-                <div class="featured__body" set:html={featured.body_html} />
+                <h3 class="headline__title" id="featured-h">
+                  {featured.external_url ? (
+                    <a
+                      class="headline__link"
+                      href={featured.external_url}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                    >
+                      {decode(featured.title)}
+                    </a>
+                  ) : (
+                    decode(featured.title)
+                  )}
+                </h3>
+
+                <div class="headline__body" set:html={featured.body_html} />
 
                 {parseTags(featured.tags_json).length > 0 && (
                   <ul class="tags">
@@ -506,19 +478,127 @@ if (featured?.external_url) {
                 )}
 
                 {featured.external_url && (
-                  <a
-                    class="btn featured__cta"
-                    href={featured.external_url}
-                    target="_blank"
-                    rel="noopener"
-                  >
+                  /*
+                    A span, not a second anchor: the title above already links to
+                    the same destination and the whole panel is clickable through
+                    it, so a real <a> here would only add a duplicate tab stop to
+                    the same URL.
+                  */
+                  <span class="headline__cta">
                     {decode(featured.external_label || 'Visit')}{' '}
-                    <span aria-hidden="true">&rarr;</span>
-                  </a>
+                    <span class="headline__arrow" aria-hidden="true">
+                      &rarr;
+                    </span>
+                  </span>
                 )}
               </article>
             )
           }
+
+          <p class="lede works__lede">
+            A few n8n builds I am genuinely proud of, outside of client work.
+          </p>
+
+          <ul class="works">
+            {
+              smallProjects.map((p) => (
+                <li class="work reveal">
+                  {p.image && (
+                    /*
+                      The screenshots are dark n8n canvases dropped onto warm
+                      paper. Framing them — inset inside a padded, rounded, hairline
+                      surface — is what stops that contrast reading as a pasted
+                      rectangle. width/height + aspect-ratio reserve the box before
+                      the lazy image arrives, so nothing shifts.
+                    */
+                    <figure class="work__frame">
+                      <img
+                        class="work__shot settle-in"
+                        src={asset(p.image)}
+                        alt={p.image_alt}
+                        loading="lazy"
+                        decoding="async"
+                        width="1600"
+                        height="840"
+                      />
+                    </figure>
+                  )}
+
+                  <div class="work__text">
+                    <div class="work__head">
+                      {p.icon_light && (
+                        <span class="work__icon" aria-hidden="true">
+                          <img
+                            class="logo-light"
+                            src={asset(p.icon_light)}
+                            alt=""
+                            aria-hidden="true"
+                            loading="lazy"
+                            decoding="async"
+                            width="26"
+                            height="26"
+                          />
+                          {p.icon_dark && (
+                            <img
+                              class="logo-dark"
+                              src={asset(p.icon_dark)}
+                              alt=""
+                              aria-hidden="true"
+                              loading="lazy"
+                              decoding="async"
+                              width="26"
+                              height="26"
+                            />
+                          )}
+                        </span>
+                      )}
+
+                      <h3 class="work__title">
+                        {p.external_url ? (
+                          /*
+                            The one real anchor in the card. `.work__link::after`
+                            stretches it over the whole <li>, which makes the card
+                            clickable without wrapping it in an <a> — wrapping would
+                            swallow the tag list and turn the described screenshot
+                            into link content.
+                          */
+                          <a
+                            class="work__link"
+                            href={p.external_url}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                          >
+                            {decode(p.title)}
+                          </a>
+                        ) : (
+                          decode(p.title)
+                        )}
+                      </h3>
+                    </div>
+
+                    <div class="work__body" set:html={p.body_html} />
+
+                    {parseTags(p.tags_json).length > 0 && (
+                      <ul class="tags">
+                        {parseTags(p.tags_json).map((t) => (
+                          <li class="tag">{decode(t)}</li>
+                        ))}
+                      </ul>
+                    )}
+
+                    {p.external_url && (
+                      <span class="work__cta">
+                        {decode(p.external_label || 'Read more')}{' '}
+                        <span class="work__arrow" aria-hidden="true">
+                          &rarr;
+                        </span>
+                      </span>
+                    )}
+                  </div>
+                </li>
+              ))
+            }
+          </ul>
         </div>
       </div>
     </section>
@@ -763,12 +843,10 @@ if (featured?.external_url) {
             </div>
             <div class="details__row">
               <dt class="details__label">Social</dt>
-              <dd class="details__val">
+              <dd class="details__val details__val--socials">
                 {
                   socials.map((s) => (
-                    <a class="link" href={s.url} target="_blank" rel="noopener">
-                      {s.label}
-                    </a>
+                    <SocialIcon name={s.name} href={s.url} label={s.label} />
                   ))
                 }
               </dd>
@@ -963,16 +1041,16 @@ if (featured?.external_url) {
   }
 
   .job__body,
-  .project__body,
-  .featured__body,
+  .work__body,
+  .headline__body,
   .edu__body {
     max-width: var(--measure);
     color: var(--ink-2);
   }
 
   .job__body :global(p:last-child),
-  .project__body :global(p:last-child),
-  .featured__body :global(p:last-child),
+  .work__body :global(p:last-child),
+  .headline__body :global(p:last-child),
   .edu__body :global(p:last-child) {
     margin-bottom: 0;
   }
@@ -991,77 +1069,255 @@ if (featured?.external_url) {
   }
 
   /* ======================================================================
-     Projects
+     Projects — DAD LINK as the headline, the n8n workflows beneath it.
+
+     The hierarchy is carried by three things at once, not one: DAD LINK comes
+     first, it is the only thing on a raised surface, and its title is set two
+     steps larger than the workflow titles. Any one of those alone would be
+     ambiguous next to three big screenshots.
      ====================================================================== */
-  .projects {
-    list-style: none;
-    padding: 0;
-    margin: var(--space-l) 0 0;
+  .headline {
+    position: relative;
+    margin-top: var(--space-l);
+    padding: clamp(var(--space-m), 4vw, var(--space-xl));
+    background: var(--surface);
+    border: var(--rule) solid var(--rule-color);
+    border-radius: var(--radius-lg);
+    box-shadow: var(--shadow);
+    overflow: hidden;
+    transition: box-shadow var(--dur-slow) var(--ease-settle);
   }
 
-  .project {
-    display: grid;
-    grid-template-columns: 2rem minmax(0, 1fr);
-    gap: var(--space-m);
-    padding-block: var(--space-m);
-    border-top: var(--rule) solid var(--rule-color);
+  /* The accent edge from the old featured block, kept — but now riding inside
+     the panel's radius instead of being a bare rule across the page. */
+  .headline::before {
+    content: '';
+    position: absolute;
+    inset: 0 0 auto 0;
+    height: 3px;
+    background: var(--accent);
   }
 
-  .project:first-child {
-    padding-top: 0;
-    border-top: 0;
+  .headline:hover {
+    box-shadow:
+      0 2px 4px rgba(22, 19, 15, 0.05),
+      0 18px 48px rgba(22, 19, 15, 0.1);
   }
 
-  .project__icon img {
-    width: 26px;
-    height: 26px;
-    object-fit: contain;
-    margin-top: 0.35em;
+  .headline__eyebrow {
+    color: var(--accent-ink);
   }
 
-  .project__title {
-    font-size: var(--step-1);
-    margin-bottom: var(--space-2xs);
-  }
-
-  @media (max-width: 40rem) {
-    .project {
-      grid-template-columns: 1fr;
-      gap: var(--space-2xs);
-    }
-  }
-
-  /* The featured build earns its weight from size and a single accent rule
-     across the top, not from a shadowed box. */
-  .featured {
-    margin-top: var(--space-xl);
-    padding-top: var(--space-m);
-    border-top: 2px solid var(--accent);
-  }
-
-  .featured__title {
-    font-size: var(--step-3);
-    max-width: var(--measure);
-    margin-bottom: var(--space-m);
-  }
-
-  .featured__logo {
+  .headline__logo {
     width: 120px;
     height: auto;
     object-fit: contain;
     margin-bottom: var(--space-m);
   }
 
-  .featured__body {
-    font-size: var(--step-0);
+  /* Two steps above .work__title — this is the thing that has to read first. */
+  .headline__title {
+    font-size: var(--step-4);
+    max-width: var(--measure-narrow);
+    margin-bottom: var(--space-m);
+    /* "…network infrastructure equipment…" at --step-4 is wider than a 320px
+       viewport minus the panel padding. Without this the single word pushes the
+       body into horizontal scroll. */
+    overflow-wrap: break-word;
   }
 
-  .featured__body :global(p) {
+  .headline__link {
+    text-decoration: none;
+    color: inherit;
+    background-image: linear-gradient(var(--accent), var(--accent));
+    background-size: 0% 2px;
+    background-position: 0 100%;
+    background-repeat: no-repeat;
+    transition: background-size var(--dur-slow) var(--ease-settle);
+  }
+
+  /*
+     Deliberately NOT a stretched link, unlike the workflow cards.
+     An overlay spanning the panel would swallow pointer events over three
+     paragraphs of prose, making the copy impossible to select. The workflow
+     cards are short and image-led so they can afford it; this one cannot.
+     The title and the explicit visit link are both real anchors here.
+  */
+  .headline:hover .headline__link,
+  .headline__link:focus-visible {
+    background-size: 100% 2px;
+  }
+
+  .headline__body {
+    font-size: var(--step-1);
+    line-height: 1.55;
+    color: var(--ink-2);
+  }
+
+  .headline__body :global(p) {
     margin-bottom: var(--space-m);
   }
 
-  .featured__cta {
+  .headline__cta {
+    display: inline-block;
     margin-top: var(--space-m);
+    font-family: var(--font-display);
+    font-size: var(--step-0);
+    font-weight: 600;
+    color: var(--accent-ink);
+  }
+
+  .headline__arrow,
+  .work__arrow {
+    display: inline-block;
+    transition: transform var(--dur-mid) var(--ease-settle);
+  }
+
+  .headline:hover .headline__arrow,
+  .work:hover .work__arrow {
+    transform: translateX(4px);
+  }
+
+  /* ---------------------------------------------------------------- Works */
+  .works__lede {
+    margin-top: var(--space-2xl);
+  }
+
+  .works {
+    list-style: none;
+    padding: 0;
+    margin: var(--space-l) 0 0;
+  }
+
+  .work {
+    position: relative;
+    padding-block: var(--space-xl);
+    border-top: var(--rule) solid var(--rule-color);
+  }
+
+  .work:first-child {
+    padding-top: var(--space-l);
+  }
+
+  /* The frame. The screenshots are dark UI on warm paper, so the image is inset
+     inside a padded surface rather than butted against the page — the padding
+     is what turns "pasted rectangle" into "framed screenshot". overflow:hidden
+     plus a smaller inner radius means the image corners can never poke out of
+     the frame's. */
+  .work__frame {
+    position: relative;
+    margin: 0 0 var(--space-m);
+    padding: clamp(var(--space-3xs), 1.2vw, var(--space-2xs));
+    background: var(--paper-2);
+    border: var(--rule) solid var(--rule-color);
+    border-radius: var(--radius-lg);
+    box-shadow: var(--shadow);
+    overflow: hidden;
+    transition: box-shadow var(--dur-slow) var(--ease-settle);
+  }
+
+  .work:hover .work__frame {
+    box-shadow:
+      0 2px 4px rgba(22, 19, 15, 0.05),
+      0 16px 40px rgba(22, 19, 15, 0.09);
+  }
+
+  .work__shot {
+    display: block;
+    width: 100%;
+    height: auto;
+    /* Reserves the box before the lazy image lands — no CLS. */
+    aspect-ratio: 1600 / 840;
+    object-fit: cover;
+    border-radius: var(--radius-md);
+    /*
+      The transform on this element belongs to `.settle-in`'s scroll-driven
+      animation (see global.css). Deliberately no hover transform here: a filled
+      scroll animation holds its final value and would beat the transition, so a
+      hover scale would simply never fire. The card's hover reads through the
+      frame's shadow, the underline and the arrow instead.
+    */
+  }
+
+  .work__head {
+    display: flex;
+    align-items: center;
+    gap: var(--space-2xs);
+    margin-bottom: var(--space-2xs);
+  }
+
+  .work__icon {
+    display: grid;
+    place-items: center;
+    flex: none;
+  }
+
+  .work__icon img {
+    width: 26px;
+    height: 26px;
+    object-fit: contain;
+  }
+
+  .work__title {
+    font-size: var(--step-2);
+    margin: 0;
+    overflow-wrap: break-word;
+    min-width: 0;
+  }
+
+  .work__link {
+    text-decoration: none;
+    color: inherit;
+    background-image: linear-gradient(var(--accent), var(--accent));
+    background-size: 0% 1px;
+    background-position: 0 100%;
+    background-repeat: no-repeat;
+    transition: background-size var(--dur-slow) var(--ease-settle);
+  }
+
+  /* Stretches the single anchor across the whole card. */
+  .work__link::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    z-index: 1;
+  }
+
+  .work:hover .work__link,
+  .work__link:focus-visible {
+    background-size: 100% 1px;
+  }
+
+  .work__cta {
+    display: inline-block;
+    margin-top: var(--space-s);
+    font-family: var(--font-mono);
+    font-size: var(--step--1);
+    color: var(--accent-ink);
+  }
+
+  @media (max-width: 40rem) {
+    .work {
+      padding-block: var(--space-l);
+    }
+
+    .work__frame {
+      border-radius: var(--radius-md);
+    }
+
+    .work__shot {
+      border-radius: var(--radius-sm);
+    }
+
+    .headline {
+      border-radius: var(--radius-md);
+    }
+
+    /* --step-4 is too big to hold a line at this width; drop a step but stay
+       clearly above the workflow titles (--step-2). */
+    .headline__title {
+      font-size: var(--step-3);
+    }
   }
 
   /* ======================================================================
@@ -1419,6 +1675,12 @@ if (featured?.external_url) {
     flex-wrap: wrap;
     gap: var(--space-3xs) var(--space-m);
     margin: 0;
+  }
+
+  /* The icon rings have no text baseline to align to, so this row centres. */
+  .details__val--socials {
+    align-items: center;
+    gap: var(--space-2xs);
   }
 
   @media (max-width: 40rem) {

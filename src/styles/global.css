@@ -407,6 +407,33 @@ p {
   }
 }
 
+/* A slow settle for framed imagery: the picture eases back to its true size as
+   it comes into view, so a screenshot arrives rather than appears.
+
+   transform only — scaling via width/height here would relayout on every frame.
+   It deliberately does not touch opacity, so if the animation never runs the
+   image is simply there at scale 1. Note that anything using this must not also
+   transition `transform` on hover: a filled scroll-driven animation holds its
+   final transform and would win over the transition, leaving a dead hover. */
+@keyframes settle {
+  from {
+    transform: scale(1.05);
+  }
+  to {
+    transform: none;
+  }
+}
+
+@supports (animation-timeline: view()) {
+  @media (prefers-reduced-motion: no-preference) {
+    .settle-in {
+      animation: settle linear both;
+      animation-timeline: view();
+      animation-range: entry 5% cover 38%;
+    }
+  }
+}
+
 /* Staggered reveal for the hero — runs once on load, not on scroll. */
 @media (prefers-reduced-motion: no-preference) {
   .stagger > * {
