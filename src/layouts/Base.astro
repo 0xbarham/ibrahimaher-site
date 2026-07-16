@@ -319,7 +319,7 @@ const year = new Date().getUTCFullYear();
 
         html.is-theme-vt::view-transition-new(root) {
           z-index: 1;
-          animation: theme-reveal var(--dur-slow) var(--ease-settle) both;
+          animation: theme-reveal var(--dur-mid) var(--ease-settle) both;
         }
       }
 
@@ -334,13 +334,30 @@ const year = new Date().getUTCFullYear();
     </style>
 
     <style>
+      /*
+        Opaque by default. A translucent sticky bar means backdrop-filter has to
+        re-blur whatever scrolls beneath it on every frame — one of the most
+        expensive things you can ask a mobile GPU to do, and a real source of
+        scroll jank. The blur is treated as a progressive enhancement and only
+        enabled for fine pointers (desktop) on wider viewports, where the cost
+        is affordable. Phones get a solid bar that looks near-identical and
+        scrolls at full frame rate.
+      */
       .site-header {
         position: sticky;
         top: 0;
         z-index: 20;
-        background: color-mix(in oklab, var(--paper) 82%, transparent);
-        backdrop-filter: blur(10px);
+        background: var(--paper);
         border-bottom: var(--rule) solid var(--rule-color);
+      }
+
+      @media (min-width: 60rem) and (pointer: fine) {
+        @supports (backdrop-filter: blur(1px)) {
+          .site-header {
+            background: color-mix(in oklab, var(--paper) 82%, transparent);
+            backdrop-filter: blur(10px);
+          }
+        }
       }
 
       .site-header__inner {
@@ -363,16 +380,18 @@ const year = new Date().getUTCFullYear();
         letter-spacing: var(--tracking-tight);
       }
 
+      /* Sized to the hover width and scaled DOWN at rest, so the animation is a
+         transform rather than an animated `width`. Animating width relayouts the
+         header every frame; scaleX is composited. The box never changes size, so
+         the nav beside it cannot shift. */
       .wordmark__rule {
         display: block;
-        width: 1.4rem;
+        width: 2.6rem;
         height: 1px;
         background: var(--accent);
-        transition: width var(--dur-mid) var(--ease-out);
-      }
-
-      .wordmark:hover .wordmark__rule {
-        width: 2.6rem;
+        transform: scaleX(0.538);
+        transform-origin: left center;
+        transition: transform var(--dur-mid) var(--ease-out);
       }
 
       .wordmark__last {
@@ -380,8 +399,14 @@ const year = new Date().getUTCFullYear();
         transition: color var(--dur-mid) var(--ease-out);
       }
 
-      .wordmark:hover .wordmark__last {
-        color: var(--accent-ink);
+      @media (hover: hover) {
+        .wordmark:hover .wordmark__rule {
+          transform: none;
+        }
+
+        .wordmark:hover .wordmark__last {
+          color: var(--accent-ink);
+        }
       }
 
       .nav {
@@ -414,14 +439,36 @@ const year = new Date().getUTCFullYear();
         transition: transform var(--dur-mid) var(--ease-out);
       }
 
-      .nav__link:hover,
       .nav__link.is-active {
         color: var(--ink);
       }
 
-      .nav__link:hover::after,
       .nav__link.is-active::after {
         transform: scaleX(1);
+      }
+
+      /* Hover is gated: a phone emulates it on tap and then leaves the state
+         stuck on the last-tapped link. */
+      @media (hover: hover) {
+        .nav__link:hover {
+          color: var(--ink);
+        }
+
+        .nav__link:hover::after {
+          transform: scaleX(1);
+        }
+      }
+
+      /* Touch targets. The visual size stays as designed; only the hit area
+         grows, via padding on the link and a taller flex line. 44px is the
+         accessibility floor and these were ~24-34px. */
+      @media (pointer: coarse) {
+        .nav__link {
+          display: inline-flex;
+          align-items: center;
+          min-height: 44px;
+          padding-inline: 0.15rem;
+        }
       }
 
       .theme-toggle {
@@ -440,10 +487,21 @@ const year = new Date().getUTCFullYear();
           transform var(--dur-mid) var(--ease-out);
       }
 
-      .theme-toggle:hover {
-        color: var(--accent-ink);
-        border-color: var(--accent);
-        transform: rotate(35deg);
+      @media (hover: hover) {
+        .theme-toggle:hover {
+          color: var(--accent-ink);
+          border-color: var(--accent);
+          transform: rotate(35deg);
+        }
+      }
+
+      /* Must come AFTER the base .theme-toggle rule: a media query adds no
+         specificity, so an earlier block would simply lose to the 2.1rem below. */
+      @media (pointer: coarse) {
+        .theme-toggle {
+          width: 44px;
+          height: 44px;
+        }
       }
 
       .site-footer {

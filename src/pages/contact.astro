@@ -290,9 +290,23 @@ const reasons = [
     margin-bottom: var(--space-s);
   }
 
+  /* Same crumb tap-target fix as /about — "Home" is a ~22px inline link. */
+  @media (pointer: coarse) {
+    .contact__crumbs :global(a) {
+      display: inline-flex;
+      align-items: center;
+      min-height: 2.75rem;
+    }
+
+    .contact__crumbs {
+      margin-bottom: var(--space-2xs);
+    }
+  }
+
   .contact__title {
     font-size: var(--step-4);
     margin-bottom: var(--space-m);
+    overflow-wrap: break-word;
   }
 
   .accent {
@@ -411,6 +425,34 @@ const reasons = [
     display: grid;
     gap: var(--space-3xs);
     font-size: var(--step--1);
+  }
+
+  /*
+    The worst tap targets on the site: the email, the phone number and the four
+    "Elsewhere" links are ~23px-tall inline links stacked 4px apart. On a phone
+    that is four ~23px rows in a 108px column — the classic mis-tap stack.
+
+    Each link gets a 44px hit area and the gap goes to zero, because the links
+    are now tall enough to separate themselves. Type, colour and the underline
+    idiom are all untouched; only the hit box grows. Desktop, where these are
+    a tidy tight list under a mouse, is unaffected.
+  */
+  @media (pointer: coarse) {
+    .aside__list {
+      gap: 0;
+    }
+
+    .aside__list :global(a) {
+      display: inline-flex;
+      align-items: center;
+      min-height: 2.75rem;
+    }
+
+    /* The muted "Erbil, Iraq" line is not a link — keep it on its own rhythm
+       rather than letting it inherit a 44px row it does not need. */
+    .aside__list li.muted {
+      padding-top: var(--space-2xs);
+    }
   }
 
   .aside__note {

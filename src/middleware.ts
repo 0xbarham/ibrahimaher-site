@@ -8,7 +8,7 @@
  * moment it is created — forgetting to register it fails closed, not open.
  */
 import { defineMiddleware } from 'astro:middleware';
-import { isAuthed } from './lib/auth';
+import { isAuthed, getCookie } from './lib/auth';
 import { findRedirect } from './lib/db';
 
 /** Paths under a protected prefix that must stay reachable while logged out. */
@@ -61,6 +61,43 @@ function canonicalHostRedirect(url: URL, canonicalHost: string): Response | null
   return new Response(null, { status: 301, headers: { Location: to.toString() } });
 }
 
+/**
+ * Edge-cache public pages.
+ *
+ * Every page is rendered on demand from D1, so without this each visit costs a
+ * worker invocation plus several database round trips — measured at 320-950ms
+ * TTFB. `s-maxage` lets Cloudflare's edge serve the HTML directly (single-digit
+ * ms) while `max-age=0, must-revalidate` keeps the *browser* from holding a
+ * stale copy, so a reader never sees old content pinned locally.
+ *
+ * `stale-while-revalidate` means the first request after expiry still gets an
+ * instant response and the refresh happens behind it.
+ *
+ * The 60s ceiling is the deliberate trade: an admin edit goes live within a
+ * minute rather than instantly. Anything authenticated, any non-GET, and
+ * anything that already set its own Cache-Control is left alone.
+ */
+function addPublicCacheHeaders(request: Request, pathname: string, response: Response): void {
+  if (request.method !== 'GET') return;
+  if (response.status !== 200) return;
+  if (pathname.startsWith('/api/') || pathname.startsWith('/admin')) return;
+  // Never cache a response rendered for a logged-in session: the admin cookie
+  // does not change public pages today, but caching per-session HTML at a
+  // shared edge is exactly how private content leaks to strangers.
+  if (getCookie(request, 'admin_session')) {
+    response.headers.set('Cache-Control', 'private, no-store');
+    return;
+  }
+  if (response.headers.has('Cache-Control')) return; // endpoint set its own
+
+  response.headers.set(
+    'Cache-Control',
+    'public, max-age=0, must-revalidate, s-maxage=60, stale-while-revalidate=86400'
+  );
+  // The cached variant depends on encoding negotiation.
+  response.headers.set('Vary', 'Accept-Encoding');
+}
+
 export const onRequest = defineMiddleware(async (context, next) => {
   const { pathname } = context.url;
 
@@ -70,10 +107,13 @@ export const onRequest = defineMiddleware(async (context, next) => {
 
   if (!isProtected(pathname) || PUBLIC_ADMIN_PATHS.has(pathname)) {
     const response = await next();
+
     if (response.status === 404 && !pathname.startsWith('/api/')) {
       const redirect = await tryRedirect(pathname);
       if (redirect) return redirect;
     }
+
+    addPublicCacheHeaders(context.request, pathname, response);
     return response;
   }
 

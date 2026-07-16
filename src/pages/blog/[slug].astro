@@ -129,6 +129,14 @@ const jsonLd = [
 
     {
       post.hero_image && (
+        /*
+          Above the fold on a post, and almost certainly the LCP element when a
+          post has one. Already correctly loading="eager"; fetchpriority="high"
+          additionally pulls it out of the browser's default "low priority until
+          layout proves it matters" bucket, which is worth ~one round trip on a
+          phone connection. decoding="async" keeps the decode off the main
+          thread so it cannot block the first paint of the text around it.
+        */
         <img
           class="post__hero reveal"
           src={post.hero_image}
@@ -136,6 +144,8 @@ const jsonLd = [
           width="1200"
           height="630"
           loading="eager"
+          fetchpriority="high"
+          decoding="async"
         />
       )
     }
@@ -213,6 +223,9 @@ const jsonLd = [
   .post__title {
     font-size: var(--step-4);
     margin-bottom: var(--space-s);
+    /* Titles are author-entered. At --step-4 (39px at 320px) a single long
+       token overflows a 280px measure — break it rather than the page. */
+    overflow-wrap: break-word;
   }
 
   .post__lede {
@@ -245,7 +258,14 @@ const jsonLd = [
   .cta {
     max-width: var(--measure);
     margin-top: var(--space-xl);
-    padding: var(--space-l);
+    /*
+      Was a flat var(--space-l) — 40px a side. At 320px the shell already leaves
+      only ~280px of measure, so a fixed 40px inset took 80px of it and left the
+      CTA copy running in a ~200px column. Fluid padding keeps the generous
+      desktop inset (it still resolves to --space-l once there is room for it)
+      and hands the width back on a phone.
+    */
+    padding: clamp(var(--space-m), 5vw, var(--space-l));
     background: var(--paper-2);
     border: var(--rule) solid var(--rule-color);
     border-radius: 10px;
@@ -275,17 +295,30 @@ const jsonLd = [
 
   .related__item {
     display: grid;
-    grid-template-columns: 8rem 1fr;
+    /* minmax(0, 1fr), not 1fr: a bare `1fr` track floors at min-content, so a
+       long unbroken word in a related post's title would push the grid wider
+       than its container instead of wrapping. */
+    grid-template-columns: 8rem minmax(0, 1fr);
     gap: var(--space-s);
     align-items: baseline;
     padding-block: var(--space-xs);
     border-bottom: var(--rule) solid var(--rule-color);
     text-decoration: none;
-    transition: padding-left var(--dur-mid) var(--ease-out);
   }
 
-  .related__item:hover {
-    padding-left: var(--space-2xs);
+  /* Same fix as .post and .entry: step the children with a transform rather
+     than animating the row's own padding, which forced layout every frame.
+     NB .related__title sets its own `transition` below — the transform has to
+     be declared there too or the shorthand there would silently drop it. */
+  .related__cat {
+    transition: transform var(--dur-mid) var(--ease-out);
+  }
+
+  @media (hover: hover) {
+    .related__item:hover .related__cat,
+    .related__item:hover .related__title {
+      transform: translateX(var(--space-2xs));
+    }
   }
 
   .related__cat {
@@ -300,11 +333,16 @@ const jsonLd = [
     font-family: var(--font-display);
     font-weight: 600;
     line-height: var(--leading-snug);
-    transition: color var(--dur-fast) var(--ease-out);
+    overflow-wrap: break-word;
+    transition:
+      color var(--dur-fast) var(--ease-out),
+      transform var(--dur-mid) var(--ease-out);
   }
 
-  .related__item:hover .related__title {
-    color: var(--accent-ink);
+  @media (hover: hover) {
+    .related__item:hover .related__title {
+      color: var(--accent-ink);
+    }
   }
 
   @media (max-width: 40rem) {

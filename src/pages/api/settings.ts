@@ -12,7 +12,7 @@
  * Auth is enforced for /api/settings by src/middleware.ts.
  */
 import type { APIRoute } from 'astro';
-import { db } from '../../lib/db';
+import { db, invalidateSettingsCache } from '../../lib/db';
 import { json } from '../../lib/auth';
 
 export const prerender = false;
@@ -55,5 +55,9 @@ export const PUT: APIRoute = async ({ request }) => {
     return json({ ok: false, error: `Unknown setting "${key}"` }, 404);
   }
 
+  // Only clears this isolate's copy — others expire on their own TTL. Without
+  // it, saving a setting and immediately reloading would show the old value in
+  // the same isolate and look like the save silently failed.
+  invalidateSettingsCache();
   return json({ ok: true });
 };

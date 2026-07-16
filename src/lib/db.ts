@@ -179,10 +179,33 @@ export const getAllPosts = () =>
 /**
  * Global settings as a plain map. Rendering must not depend on a row existing,
  * so callers pass a fallback.
+ *
+ * Cached in-isolate for a short window. Every page hits this at least twice —
+ * once in the page frontmatter and once in Base.astro — and a Worker isolate
+ * serves many requests, so without this it is a guaranteed extra D1 round trip
+ * on the critical path of every single render.
+ *
+ * The TTL is the trade: a settings change in the admin takes up to 30s to show.
+ * That is bounded and matches the edge cache window, rather than being an
+ * unbounded cache that could pin a stale GA id indefinitely.
  */
+const SETTINGS_TTL_MS = 30_000;
+let settingsCache: { at: number; value: Record<string, string> } | null = null;
+
 export async function getSettings(): Promise<Record<string, string>> {
+  const now = Date.now();
+  if (settingsCache && now - settingsCache.at < SETTINGS_TTL_MS) {
+    return settingsCache.value;
+  }
   const rows = await all<{ key: string; value: string }>('SELECT key, value FROM settings');
-  return Object.fromEntries(rows.map((r) => [r.key, r.value]));
+  const value = Object.fromEntries(rows.map((r) => [r.key, r.value]));
+  settingsCache = { at: now, value };
+  return value;
+}
+
+/** Called after a settings write so the admin does not fight its own cache. */
+export function invalidateSettingsCache(): void {
+  settingsCache = null;
 }
 
 export function setting(

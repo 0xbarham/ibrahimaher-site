@@ -367,29 +367,37 @@ if (featured?.external_url) {
                     <span class="job__index" aria-hidden="true">
                       {String(i + 1).padStart(2, '0')}
                     </span>
-                    <span class="job__logo">
+                    {/*
+                       Only mark the light mark swappable when a dark variant
+                       actually exists. Help Tech and YourVisio have logo_dark
+                       NULL, and hiding .logo-light in dark mode unconditionally
+                       made them disappear entirely. Logos with no dark variant
+                       get a light plate instead, so a dark-ink mark stays
+                       legible on dark paper.
+                    */}
+                    <span class:list={['job__logo', { 'job__logo--plate': !job.logo_dark }]}>
                       {/* Decorative: the company name is set in type directly
                           beside it, so an alt would only repeat the sentence. */}
                       <img
-                        class="logo-light"
+                        class:list={['logo-mark', { 'logo-light': job.logo_dark }]}
                         src={asset(job.logo_light)}
                         alt=""
                         aria-hidden="true"
                         loading="lazy"
                         decoding="async"
-                        width="44"
-                        height="44"
+                        width="66"
+                        height="66"
                       />
                       {job.logo_dark && (
                         <img
-                          class="logo-dark"
+                          class="logo-mark logo-dark"
                           src={asset(job.logo_dark)}
                           alt=""
                           aria-hidden="true"
                           loading="lazy"
                           decoding="async"
-                          width="44"
-                          height="44"
+                          width="66"
+                          height="66"
                         />
                       )}
                     </span>
@@ -527,27 +535,30 @@ if (featured?.external_url) {
                   <div class="work__text">
                     <div class="work__head">
                       {p.icon_light && (
-                        <span class="work__icon" aria-hidden="true">
+                        <span
+                          class:list={['work__icon', { 'work__icon--plate': !p.icon_dark }]}
+                          aria-hidden="true"
+                        >
                           <img
-                            class="logo-light"
+                            class:list={['logo-mark', { 'logo-light': p.icon_dark }]}
                             src={asset(p.icon_light)}
                             alt=""
                             aria-hidden="true"
                             loading="lazy"
                             decoding="async"
-                            width="26"
-                            height="26"
+                            width="52"
+                            height="52"
                           />
                           {p.icon_dark && (
                             <img
-                              class="logo-dark"
+                              class="logo-mark logo-dark"
                               src={asset(p.icon_dark)}
                               alt=""
                               aria-hidden="true"
                               loading="lazy"
                               decoding="async"
-                              width="26"
-                              height="26"
+                              width="52"
+                              height="52"
                             />
                           )}
                         </span>
@@ -682,8 +693,24 @@ if (featured?.external_url) {
       </div>
     </section>
 
-    {/* -------------------------------------------------------------- Skills */}
-    <section class="section" id="skills" aria-labelledby="skills-h">
+    {/*
+      -------------------------------------------------------------- Skills
+
+      From here down, every section carries .defer-paint (see global.css): on a
+      phone the browser skips their layout and paint until they approach the
+      viewport. This is the cheap half of the homepage's cost — six sections of
+      rules, lists and marks that nobody has scrolled to yet.
+
+      The cut is here and not higher for a specific reason: #experience,
+      #projects, #ai-disciplines and the four discipline term ids are all
+      linked by fragment (from the hero button, the FAQ answers, /about,
+      /contact and the DefinedTermSet JSON-LD). Nothing anywhere links to
+      #skills or below. A skipped section's height is estimated until it first
+      renders, so anchoring *past* one is unreliable — keeping every real
+      #target above the skipped range removes the failure mode instead of
+      betting on it.
+    */}
+    <section class="section defer-paint" id="skills" aria-labelledby="skills-h">
       <div class="rail">
         <p class="eyebrow">Toolkit</p>
         <div>
@@ -709,7 +736,7 @@ if (featured?.external_url) {
     </section>
 
     {/* ----------------------------------------------------------- Education */}
-    <section class="section" id="education" aria-labelledby="education-h">
+    <section class="section defer-paint" id="education" aria-labelledby="education-h">
       <div class="rail">
         <p class="eyebrow">Background</p>
         <div>
@@ -732,7 +759,7 @@ if (featured?.external_url) {
     </section>
 
     {/* ------------------------------------------------------ Certifications */}
-    <section class="section" id="certifications" aria-labelledby="certifications-h">
+    <section class="section defer-paint" id="certifications" aria-labelledby="certifications-h">
       <div class="rail">
         <p class="eyebrow">Credentials</p>
         <div>
@@ -757,7 +784,7 @@ if (featured?.external_url) {
     </section>
 
     {/* ---------------------------------------------------------------- Blog */}
-    <section class="section" id="blog" aria-labelledby="blog-h">
+    <section class="section defer-paint" id="blog" aria-labelledby="blog-h">
       <div class="rail">
         <p class="eyebrow">Writing</p>
         <div>
@@ -796,7 +823,7 @@ if (featured?.external_url) {
     </section>
 
     {/* ----------------------------------------------------------------- FAQ */}
-    <section class="section" id="faq" aria-labelledby="faq-h">
+    <section class="section defer-paint" id="faq" aria-labelledby="faq-h">
       <div class="rail">
         <p class="eyebrow">Quick answers</p>
         <div>
@@ -818,7 +845,7 @@ if (featured?.external_url) {
     </section>
 
     {/* ------------------------------------------------------------- Contact */}
-    <section class="section" id="contact" aria-labelledby="contact-h">
+    <section class="section defer-paint" id="contact" aria-labelledby="contact-h">
       <div class="rail">
         <p class="eyebrow">Get in touch</p>
         <div>
@@ -864,10 +891,20 @@ if (featured?.external_url) {
 
 <style>
   /* ======================================================================
-     Light/dark logo swap. The old site had .logo-light/.logo-dark globals;
-     they are not in the new system, so the pair is scoped here — the only
-     place on the site that ships two-tone marks.
+     Light/dark logo swap.
+
+     IMPORTANT: `.logo-light` is only applied when a dark counterpart exists.
+     The previous rule hid every light mark in dark mode, so Help Tech and
+     YourVisio — which have no dark variant in D1 — vanished completely.
+     Marks without a counterpart keep the neutral `.logo-mark` class, are never
+     hidden, and sit on a plate (below) so dark ink stays legible on dark paper.
      ====================================================================== */
+  .logo-mark {
+    width: 100%;
+    height: 100%;
+    object-fit: contain;
+  }
+
   .logo-dark {
     display: none;
   }
@@ -890,6 +927,23 @@ if (featured?.external_url) {
     }
   }
 
+  /* ----------------------------------------------------------------------
+     Plate: a light, rounded card behind single-variant marks.
+     Help Tech's mark is dark ink on transparency and YourVisio's is a dark
+     green mark on cream — both need a light ground to read on dark paper.
+     Keeping the plate in BOTH themes means the brand colours stay correct
+     (an invert filter would turn Help Tech's red into cyan) and the mark
+     does not shift appearance between modes.
+     ---------------------------------------------------------------------- */
+  .job__logo--plate,
+  .work__icon--plate {
+    background: #faf8f5;
+    border: var(--rule) solid var(--rule-color);
+    border-radius: var(--radius-md);
+    padding: 0.34em;
+    box-shadow: var(--shadow);
+  }
+
   /* ======================================================================
      Hero — the one place the type is allowed to shout.
      ====================================================================== */
@@ -900,6 +954,21 @@ if (featured?.external_url) {
   .hero__name {
     font-size: var(--step-6);
     margin-bottom: var(--space-s);
+  }
+
+  /*
+    --step-6 bottoms out at 3.81rem (61px). At 320px the shell leaves ~280px of
+    measure, and "Al-Bander" at 61px in Sora does not fit it — the hyphen gives
+    the browser a break opportunity, so it does not overflow, it does something
+    worse: it wraps the accented surname to "Al-" / "Bander" and the name reads
+    as broken. One step down at phone widths keeps the intended two-line
+    "Ibrahim Maher / Al-Bander" reading. Nothing above 26rem is touched, so the
+    hero at desktop is exactly as designed.
+  */
+  @media (max-width: 26rem) {
+    .hero__name {
+      font-size: var(--step-5);
+    }
   }
 
   .hero__last {
@@ -957,6 +1026,24 @@ if (featured?.external_url) {
     border-left: var(--rule) solid var(--rule-color);
   }
 
+  /*
+    The vertical hairline only means anything while the three figures sit on one
+    row. Each stat is `flex: 1 1 12rem` (192px, border-box), so all three fit
+    until the measure drops below ~576px — i.e. below ~40rem of viewport. Once
+    they wrap, a `border-left` on the 2nd and 3rd reads as an indent with a bar
+    floating beside nothing. Stacked, the row gap already does the separating.
+  */
+  @media (max-width: 40rem) {
+    .hero__stat + .hero__stat {
+      padding-left: 0;
+      border-left: 0;
+    }
+
+    .hero__stat {
+      padding-right: 0;
+    }
+  }
+
   .hero__stat-num {
     display: block;
     font-family: var(--font-display);
@@ -1009,9 +1096,17 @@ if (featured?.external_url) {
     letter-spacing: var(--tracking-wide);
   }
 
+  /* 1.5x the original 44px. The plate adds padding around this box, so the
+     mark itself stays 66px and the plate reads slightly larger. */
+  .job__logo {
+    display: grid;
+    place-items: center;
+    flex: none;
+  }
+
   .job__logo img {
-    width: 44px;
-    height: 44px;
+    width: 66px;
+    height: 66px;
     object-fit: contain;
   }
 
@@ -1098,10 +1193,15 @@ if (featured?.external_url) {
     background: var(--accent);
   }
 
-  .headline:hover {
-    box-shadow:
-      0 2px 4px rgba(22, 19, 15, 0.05),
-      0 18px 48px rgba(22, 19, 15, 0.1);
+  /* A 48px-blur shadow transition is a full re-raster of the panel on every
+     frame. It is worth it on a desktop pointer; on a phone it can never be
+     triggered by a real hover, only by tap emulation, so it is gated out. */
+  @media (hover: hover) {
+    .headline:hover {
+      box-shadow:
+        0 2px 4px rgba(22, 19, 15, 0.05),
+        0 18px 48px rgba(22, 19, 15, 0.1);
+    }
   }
 
   .headline__eyebrow {
@@ -1143,9 +1243,14 @@ if (featured?.external_url) {
      cards are short and image-led so they can afford it; this one cannot.
      The title and the explicit visit link are both real anchors here.
   */
-  .headline:hover .headline__link,
   .headline__link:focus-visible {
     background-size: 100% 2px;
+  }
+
+  @media (hover: hover) {
+    .headline:hover .headline__link {
+      background-size: 100% 2px;
+    }
   }
 
   .headline__body {
@@ -1173,9 +1278,11 @@ if (featured?.external_url) {
     transition: transform var(--dur-mid) var(--ease-settle);
   }
 
-  .headline:hover .headline__arrow,
-  .work:hover .work__arrow {
-    transform: translateX(4px);
+  @media (hover: hover) {
+    .headline:hover .headline__arrow,
+    .work:hover .work__arrow {
+      transform: translateX(4px);
+    }
   }
 
   /* ---------------------------------------------------------------- Works */
@@ -1216,10 +1323,12 @@ if (featured?.external_url) {
     transition: box-shadow var(--dur-slow) var(--ease-settle);
   }
 
-  .work:hover .work__frame {
-    box-shadow:
-      0 2px 4px rgba(22, 19, 15, 0.05),
-      0 16px 40px rgba(22, 19, 15, 0.09);
+  @media (hover: hover) {
+    .work:hover .work__frame {
+      box-shadow:
+        0 2px 4px rgba(22, 19, 15, 0.05),
+        0 16px 40px rgba(22, 19, 15, 0.09);
+    }
   }
 
   .work__shot {
@@ -1252,9 +1361,10 @@ if (featured?.external_url) {
     flex: none;
   }
 
+  /* 2x the original 26px, per the brief. */
   .work__icon img {
-    width: 26px;
-    height: 26px;
+    width: 52px;
+    height: 52px;
     object-fit: contain;
   }
 
@@ -1283,9 +1393,14 @@ if (featured?.external_url) {
     z-index: 1;
   }
 
-  .work:hover .work__link,
   .work__link:focus-visible {
     background-size: 100% 1px;
+  }
+
+  @media (hover: hover) {
+    .work:hover .work__link {
+      background-size: 100% 1px;
+    }
   }
 
   .work__cta {
@@ -1539,11 +1654,30 @@ if (featured?.external_url) {
     padding-block: var(--space-s);
     border-top: var(--rule) solid var(--rule-color);
     text-decoration: none;
-    transition: padding-left var(--dur-mid) var(--ease-out);
   }
 
-  .post:hover {
-    padding-left: var(--space-2xs);
+  /*
+    The row steps right on hover. This used to animate `padding-left` on .post
+    itself, which is a layout property: every frame re-ran layout for the whole
+    row — grid resolution, text wrapping in the excerpt, the lot — and dropped
+    frames for a purely decorative 8px nudge.
+
+    Transforming the two grid children instead is visually identical (the rule
+    is drawn by .post's own border, which must stay put — translating .post
+    would drag the hairline out of alignment with the rows above and below) and
+    runs on the compositor. Both children are grid items, so they are blockified
+    and transformable despite being spans.
+  */
+  .post__cat,
+  .post__main {
+    transition: transform var(--dur-mid) var(--ease-out);
+  }
+
+  @media (hover: hover) {
+    .post:hover .post__cat,
+    .post:hover .post__main {
+      transform: translateX(var(--space-2xs));
+    }
   }
 
   .posts li:last-child .post {
@@ -1568,8 +1702,10 @@ if (featured?.external_url) {
     transition: color var(--dur-fast) var(--ease-out);
   }
 
-  .post:hover .post__title {
-    color: var(--accent-ink);
+  @media (hover: hover) {
+    .post:hover .post__title {
+      color: var(--accent-ink);
+    }
   }
 
   .post__excerpt {
@@ -1637,8 +1773,10 @@ if (featured?.external_url) {
     transition: text-decoration-color var(--dur-fast) var(--ease-out);
   }
 
-  .faq__a :global(a:hover) {
-    text-decoration-color: var(--accent);
+  @media (hover: hover) {
+    .faq__a :global(a:hover) {
+      text-decoration-color: var(--accent);
+    }
   }
 
   /* ======================================================================
@@ -1681,6 +1819,27 @@ if (featured?.external_url) {
   .details__val--socials {
     align-items: center;
     gap: var(--space-2xs);
+  }
+
+  /*
+    Email and phone are ~22px tall as bare inline links — half a fingertip, and
+    on this row they sit side by side. Touch pointers get a 44px target; the
+    line box is unchanged, the hit area just grows around it, so the row still
+    looks identical. Gated to (pointer: coarse) so the desktop rhythm is
+    untouched.
+
+    This also catches the SocialIcon anchors, which are direct <a> children of
+    the socials row: their hit area goes to 44px *tall*. Their width still comes
+    from the 2.1rem ring inside SocialIcon.astro, which is out of scope for this
+    pass — so they end up 33.6px wide by 44px tall. Better, not yet passing.
+    Flagged in the report.
+  */
+  @media (pointer: coarse) {
+    .details__val > :global(a) {
+      display: inline-flex;
+      align-items: center;
+      min-height: 2.75rem;
+    }
   }
 
   @media (max-width: 40rem) {

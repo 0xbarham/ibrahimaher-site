@@ -1,6 +1,24 @@
 @import './tokens.css';
 
 /* ==========================================================================
+   Mobile legibility floor
+
+   --step--1 bottoms out at 0.83rem (13.28px), and it is not only used for
+   marginalia: .tool__use, .discipline__analogy, .post__excerpt, .hero__stat-label
+   and the whole contact aside set real body copy at this step. 13px body copy on
+   a phone is below the ~14px floor where sustained reading stays comfortable.
+
+   Redefined here rather than edited in tokens.css so that file stays the record
+   of the original scale. Only the *floor* moves — the 0.91rem ceiling is
+   untouched, so any viewport wide enough to have reached the top of the clamp
+   renders exactly as before. Between the two the curve differs by at most ~0.7px.
+   ========================================================================== */
+
+:root {
+  --step--1: clamp(0.875rem, 0.84rem + 0.15vw, 0.91rem);
+}
+
+/* ==========================================================================
    Base
    ========================================================================== */
 
@@ -26,13 +44,28 @@ body {
   text-rendering: optimizeLegibility;
   -webkit-font-smoothing: antialiased;
 
-  /* A whisper of warmth. Print never sits on a perfectly flat field, and the
-     absence of one is a big part of why generated pages read as synthetic.
-     Two soft gradients — no image request, no CLS. */
+}
+
+/*
+  A whisper of warmth. Print never sits on a perfectly flat field, and the
+  absence of one is a big part of why generated pages read as synthetic.
+
+  This lives on a fixed, composited layer rather than `background-attachment:
+  fixed` on <body>. That property is one of the worst offenders in mobile web
+  performance: it forces the browser to repaint the gradient on every scroll
+  frame, which is exactly the "slow and jittery" feeling it was creating here.
+  A fixed pseudo-element is promoted to its own layer and costs nothing to
+  scroll past.
+*/
+body::before {
+  content: '';
+  position: fixed;
+  inset: 0;
+  z-index: -1;
+  pointer-events: none;
   background-image:
     radial-gradient(circle at 15% 12%, var(--accent-soft), transparent 42%),
     radial-gradient(circle at 85% 88%, var(--accent-soft), transparent 46%);
-  background-attachment: fixed;
 }
 
 img,
@@ -173,11 +206,21 @@ p {
   background-repeat: no-repeat;
   transition: background-size var(--dur-mid) var(--ease-out);
   padding-bottom: 1px;
+  /* Emails, phone numbers and long URLs are the classic 320px overflow: they
+     have no spaces to break at. */
+  overflow-wrap: break-word;
 }
 
-.link:hover,
+/* :focus-visible stays outside the hover query — gating it would take the
+   underline away from keyboard users on touch-capable laptops. */
 .link:focus-visible {
   background-size: 100% 1px;
+}
+
+@media (hover: hover) {
+  .link:hover {
+    background-size: 100% 1px;
+  }
 }
 
 /* ==========================================================================
@@ -187,6 +230,14 @@ p {
 .prose {
   max-width: var(--measure);
   font-size: var(--step-0);
+  /*
+    Post bodies are the one place on the site whose content is not known at
+    build time. A bare URL, a package name or a long slug pasted into a
+    paragraph has no break opportunity, and at 320px a single such token is
+    enough to push the whole document into horizontal scroll. This only fires
+    when a word would otherwise overflow, so normal prose is unaffected.
+  */
+  overflow-wrap: break-word;
 }
 
 .prose > h2 {
@@ -216,8 +267,10 @@ p {
   transition: text-decoration-color var(--dur-fast) var(--ease-out);
 }
 
-.prose a:hover {
-  text-decoration-color: var(--accent);
+@media (hover: hover) {
+  .prose a:hover {
+    text-decoration-color: var(--accent);
+  }
 }
 
 .prose ul,
@@ -333,6 +386,22 @@ p {
   border-radius: 999px;
   padding: 0.15em 0.7em;
   white-space: nowrap;
+  max-width: 100%;
+}
+
+/*
+  Safety net, not a design change. Tags are admin-entered, and `nowrap` means a
+  pill is physically incapable of fitting a narrow screen once its text is
+  wider than the measure — it just leaves the page, taking the body scroll with
+  it. The longest tag in the database today ("OpenAI / Claude / Gemini") is
+  roughly 220px against ~280px of measure at 320px, so every current tag still
+  sits on one line and looks exactly as before. This only ever fires for a tag
+  that would otherwise overflow, and lets it take a second line instead.
+*/
+@media (max-width: 30rem) {
+  .tag {
+    white-space: normal;
+  }
 }
 
 /* ==========================================================================
@@ -357,10 +426,19 @@ p {
     background-color var(--dur-fast) var(--ease-out);
 }
 
-.btn:hover {
-  transform: translateY(-2px);
-  background: var(--accent-ink);
-  border-color: var(--accent-ink);
+/*
+  Hover effects are gated behind (hover: hover) throughout. A phone has no
+  hover state, but it *does* emulate one on tap and then leave it stuck until
+  you touch something else — so an ungated :hover reads as "this button is
+  still selected" long after you have navigated. The lift is transform-only, so
+  where it does run it never triggers layout.
+*/
+@media (hover: hover) {
+  .btn:hover {
+    transform: translateY(-2px);
+    background: var(--accent-ink);
+    border-color: var(--accent-ink);
+  }
 }
 
 .btn:active {
@@ -373,10 +451,12 @@ p {
   border-color: var(--rule-color);
 }
 
-.btn-ghost:hover {
-  background: var(--accent-soft);
-  color: var(--accent-ink);
-  border-color: var(--accent);
+@media (hover: hover) {
+  .btn-ghost:hover {
+    background: var(--accent-soft);
+    color: var(--accent-ink);
+    border-color: var(--accent);
+  }
 }
 
 /* ==========================================================================
@@ -457,6 +537,40 @@ p {
    Utility
    ========================================================================== */
 
+/*
+  Skip rendering work for sections that are far below the fold.
+
+  Deliberately mobile-only, and deliberately not applied to everything:
+
+  - Gated to (max-width: 60rem) because that is where the win is (a phone CPU
+    laying out the entire homepage on load) and because above 60rem the .rail
+    eyebrow becomes `position: sticky`. content-visibility implies paint
+    containment, and reasoning about sticky inside a paint-contained box
+    without being able to render the page is exactly the kind of guess that
+    ships a bug. Desktop is left untouched.
+
+  - `contain-intrinsic-size: auto 45rem` — the `auto` keyword makes the browser
+    remember each section's real height once it has been rendered, so the
+    45rem placeholder is only ever used for the very first estimate.
+
+  - Only applied to sections BELOW every fragment target the site actually
+    links to (see index.astro). A skipped section's height is an estimate until
+    it is first rendered, so jumping to an anchor *underneath* one can land in
+    the wrong place. Keeping every linked #target out of the skipped range
+    sidesteps that entirely rather than hoping scroll anchoring cleans it up.
+
+  The .reveal animations inside are unaffected: a view() timeline attached to a
+  skipped subtree simply has not started yet, and the section stops being
+  skipped as it approaches the viewport — which is when the animation was
+  supposed to begin anyway.
+*/
+@media (max-width: 60rem) {
+  .defer-paint {
+    content-visibility: auto;
+    contain-intrinsic-size: auto 45rem;
+  }
+}
+
 .visually-hidden {
   position: absolute;
   width: 1px;
@@ -469,21 +583,27 @@ p {
   border: 0;
 }
 
+/* Parks itself above the viewport with a transform rather than a negative
+   `top`. Same movement, but `top` is a layout property — animating it made the
+   browser re-run layout for the element on every frame of the drop-in. It is
+   only a skip link, but it is also the first thing a keyboard user ever sees
+   move on this site, so it may as well be the smooth one. */
 .skip-link {
   position: absolute;
   left: var(--space-s);
-  top: -4rem;
+  top: 0;
   z-index: 100;
   background: var(--ink);
   color: var(--paper);
   padding: var(--space-2xs) var(--space-s);
   border-radius: 0 0 6px 6px;
   text-decoration: none;
-  transition: top var(--dur-fast) var(--ease-out);
+  transform: translateY(-150%);
+  transition: transform var(--dur-fast) var(--ease-out);
 }
 
 .skip-link:focus {
-  top: 0;
+  transform: translateY(0);
 }
 
 .stack > * + * {

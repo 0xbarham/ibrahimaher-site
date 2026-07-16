@@ -95,6 +95,16 @@ const paths = PATHS[name];
       transform var(--dur-mid) var(--ease-settle);
   }
 
+  /* On touch the ring itself must reach the 44px floor: an outer rule can make
+     the anchor taller, but the ring sets the width, so the target would end up
+     ~34px wide and 44px tall — better, but still failing. */
+  @media (pointer: coarse) {
+    .social__ring {
+      width: 44px;
+      height: 44px;
+    }
+  }
+
   .social:hover,
   .social:focus-visible {
     color: var(--accent-ink);

@@ -222,9 +222,27 @@ const jsonLd = [
     margin-bottom: var(--space-s);
   }
 
+  /* The only interactive thing in the crumb trail is "Home", and as bare inline
+     text it is ~22px tall. Give the touch target real height without moving the
+     trail: the extra height is absorbed by the flex row's centring. */
+  @media (pointer: coarse) {
+    .about__crumbs :global(a) {
+      display: inline-flex;
+      align-items: center;
+      min-height: 2.75rem;
+    }
+
+    .about__crumbs {
+      margin-bottom: var(--space-2xs);
+    }
+  }
+
   .about__title {
     font-size: var(--step-4);
     margin-bottom: var(--space-m);
+    /* --step-4 is 39px at 320px; "properly" and "engineering" are the long
+       tokens here and both fit, but this costs nothing and guarantees it. */
+    overflow-wrap: break-word;
   }
 
   /* The second clause of the headline carries the accent, exactly as it did on

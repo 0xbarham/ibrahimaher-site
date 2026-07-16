@@ -249,9 +249,40 @@ const jsonLd = [
       border-color var(--dur-fast) var(--ease-out);
   }
 
-  .index__filter:hover {
-    color: var(--accent-ink);
-    border-color: var(--rule-color);
+  /*
+    These are the most-tapped controls on the page and the smallest: at
+    0.15em/0.7em on ~14px mono the pill is roughly 23px tall and, for a short
+    category, ~60px wide. That is well under the 44px guidance and they sit in
+    a wrapping row only 4px apart, so neighbouring categories are easy to hit
+    by accident.
+
+    Touch pointers get a 44px-tall pill with real horizontal padding and a 44px
+    minimum width; the row's gap opens up to match so the targets do not merge
+    into each other. The pill shape, the mono type and the accent border are all
+    unchanged — it is the same control, sized for a finger. Desktop keeps the
+    tight original.
+  */
+  @media (pointer: coarse) {
+    .index__filters {
+      gap: var(--space-2xs);
+    }
+
+    .index__filter {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 0.4em;
+      min-height: 2.75rem;
+      min-width: 2.75rem;
+      padding: 0.15em 1em;
+    }
+  }
+
+  @media (hover: hover) {
+    .index__filter:hover {
+      color: var(--accent-ink);
+      border-color: var(--rule-color);
+    }
   }
 
   .index__filter.is-active {
@@ -281,11 +312,26 @@ const jsonLd = [
     padding-block: var(--space-m);
     border-bottom: var(--rule) solid var(--rule-color);
     text-decoration: none;
-    transition: padding-left var(--dur-mid) var(--ease-out);
   }
 
-  .entry:hover {
-    padding-left: var(--space-2xs);
+  /*
+    Was `transition: padding-left` on .entry — a layout property, animated on
+    the longest list on the site. Each hover re-ran layout for the whole row,
+    including re-wrapping the excerpt, once per frame.
+
+    Now the two grid children translate instead: same 8px step, composited, and
+    the row's own border-bottom stays put so the ruled list keeps its alignment.
+  */
+  .entry__margin,
+  .entry__body {
+    transition: transform var(--dur-mid) var(--ease-out);
+  }
+
+  @media (hover: hover) {
+    .entry:hover .entry__margin,
+    .entry:hover .entry__body {
+      transform: translateX(var(--space-2xs));
+    }
   }
 
   .entry__margin {
@@ -303,8 +349,10 @@ const jsonLd = [
     transition: color var(--dur-fast) var(--ease-out);
   }
 
-  .entry:hover .entry__cat {
-    color: var(--accent);
+  @media (hover: hover) {
+    .entry:hover .entry__cat {
+      color: var(--accent);
+    }
   }
 
   .entry__body {
@@ -319,11 +367,16 @@ const jsonLd = [
     line-height: var(--leading-snug);
     letter-spacing: var(--tracking-tight);
     text-wrap: balance;
+    /* Post titles come from D1 and are not known at build time — a long
+       unbroken token in one would otherwise take the page sideways at 320px. */
+    overflow-wrap: break-word;
     transition: color var(--dur-fast) var(--ease-out);
   }
 
-  .entry:hover .entry__title {
-    color: var(--accent-ink);
+  @media (hover: hover) {
+    .entry:hover .entry__title {
+      color: var(--accent-ink);
+    }
   }
 
   .entry__excerpt {
