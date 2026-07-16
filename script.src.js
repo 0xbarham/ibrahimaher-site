@@ -73,6 +73,9 @@ themeToggle.addEventListener('click', () => {
   localStorage.setItem('theme', next);
 });
 
+// rootMargin starts the reveal while the block is still below the fold, so the
+// fade has finished by the time it is actually on screen. threshold 0 matters
+// for blocks taller than the viewport, which can never reach a 0.15 ratio.
 const revealObserver = new IntersectionObserver(
   (entries) => {
     entries.forEach((entry) => {
@@ -82,7 +85,7 @@ const revealObserver = new IntersectionObserver(
       }
     });
   },
-  { threshold: 0.15 }
+  { threshold: 0, rootMargin: '0px 0px 250px 0px' }
 );
 
 document.querySelectorAll('.reveal').forEach((el) => revealObserver.observe(el));
