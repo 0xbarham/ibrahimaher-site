@@ -1,0 +1,54 @@
+---
+export const prerender = false;
+
+import Base from '../layouts/Base.astro';
+
+// Set on the response, not just rendered: this page is also the target of
+// Astro.rewrite('/404') from /blog/[slug], and a rewritten unknown post must
+// still answer 404 rather than a 200 with apologetic text on it.
+Astro.response.status = 404;
+---
+
+<Base
+  title="Page not found | Ibrahim Maher Al-Bander"
+  description="That page does not exist."
+  noindex={true}
+>
+  <div class="shell notfound">
+    <div class="notfound__inner stagger">
+      <p class="eyebrow" style="--i:0">Error 404</p>
+      <h1 class="notfound__title" style="--i:1">This page does not exist.</h1>
+      <p class="lede" style="--i:2">
+        Either the link is wrong or I moved something and did not redirect it properly. Both are
+        fixable.
+      </p>
+      <p class="notfound__links" style="--i:3">
+        <a class="btn" href="/">Home</a>
+        <a class="link" href="/blog/">Read the writing instead</a>
+      </p>
+    </div>
+  </div>
+</Base>
+
+<style>
+  .notfound {
+    padding-block: clamp(var(--space-xl), 12vw, var(--space-3xl));
+  }
+
+  .notfound__inner {
+    max-width: var(--measure);
+  }
+
+  .notfound__title {
+    font-size: var(--step-4);
+    margin-bottom: var(--space-m);
+  }
+
+  .notfound__links {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--space-m);
+    align-items: center;
+    margin: var(--space-l) 0 0;
+  }
+</style>

@@ -1,0 +1,1431 @@
+---
+export const prerender = false;
+
+import Base from '../layouts/Base.astro';
+import {
+  getJobs,
+  getProjects,
+  getSkills,
+  getCertifications,
+  getEducation,
+  getPublishedPosts,
+  getSettings,
+  setting,
+  parseTags,
+} from '../lib/db';
+
+const [jobs, projects, skills, certifications, education, posts, settings] = await Promise.all([
+  getJobs(),
+  getProjects(),
+  getSkills(),
+  getCertifications(),
+  getEducation(),
+  getPublishedPosts(3),
+  getSettings(),
+]);
+
+const siteUrl = setting(settings, 'site_url', 'https://ibrahimaher.com').replace(/\/$/, '');
+const siteName = setting(settings, 'site_name', 'Ibrahim Maher Al-Bander');
+const siteTagline = setting(settings, 'site_tagline', 'Social Media Marketer · Accounts & Automation');
+const ogImage = setting(settings, 'default_og_image', '/assets/og-image.png');
+
+/**
+ * Several D1 columns (`company`, `title`, `tags_json`) hold HTML *source* —
+ * `&amp;`, `&middot;` — because they were lifted straight out of the old static
+ * markup. They are correct through `set:html`, but Astro escapes plain text
+ * nodes, so anything printed as text has to be decoded first or the reader sees
+ * a literal "&middot;". `&amp;` must go last so "&amp;middot;" is not
+ * double-decoded.
+ */
+const decode = (s: string): string =>
+  s
+    .replace(/&middot;/g, '·')
+    .replace(/&rarr;/g, '→')
+    .replace(/&nbsp;/g, ' ')
+    .replace(/&quot;/g, '"')
+    .replace(/&#0?39;/g, "'")
+    .replace(/&apos;/g, "'")
+    .replace(/&lt;/g, '<')
+    .replace(/&gt;/g, '>')
+    .replace(/&amp;/g, '&');
+
+/** Logo paths are stored relative ("assets/logos/…"), as the old root-level page used them. */
+const asset = (p: string): string => (/^(https?:)?\//.test(p) ? p : `/${p}`);
+
+const featured = projects.find((p) => p.featured === 1) ?? null;
+const smallProjects = projects.filter((p) => p.featured !== 1);
+
+const dateLabel = (d: string) =>
+  new Date(`${d}T00:00:00Z`).toLocaleDateString('en-GB', {
+    day: 'numeric',
+    month: 'long',
+    year: 'numeric',
+    timeZone: 'UTC',
+  });
+
+/* The four-layer framework. Ibrahim's own terminology, carried over word for
+   word from the old index.html — there is no table behind it yet.
+   `def` is deliberately one self-contained paragraph per term: it is both the
+   on-page definition and the DefinedTerm description below, so the two can
+   never drift apart, and each reads correctly lifted out of its context. */
+const disciplines = [
+  {
+    num: '01',
+    id: 'prompt-engineering',
+    term: 'Prompt Engineering',
+    def: `Optimizes the instruction. This is what most people mean when they say "AI skills": how you phrase a request, assign a persona, set formatting rules, and give clear constraints for a single interaction. It matters, but it only covers one exchange, it does not survive a long project on its own.`,
+    analogy: 'Like giving a new hire their daily task list.',
+  },
+  {
+    num: '02',
+    id: 'context-engineering',
+    term: 'Context Engineering',
+    def: `Optimizes the information. It manages what the model's context window actually sees: retrieval-augmented generation, memory management, and picking the right documents, code, or prior decisions to surface at the right moment. Bad context engineering is why AI tools "forget" things mid-project. I treat this as a first-class design problem, not an afterthought.`,
+    analogy: 'Like handing them the correct project binders before they start.',
+  },
+  {
+    num: '03',
+    id: 'harness-engineering',
+    term: 'Harness Engineering',
+    def: `Optimizes the execution environment. This is the closed-loop system around the model: what tools it can call, what guardrails stop it from doing something destructive, and how output gets validated before it is trusted. This is the layer that turns "the AI wrote something" into "the AI's work is safe to ship," and it is most of what I actually build when I automate something with n8n.`,
+    analogy:
+      'Like designing the workspace, the rules, and the oversight the employee works under.',
+  },
+  {
+    num: '04',
+    id: 'loop-engineering',
+    term: 'Loop Engineering',
+    def: `Automates the repetition. It builds on harness engineering to let agents run for hours without me watching: spawning helper agents for sub-tasks, checking their own results against a standard, and self-correcting when something is off. Sites like DAD LINK get built this way, in long autonomous passes with checkpoints, not one prompt at a time.`,
+    analogy:
+      'Like an employee who runs their own workday and only escalates what actually needs a human.',
+  },
+];
+
+/* The daily tool strip, verbatim from the old page. Paths keep the `?v=2`
+   cache-buster the D1 rows use for the n8n marks. */
+const aiTools = [
+  {
+    name: 'Claude',
+    light: 'assets/logos/claude-logo.svg',
+    dark: 'assets/logos/claude-logo-white.svg',
+    use: `Claude Code writes and ships the production code: this site, DAD LINK's build work, and the custom n8n function nodes I can't do with built-in blocks alone.`,
+  },
+  {
+    name: 'ChatGPT',
+    light: 'assets/logos/openai-logo.svg',
+    dark: 'assets/logos/openai-logo-white.svg',
+    use: `Fast day-to-day thinking: drafting client messages, brainstorming campaign angles, and quick lookups where I don't need a full coding session.`,
+  },
+  {
+    name: 'Gemini',
+    light: 'assets/logos/gemini-logo.svg',
+    dark: 'assets/logos/gemini-logo-white.svg',
+    use: `The model behind my n8n workflows that read and judge things: screening invoice emails for fraud, scoring inbound leads, and extracting structured data from documents.`,
+  },
+  {
+    name: 'n8n',
+    light: 'assets/logos/n8n-logo.svg?v=2',
+    dark: 'assets/logos/n8n-logo-white.svg?v=2',
+    use: `The automation platform that wires the models above into Gmail, Sheets, Telegram, Calendar, and GoHighLevel to run as unattended production workflows.`,
+  },
+];
+
+/* Contact rows, verbatim from the old contact section. The form itself stays
+   on /contact — these are just the details, set as labelled rows. */
+const socials = [
+  { label: 'LinkedIn', url: 'https://www.linkedin.com/in/ibrahimaher' },
+  { label: 'Facebook', url: 'https://www.facebook.com/ibmabr' },
+  { label: 'Instagram', url: 'https://www.instagram.com/ibmabr' },
+  { label: 'Telegram', url: 'https://t.me/ibmabr' },
+];
+
+const contactEmail = setting(settings, 'contact_email', 'me@ibrahimaher.com');
+
+/* The FAQ is the one block on this page with no table behind it: it was written
+   by hand in the old index.html and is carried over verbatim, answers and links
+   included. The `a` strings are HTML on purpose — they contain the same inline
+   links the original had. */
+const faqs = [
+  {
+    q: 'Who is Ibrahim Maher Al-Bander?',
+    a: 'A social media marketer, accounts and inventory officer, and freelance AI automation developer based in Erbil, Iraq, currently working three roles at Help Tech Co. Ltd. while running an independent n8n automation practice. <a href="/about">Read the full story</a>.',
+  },
+  {
+    q: 'Is he available for freelance n8n or AI automation work?',
+    a: 'Yes. He designs and deploys production n8n workflows integrating OpenAI, Claude, and Gemini for lead scoring, invoice processing, and reporting. <a href="/contact">Get in touch</a> with what you need automated.',
+  },
+  {
+    q: 'Does he do social media marketing for other businesses?',
+    a: 'His main track record is in-house at Help Tech, where he grew a Facebook page more than 500 percent and ran campaigns close to 100 percent ROI, plus an agency internship at YourVisio Media managing multiple client accounts.',
+  },
+  {
+    q: 'What is DAD LINK and did he really build it?',
+    a: '<a href="https://www.dad-link.com" target="_blank" rel="noopener">DAD LINK</a> is a live B2B e-commerce store for network cabling equipment in Iraq that he designed and shipped on Odoo with Claude Code doing most of the build work. See the <a href="#projects">Projects</a> section for details.',
+  },
+];
+
+/* JSON-LD FAQ answers are the longer, self-contained phrasings from the old
+   page's script block — not the on-page text — because a rich result is read
+   without the surrounding page for context. Carried over word for word. */
+const faqLd = [
+  {
+    q: 'Who is Ibrahim Maher Al-Bander?',
+    a: 'Ibrahim Maher Al-Bander is a social media marketer, accounts and inventory officer, and freelance AI automation developer based in Erbil, Iraq, currently working three roles at Help Tech Co. Ltd. while running an independent n8n automation practice.',
+  },
+  {
+    q: 'Is Ibrahim Al-Bander available for freelance n8n or AI automation work?',
+    a: 'Yes. He designs and deploys production n8n workflows integrating OpenAI, Claude, and Gemini for lead scoring, invoice processing, and reporting, and can be reached through the contact page on ibrahimaher.com.',
+  },
+  {
+    q: 'Does Ibrahim Al-Bander do social media marketing for other businesses?',
+    a: 'His main track record is in-house at Help Tech Co. Ltd., where he grew a Facebook page more than 500 percent and ran paid campaigns close to 100 percent ROI, plus an agency internship at YourVisio Media managing multiple client accounts.',
+  },
+  {
+    q: 'What is DAD LINK and did Ibrahim Al-Bander really build it?',
+    a: 'DAD LINK (dad-link.com) is a live B2B e-commerce store for network cabling equipment in Iraq that Ibrahim designed and shipped on Odoo with Claude Code doing most of the build work, including catalog structure, category pages, and on-page SEO.',
+  },
+];
+
+const metaTitle = setting(
+  settings,
+  'default_seo_title',
+  'Ibrahim Maher Al-Bander | Marketer & AI Automation Developer'
+);
+const metaDesc = setting(
+  settings,
+  'default_seo_description',
+  'Ibrahim Maher Al-Bander: social media marketer and AI automation developer in Erbil, Iraq, building n8n workflows, AI agents, and paid social campaigns.'
+);
+const metaKeywords =
+  'Ibrahim Maher Al-Bander, social media marketer Erbil, n8n automation developer, AI automation Iraq, AI agent developer, prompt engineering, context engineering, harness engineering, loop engineering, Claude Code developer, DAD LINK, accounts officer Erbil, social media specialist Iraq';
+
+const jsonLd: Record<string, unknown>[] = [
+  {
+    '@context': 'https://schema.org',
+    '@type': 'Person',
+    name: siteName,
+    alternateName: 'Ibrahim Al-Bander',
+    url: siteUrl,
+    image: `${siteUrl}${ogImage}`,
+    jobTitle: 'Social Media Marketing Specialist & AI Automation Developer',
+    worksFor: { '@type': 'Organization', name: 'Help Tech Co. Ltd.' },
+    address: { '@type': 'PostalAddress', addressLocality: 'Erbil', addressCountry: 'IQ' },
+    email: `mailto:${setting(settings, 'contact_email', 'me@ibrahimaher.com')}`,
+    telephone: '+964771962 0471',
+    sameAs: [
+      'https://www.linkedin.com/in/ibrahimaher',
+      'https://www.facebook.com/ibmabr',
+      'https://www.instagram.com/ibmabr',
+      'https://t.me/ibmabr',
+    ],
+    alumniOf: { '@type': 'CollegeOrUniversity', name: 'Northern Technical University' },
+    knowsAbout: [
+      'Social Media Marketing',
+      'n8n Automation',
+      'AI Workflow Development',
+      'Prompt Engineering',
+      'Context Engineering',
+      'AI Agent Harness Design',
+      'Loop Engineering',
+      'Bookkeeping',
+      'Paid Advertising',
+      'Inventory Management',
+    ],
+  },
+  {
+    '@context': 'https://schema.org',
+    '@type': 'FAQPage',
+    mainEntity: faqLd.map((f) => ({
+      '@type': 'Question',
+      name: f.q,
+      acceptedAnswer: { '@type': 'Answer', text: f.a },
+    })),
+  },
+];
+
+/* The four-layer framework as coined terminology. `description` is the exact
+   same string the page renders, so the schema can never describe something the
+   reader cannot see — the fastest way to turn a rich result into a penalty. */
+jsonLd.push({
+  '@context': 'https://schema.org',
+  '@type': 'DefinedTermSet',
+  '@id': `${siteUrl}/#ai-disciplines`,
+  name: 'Beyond prompting',
+  url: `${siteUrl}/#ai-disciplines`,
+  inLanguage: 'en',
+  creator: { '@type': 'Person', name: siteName, url: siteUrl },
+  hasDefinedTerm: disciplines.map((d) => ({
+    '@type': 'DefinedTerm',
+    '@id': `${siteUrl}/#${d.id}`,
+    name: d.term,
+    description: d.def,
+    url: `${siteUrl}/#${d.id}`,
+    inDefinedTermSet: { '@id': `${siteUrl}/#ai-disciplines` },
+  })),
+});
+
+// The DAD LINK node only exists if the featured row does — no orphan schema
+// describing a project the page is not actually showing.
+if (featured?.external_url) {
+  jsonLd.push({
+    '@context': 'https://schema.org',
+    '@type': 'CreativeWork',
+    name: 'DAD LINK',
+    url: featured.external_url,
+    description:
+      'B2B e-commerce website for network infrastructure equipment in Iraq: Cat.6 and Cat.6A structured cabling, fiber optic patch cords, server racks and cabinets, and HDMI 2.1 cables, built on Odoo with Claude Code.',
+    creator: { '@type': 'Person', name: siteName, url: siteUrl },
+    about: [
+      'Network cabling Iraq',
+      'Cat6 cable',
+      'Cat6A cable',
+      'Fiber optic patch cord',
+      'Server rack cabinet',
+      'HDMI 2.1 cable',
+      'Structured cabling',
+    ],
+  });
+}
+---
+
+<Base
+  title={metaTitle}
+  description={metaDesc}
+  canonical="/"
+  keywords={metaKeywords}
+  ogType="profile"
+  jsonLd={jsonLd}
+>
+  <div class="shell">
+    {/* ---------------------------------------------------------------- Hero */}
+    <section class="section hero stagger" aria-labelledby="hero-h">
+      <p class="eyebrow" style="--i:0">Hello, I'm</p>
+
+      <h1 class="hero__name" id="hero-h" style="--i:1">
+        Ibrahim Maher<br /><span class="hero__last">Al-Bander</span>
+      </h1>
+
+      <p class="hero__role" style="--i:2">{decode(siteTagline)}</p>
+
+      <p class="hero__tagline muted" style="--i:3">
+        Based in Erbil, Iraq &middot; growth, numbers, and n8n, done properly
+      </p>
+
+      <div class="hero__actions" style="--i:4">
+        <a class="btn" href="/contact">Get in touch</a>
+        <a class="btn btn-ghost" href="#experience">
+          See my work <span aria-hidden="true">&rarr;</span>
+        </a>
+        <a class="btn btn-ghost" href="/about">
+          More about me <span aria-hidden="true">&rarr;</span>
+        </a>
+      </div>
+
+      <p class="hero__lead" style="--i:5">
+        I work across three things at once: social media marketing, accounting and inventory
+        operations, and building AI automations with n8n. Most people specialize in one of those. I
+        have spent the last few years getting good at all three, and they feed each other more than
+        you would expect. The reporting instincts I built doing bookkeeping made my marketing
+        numbers sharper. The automation skills I picked up building workflows now save my own team
+        hours every week.
+      </p>
+
+      {/* Figures set as a rule-separated row of type rather than three stat
+          cards — the numbers are the point, the container was never the point. */}
+      <dl class="hero__stats" style="--i:6">
+        <div class="hero__stat">
+          <dt class="hero__stat-num">500%+</dt>
+          <dd class="hero__stat-label">Facebook page growth delivered</dd>
+        </div>
+        <div class="hero__stat">
+          <dt class="hero__stat-num">~100%</dt>
+          <dd class="hero__stat-label">ROI on paid campaigns</dd>
+        </div>
+        <div class="hero__stat">
+          <dt class="hero__stat-num">3</dt>
+          <dd class="hero__stat-label">roles held at once, same company</dd>
+        </div>
+      </dl>
+    </section>
+
+    {/* ---------------------------------------------------------- Experience */}
+    <section class="section" id="experience" aria-labelledby="experience-h">
+      <div class="rail">
+        <p class="eyebrow">Career</p>
+        <div>
+          <h2 class="section-title" id="experience-h">Experience</h2>
+          <p class="lede">
+            What I have actually been doing, day to day, for the last few years.
+          </p>
+
+          <div class="jobs">
+            {
+              jobs.map((job, i) => (
+                <article class="job reveal">
+                  <div class="job__aside">
+                    <span class="job__index" aria-hidden="true">
+                      {String(i + 1).padStart(2, '0')}
+                    </span>
+                    <span class="job__logo">
+                      {/* Decorative: the company name is set in type directly
+                          beside it, so an alt would only repeat the sentence. */}
+                      <img
+                        class="logo-light"
+                        src={asset(job.logo_light)}
+                        alt=""
+                        aria-hidden="true"
+                        loading="lazy"
+                        decoding="async"
+                        width="44"
+                        height="44"
+                      />
+                      {job.logo_dark && (
+                        <img
+                          class="logo-dark"
+                          src={asset(job.logo_dark)}
+                          alt=""
+                          aria-hidden="true"
+                          loading="lazy"
+                          decoding="async"
+                          width="44"
+                          height="44"
+                        />
+                      )}
+                    </span>
+                  </div>
+
+                  <div class="job__main">
+                    <p class="eyebrow">{decode(job.eyebrow)}</p>
+                    <h3 class="job__title">{decode(job.title)}</h3>
+                    <p class="job__meta">
+                      <span>{decode(job.company)}</span>
+                      <span class="job__date">{decode(job.date_range)}</span>
+                    </p>
+
+                    <div class="job__body" set:html={job.body_html} />
+
+                    {parseTags(job.tags_json).length > 0 && (
+                      <ul class="tags" aria-label={`Skills used as ${decode(job.title)}`}>
+                        {parseTags(job.tags_json).map((t) => (
+                          <li class="tag">{decode(t)}</li>
+                        ))}
+                      </ul>
+                    )}
+                  </div>
+                </article>
+              ))
+            }
+          </div>
+        </div>
+      </div>
+    </section>
+
+    {/* ------------------------------------------------------------ Projects */}
+    <section class="section" id="projects" aria-labelledby="projects-h">
+      <div class="rail">
+        <p class="eyebrow">Automation</p>
+        <div>
+          <h2 class="section-title" id="projects-h">Projects</h2>
+          <p class="lede">A few n8n builds I am genuinely proud of, outside of client work.</p>
+
+          {/* An index, not a card grid: title, rule, description. */}
+          <ul class="projects">
+            {
+              smallProjects.map((p) => (
+                <li class="project reveal">
+                  {p.icon_light && (
+                    <span class="project__icon">
+                      <img
+                        class="logo-light"
+                        src={asset(p.icon_light)}
+                        alt=""
+                        aria-hidden="true"
+                        loading="lazy"
+                        decoding="async"
+                        width="26"
+                        height="26"
+                      />
+                      {p.icon_dark && (
+                        <img
+                          class="logo-dark"
+                          src={asset(p.icon_dark)}
+                          alt=""
+                          aria-hidden="true"
+                          loading="lazy"
+                          decoding="async"
+                          width="26"
+                          height="26"
+                        />
+                      )}
+                    </span>
+                  )}
+                  <div class="project__main">
+                    <h3 class="project__title">{decode(p.title)}</h3>
+                    <div class="project__body" set:html={p.body_html} />
+                    {parseTags(p.tags_json).length > 0 && (
+                      <ul class="tags">
+                        {parseTags(p.tags_json).map((t) => (
+                          <li class="tag">{decode(t)}</li>
+                        ))}
+                      </ul>
+                    )}
+                  </div>
+                </li>
+              ))
+            }
+          </ul>
+
+          {
+            featured && (
+              <article class="featured reveal" aria-labelledby="featured-h">
+                <p class="eyebrow">Featured build</p>
+                <h3 class="featured__title" id="featured-h">
+                  {decode(featured.title)}
+                </h3>
+
+                {featured.featured_logo && (
+                  <img
+                    class="featured__logo"
+                    src={asset(featured.featured_logo)}
+                    alt="DAD LINK logo"
+                    loading="lazy"
+                    decoding="async"
+                    width="120"
+                    height="60"
+                  />
+                )}
+
+                <div class="featured__body" set:html={featured.body_html} />
+
+                {parseTags(featured.tags_json).length > 0 && (
+                  <ul class="tags">
+                    {parseTags(featured.tags_json).map((t) => (
+                      <li class="tag">{decode(t)}</li>
+                    ))}
+                  </ul>
+                )}
+
+                {featured.external_url && (
+                  <a
+                    class="btn featured__cta"
+                    href={featured.external_url}
+                    target="_blank"
+                    rel="noopener"
+                  >
+                    {decode(featured.external_label || 'Visit')}{' '}
+                    <span aria-hidden="true">&rarr;</span>
+                  </a>
+                )}
+              </article>
+            )
+          }
+        </div>
+      </div>
+    </section>
+
+    {/* -------------------------------------------- Beyond prompting (terms) */}
+    <section class="section" id="ai-disciplines" aria-labelledby="ai-disciplines-h">
+      <div class="rail">
+        <p class="eyebrow">How I actually use AI</p>
+        <div>
+          <h2 class="section-title" id="ai-disciplines-h">Beyond prompting</h2>
+          <p class="lede">
+            Anyone can type a clever prompt into a chat window. Getting an AI model to do real,
+            unattended, production-grade work, like building and shipping the DAD LINK storefront
+            above, takes four distinct layers of skill, and most people who claim to "know AI" have
+            only touched the first one.
+          </p>
+
+          {/* Each term is a heading followed immediately by its definition
+              paragraph, with a stable id — so the passage is directly linkable
+              and lifts out cleanly on its own. The number and the analogy sit
+              outside the definition deliberately: they are commentary, and
+              anything quoting the definition should get only the definition. */}
+          <ol class="disciplines">
+            {
+              disciplines.map((d) => (
+                <li class="discipline reveal">
+                  <span class="discipline__num" aria-hidden="true">
+                    {d.num}
+                  </span>
+                  <div class="discipline__main">
+                    <h3 class="discipline__term" id={d.id}>
+                      {d.term}
+                    </h3>
+                    <p class="discipline__def">{d.def}</p>
+                    <p class="discipline__analogy">{d.analogy}</p>
+                  </div>
+                </li>
+              ))
+            }
+          </ol>
+
+          {/* Tools as a labelled row of type: name, mark, and what it is for. */}
+          <section class="tools" aria-labelledby="ai-tools-h">
+            <h3 class="eyebrow" id="ai-tools-h">AI tools I use daily</h3>
+            <dl class="tools__list">
+              {
+                aiTools.map((t) => (
+                  <div class="tool reveal">
+                    <dt class="tool__name">
+                      <span class="tool__mark">
+                        <img
+                          class="logo-light"
+                          src={asset(t.light)}
+                          alt=""
+                          aria-hidden="true"
+                          loading="lazy"
+                          decoding="async"
+                          width="20"
+                          height="20"
+                        />
+                        <img
+                          class="logo-dark"
+                          src={asset(t.dark)}
+                          alt=""
+                          aria-hidden="true"
+                          loading="lazy"
+                          decoding="async"
+                          width="20"
+                          height="20"
+                        />
+                      </span>
+                      {t.name}
+                    </dt>
+                    <dd class="tool__use">{t.use}</dd>
+                  </div>
+                ))
+              }
+            </dl>
+          </section>
+        </div>
+      </div>
+    </section>
+
+    {/* -------------------------------------------------------------- Skills */}
+    <section class="section" id="skills" aria-labelledby="skills-h">
+      <div class="rail">
+        <p class="eyebrow">Toolkit</p>
+        <div>
+          <h2 class="section-title" id="skills-h">Skills</h2>
+
+          <ul class="skills">
+            {
+              skills.map((s) => (
+                <li class="skill reveal">
+                  <h3 class="skill__title">{decode(s.category)}</h3>
+                  <p class="skill__sub muted">{decode(s.subtitle)}</p>
+                  <ul class="tags">
+                    {parseTags(s.tags_json).map((t) => (
+                      <li class="tag">{decode(t)}</li>
+                    ))}
+                  </ul>
+                </li>
+              ))
+            }
+          </ul>
+        </div>
+      </div>
+    </section>
+
+    {/* ----------------------------------------------------------- Education */}
+    <section class="section" id="education" aria-labelledby="education-h">
+      <div class="rail">
+        <p class="eyebrow">Background</p>
+        <div>
+          <h2 class="section-title" id="education-h">Education</h2>
+
+          {
+            education.map((e) => (
+              <article class="edu reveal">
+                <h3 class="edu__title">{decode(e.title)}</h3>
+                <p class="edu__meta">
+                  <span>{decode(e.school)}</span>
+                  <span class="muted">{decode(e.date_range)}</span>
+                </p>
+                <div class="edu__body" set:html={e.body_html} />
+              </article>
+            ))
+          }
+        </div>
+      </div>
+    </section>
+
+    {/* ------------------------------------------------------ Certifications */}
+    <section class="section" id="certifications" aria-labelledby="certifications-h">
+      <div class="rail">
+        <p class="eyebrow">Credentials</p>
+        <div>
+          <h2 class="section-title" id="certifications-h">Certifications</h2>
+          <p class="lede">
+            Courses and certificates I completed to back up what I already do in practice.
+          </p>
+
+          {/* Set like a printed credits list: name left, issuer right, hairline between. */}
+          <ul class="certs">
+            {
+              certifications.map((c) => (
+                <li class="cert reveal">
+                  <span class="cert__title">{decode(c.title)}</span>
+                  <span class="cert__issuer muted">{decode(c.issuer)}</span>
+                </li>
+              ))
+            }
+          </ul>
+        </div>
+      </div>
+    </section>
+
+    {/* ---------------------------------------------------------------- Blog */}
+    <section class="section" id="blog" aria-labelledby="blog-h">
+      <div class="rail">
+        <p class="eyebrow">Writing</p>
+        <div>
+          <h2 class="section-title" id="blog-h">From the blog</h2>
+          <p class="lede">
+            Notes on AI automation, social media marketing, and shipping real software with AI
+            tools, written from doing the work, not from a marketing deck.
+          </p>
+
+          {
+            posts.length > 0 && (
+              <ul class="posts">
+                {posts.map((p) => (
+                  <li class="reveal">
+                    <a class="post" href={`/blog/${p.slug}`}>
+                      <span class="post__cat">{p.category}</span>
+                      <span class="post__main">
+                        <span class="post__title">{p.title}</span>
+                        <span class="post__excerpt muted">{p.excerpt}</span>
+                        <span class="post__meta muted">
+                          <time datetime={p.post_date}>{dateLabel(p.post_date)}</time>
+                          <span aria-hidden="true">&middot;</span>
+                          <span>{p.read_time}</span>
+                        </span>
+                      </span>
+                    </a>
+                  </li>
+                ))}
+              </ul>
+            )
+          }
+
+          <a class="btn" href="/blog/">Read the blog <span aria-hidden="true">&rarr;</span></a>
+        </div>
+      </div>
+    </section>
+
+    {/* ----------------------------------------------------------------- FAQ */}
+    <section class="section" id="faq" aria-labelledby="faq-h">
+      <div class="rail">
+        <p class="eyebrow">Quick answers</p>
+        <div>
+          <h2 class="section-title" id="faq-h">Frequently asked</h2>
+          <p class="lede">The questions people usually have before reaching out.</p>
+
+          <dl class="faq">
+            {
+              faqs.map((f) => (
+                <div class="faq__item reveal">
+                  <dt class="faq__q">{f.q}</dt>
+                  <dd class="faq__a" set:html={f.a} />
+                </div>
+              ))
+            }
+          </dl>
+        </div>
+      </div>
+    </section>
+
+    {/* ------------------------------------------------------------- Contact */}
+    <section class="section" id="contact" aria-labelledby="contact-h">
+      <div class="rail">
+        <p class="eyebrow">Get in touch</p>
+        <div>
+          <h2 class="section-title" id="contact-h">Let's talk</h2>
+          <p class="lede">
+            Whether it is a marketing role, an accounts position, or an automation project that
+            needs building properly, I would like to hear about it.
+          </p>
+          <a class="btn" href="/contact">
+            Go to contact page <span aria-hidden="true">&rarr;</span>
+          </a>
+
+          {/* The details themselves — labelled rows, no form. The form lives
+              on /contact and is not duplicated here. */}
+          <dl class="details">
+            <div class="details__row">
+              <dt class="details__label">Email</dt>
+              <dd class="details__val">
+                <a class="link" href={`mailto:${contactEmail}`}>{contactEmail}</a>
+                <a class="link" href="tel:+9647719620471">+964 (0)771 962 0471</a>
+              </dd>
+            </div>
+            <div class="details__row">
+              <dt class="details__label">Social</dt>
+              <dd class="details__val">
+                {
+                  socials.map((s) => (
+                    <a class="link" href={s.url} target="_blank" rel="noopener">
+                      {s.label}
+                    </a>
+                  ))
+                }
+              </dd>
+            </div>
+            <div class="details__row">
+              <dt class="details__label">Location</dt>
+              <dd class="details__val"><span>Erbil, Iraq</span></dd>
+            </div>
+          </dl>
+        </div>
+      </div>
+    </section>
+  </div>
+</Base>
+
+<style>
+  /* ======================================================================
+     Light/dark logo swap. The old site had .logo-light/.logo-dark globals;
+     they are not in the new system, so the pair is scoped here — the only
+     place on the site that ships two-tone marks.
+     ====================================================================== */
+  .logo-dark {
+    display: none;
+  }
+
+  :root[data-theme='dark'] .logo-light {
+    display: none;
+  }
+
+  :root[data-theme='dark'] .logo-dark {
+    display: block;
+  }
+
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme='light']) .logo-light {
+      display: none;
+    }
+
+    :root:not([data-theme='light']) .logo-dark {
+      display: block;
+    }
+  }
+
+  /* ======================================================================
+     Hero — the one place the type is allowed to shout.
+     ====================================================================== */
+  .hero {
+    padding-top: clamp(var(--space-l), 7vw, var(--space-2xl));
+  }
+
+  .hero__name {
+    font-size: var(--step-6);
+    margin-bottom: var(--space-s);
+  }
+
+  .hero__last {
+    color: var(--accent-ink);
+  }
+
+  .hero__role {
+    font-family: var(--font-display);
+    font-size: var(--step-2);
+    font-weight: 500;
+    line-height: var(--leading-snug);
+    letter-spacing: var(--tracking-tight);
+    margin-bottom: var(--space-2xs);
+  }
+
+  .hero__tagline {
+    font-size: var(--step-0);
+    margin-bottom: var(--space-l);
+  }
+
+  .hero__actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--space-2xs) var(--space-xs);
+    margin-bottom: var(--space-l);
+  }
+
+  .hero__lead {
+    max-width: var(--measure);
+    font-size: var(--step-1);
+    line-height: 1.5;
+    color: var(--ink-2);
+    /* A hanging rule in the margin — marginalia, not a border-box. */
+    border-left: 2px solid var(--accent);
+    padding-left: var(--space-m);
+    margin-bottom: var(--space-l);
+  }
+
+  .hero__stats {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--space-s) 0;
+    margin: 0;
+    padding-top: var(--space-m);
+    border-top: var(--rule) solid var(--rule-color);
+  }
+
+  .hero__stat {
+    flex: 1 1 12rem;
+    padding-right: var(--space-m);
+  }
+
+  .hero__stat + .hero__stat {
+    padding-left: var(--space-m);
+    border-left: var(--rule) solid var(--rule-color);
+  }
+
+  .hero__stat-num {
+    display: block;
+    font-family: var(--font-display);
+    font-size: var(--step-3);
+    font-weight: 600;
+    line-height: var(--leading-tight);
+    letter-spacing: var(--tracking-tight);
+    color: var(--accent-ink);
+  }
+
+  .hero__stat-label {
+    display: block;
+    margin: var(--space-3xs) 0 0;
+    font-size: var(--step--1);
+    line-height: var(--leading-snug);
+    color: var(--ink-3);
+  }
+
+  /* ======================================================================
+     Experience — a dated index, the way a CV reads in print.
+     ====================================================================== */
+  .jobs {
+    margin-top: var(--space-l);
+  }
+
+  .job {
+    display: grid;
+    grid-template-columns: 3.5rem minmax(0, 1fr);
+    gap: var(--space-m);
+    padding-block: var(--space-l);
+    border-top: var(--rule) solid var(--rule-color);
+  }
+
+  .job:first-child {
+    padding-top: 0;
+    border-top: 0;
+  }
+
+  .job__aside {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-2xs);
+    align-items: flex-start;
+  }
+
+  .job__index {
+    font-family: var(--font-mono);
+    font-size: var(--step--1);
+    color: var(--ink-3);
+    letter-spacing: var(--tracking-wide);
+  }
+
+  .job__logo img {
+    width: 44px;
+    height: 44px;
+    object-fit: contain;
+  }
+
+  .job__title {
+    font-size: var(--step-2);
+    margin-bottom: var(--space-3xs);
+  }
+
+  .job__meta {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--space-3xs) var(--space-2xs);
+    align-items: baseline;
+    font-size: var(--step--1);
+    color: var(--ink-3);
+    margin-bottom: var(--space-s);
+  }
+
+  .job__date {
+    font-family: var(--font-mono);
+    letter-spacing: var(--tracking-wide);
+  }
+
+  .job__date::before {
+    content: '\2014';
+    margin-right: var(--space-2xs);
+  }
+
+  .job__body,
+  .project__body,
+  .featured__body,
+  .edu__body {
+    max-width: var(--measure);
+    color: var(--ink-2);
+  }
+
+  .job__body :global(p:last-child),
+  .project__body :global(p:last-child),
+  .featured__body :global(p:last-child),
+  .edu__body :global(p:last-child) {
+    margin-bottom: 0;
+  }
+
+  @media (max-width: 40rem) {
+    .job {
+      grid-template-columns: 1fr;
+      gap: var(--space-s);
+    }
+
+    .job__aside {
+      flex-direction: row;
+      align-items: center;
+      gap: var(--space-s);
+    }
+  }
+
+  /* ======================================================================
+     Projects
+     ====================================================================== */
+  .projects {
+    list-style: none;
+    padding: 0;
+    margin: var(--space-l) 0 0;
+  }
+
+  .project {
+    display: grid;
+    grid-template-columns: 2rem minmax(0, 1fr);
+    gap: var(--space-m);
+    padding-block: var(--space-m);
+    border-top: var(--rule) solid var(--rule-color);
+  }
+
+  .project:first-child {
+    padding-top: 0;
+    border-top: 0;
+  }
+
+  .project__icon img {
+    width: 26px;
+    height: 26px;
+    object-fit: contain;
+    margin-top: 0.35em;
+  }
+
+  .project__title {
+    font-size: var(--step-1);
+    margin-bottom: var(--space-2xs);
+  }
+
+  @media (max-width: 40rem) {
+    .project {
+      grid-template-columns: 1fr;
+      gap: var(--space-2xs);
+    }
+  }
+
+  /* The featured build earns its weight from size and a single accent rule
+     across the top, not from a shadowed box. */
+  .featured {
+    margin-top: var(--space-xl);
+    padding-top: var(--space-m);
+    border-top: 2px solid var(--accent);
+  }
+
+  .featured__title {
+    font-size: var(--step-3);
+    max-width: var(--measure);
+    margin-bottom: var(--space-m);
+  }
+
+  .featured__logo {
+    width: 120px;
+    height: auto;
+    object-fit: contain;
+    margin-bottom: var(--space-m);
+  }
+
+  .featured__body {
+    font-size: var(--step-0);
+  }
+
+  .featured__body :global(p) {
+    margin-bottom: var(--space-m);
+  }
+
+  .featured__cta {
+    margin-top: var(--space-m);
+  }
+
+  /* ======================================================================
+     Beyond prompting — a numbered definition list. The number hangs in the
+     margin like a footnote marker; the rule does the separating.
+     ====================================================================== */
+  .disciplines {
+    list-style: none;
+    padding: 0;
+    margin: var(--space-l) 0 0;
+    counter-reset: none;
+  }
+
+  .discipline {
+    display: grid;
+    grid-template-columns: 2.5rem minmax(0, 1fr);
+    gap: var(--space-m);
+    padding-block: var(--space-m);
+    border-top: var(--rule) solid var(--rule-color);
+  }
+
+  .discipline:first-child {
+    padding-top: 0;
+    border-top: 0;
+  }
+
+  .discipline__num {
+    font-family: var(--font-mono);
+    font-size: var(--step--1);
+    letter-spacing: var(--tracking-wide);
+    color: var(--accent-ink);
+    padding-top: 0.35em;
+  }
+
+  .discipline__term {
+    font-size: var(--step-2);
+    margin-bottom: var(--space-2xs);
+    scroll-margin-top: 5rem;
+  }
+
+  .discipline__def {
+    max-width: var(--measure);
+    color: var(--ink-2);
+    margin-bottom: var(--space-xs);
+  }
+
+  /* The analogy is an aside, and is set like one. */
+  .discipline__analogy {
+    max-width: var(--measure);
+    margin: 0;
+    padding-left: var(--space-s);
+    border-left: 2px solid var(--accent);
+    font-size: var(--step--1);
+    line-height: var(--leading-snug);
+    color: var(--ink-3);
+  }
+
+  @media (max-width: 40rem) {
+    .discipline {
+      grid-template-columns: 1fr;
+      gap: var(--space-3xs);
+    }
+
+    .discipline__num {
+      padding-top: 0;
+    }
+  }
+
+  /* ======================================================================
+     Tools — a typographic row, not a logo wall.
+     ====================================================================== */
+  .tools {
+    margin-top: var(--space-xl);
+    padding-top: var(--space-m);
+    border-top: var(--rule) solid var(--rule-color);
+  }
+
+  .tools__list {
+    margin: var(--space-s) 0 0;
+  }
+
+  .tool {
+    display: grid;
+    grid-template-columns: 9rem minmax(0, 1fr);
+    gap: var(--space-s);
+    align-items: baseline;
+    padding-block: var(--space-xs);
+    border-bottom: var(--rule) solid var(--rule-color);
+  }
+
+  .tool:last-child {
+    border-bottom: 0;
+    padding-bottom: 0;
+  }
+
+  .tool__name {
+    display: flex;
+    align-items: center;
+    gap: var(--space-2xs);
+    font-family: var(--font-display);
+    font-weight: 600;
+    line-height: var(--leading-snug);
+  }
+
+  .tool__mark img {
+    width: 20px;
+    height: 20px;
+    object-fit: contain;
+  }
+
+  .tool__use {
+    max-width: var(--measure);
+    margin: 0;
+    font-size: var(--step--1);
+    line-height: var(--leading-snug);
+    color: var(--ink-2);
+  }
+
+  @media (max-width: 40rem) {
+    .tool {
+      grid-template-columns: 1fr;
+      gap: var(--space-3xs);
+    }
+  }
+
+  /* ======================================================================
+     Skills
+     ====================================================================== */
+  .skills {
+    list-style: none;
+    padding: 0;
+    margin: var(--space-l) 0 0;
+  }
+
+  .skill {
+    padding-block: var(--space-m);
+    border-top: var(--rule) solid var(--rule-color);
+  }
+
+  .skill:first-child {
+    padding-top: 0;
+    border-top: 0;
+  }
+
+  .skill__title {
+    font-size: var(--step-1);
+  }
+
+  .skill__sub {
+    font-size: var(--step--1);
+    margin: var(--space-3xs) 0 0;
+  }
+
+  /* ======================================================================
+     Education
+     ====================================================================== */
+  .edu__title {
+    font-size: var(--step-2);
+    margin-bottom: var(--space-3xs);
+  }
+
+  .edu__meta {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--space-3xs) var(--space-2xs);
+    align-items: baseline;
+    font-size: var(--step--1);
+    color: var(--ink-2);
+    margin-bottom: var(--space-s);
+  }
+
+  /* ======================================================================
+     Certifications — a credits list.
+     ====================================================================== */
+  .certs {
+    list-style: none;
+    padding: 0;
+    margin: var(--space-l) 0 0;
+  }
+
+  .cert {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--space-3xs) var(--space-m);
+    justify-content: space-between;
+    align-items: baseline;
+    padding-block: var(--space-xs);
+    border-bottom: var(--rule) solid var(--rule-color);
+  }
+
+  .cert:first-child {
+    border-top: var(--rule) solid var(--rule-color);
+  }
+
+  .cert__title {
+    font-family: var(--font-display);
+    font-weight: 600;
+    line-height: var(--leading-snug);
+  }
+
+  .cert__issuer {
+    font-family: var(--font-mono);
+    font-size: var(--step--1);
+  }
+
+  /* ======================================================================
+     Blog — same index treatment as the related list on a post page.
+     ====================================================================== */
+  .posts {
+    list-style: none;
+    padding: 0;
+    margin: var(--space-l) 0;
+  }
+
+  .post {
+    display: grid;
+    grid-template-columns: 8rem minmax(0, 1fr);
+    gap: var(--space-s);
+    align-items: baseline;
+    padding-block: var(--space-s);
+    border-top: var(--rule) solid var(--rule-color);
+    text-decoration: none;
+    transition: padding-left var(--dur-mid) var(--ease-out);
+  }
+
+  .post:hover {
+    padding-left: var(--space-2xs);
+  }
+
+  .posts li:last-child .post {
+    border-bottom: var(--rule) solid var(--rule-color);
+  }
+
+  .post__cat {
+    font-family: var(--font-mono);
+    font-size: var(--step--1);
+    text-transform: uppercase;
+    letter-spacing: var(--tracking-wide);
+    color: var(--ink-3);
+  }
+
+  .post__title {
+    display: block;
+    font-family: var(--font-display);
+    font-size: var(--step-1);
+    font-weight: 600;
+    line-height: var(--leading-snug);
+    letter-spacing: var(--tracking-tight);
+    transition: color var(--dur-fast) var(--ease-out);
+  }
+
+  .post:hover .post__title {
+    color: var(--accent-ink);
+  }
+
+  .post__excerpt {
+    display: block;
+    max-width: var(--measure);
+    margin-top: var(--space-3xs);
+    font-size: var(--step--1);
+    line-height: var(--leading-snug);
+  }
+
+  .post__meta {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--space-2xs);
+    margin-top: var(--space-2xs);
+    font-family: var(--font-mono);
+    font-size: var(--step--1);
+  }
+
+  @media (max-width: 40rem) {
+    .post {
+      grid-template-columns: 1fr;
+      gap: var(--space-3xs);
+    }
+  }
+
+  /* ======================================================================
+     FAQ
+     ====================================================================== */
+  .faq {
+    margin: var(--space-l) 0 0;
+  }
+
+  .faq__item {
+    padding-block: var(--space-m);
+    border-top: var(--rule) solid var(--rule-color);
+  }
+
+  .faq__item:first-child {
+    padding-top: 0;
+    border-top: 0;
+  }
+
+  .faq__q {
+    font-family: var(--font-display);
+    font-size: var(--step-1);
+    font-weight: 600;
+    line-height: var(--leading-snug);
+    letter-spacing: var(--tracking-tight);
+    margin-bottom: var(--space-2xs);
+  }
+
+  .faq__a {
+    max-width: var(--measure);
+    margin: 0;
+    color: var(--ink-2);
+  }
+
+  .faq__a :global(a) {
+    color: var(--accent-ink);
+    text-decoration: underline;
+    text-underline-offset: 0.18em;
+    text-decoration-thickness: 1px;
+    text-decoration-color: color-mix(in oklab, var(--accent) 45%, transparent);
+    transition: text-decoration-color var(--dur-fast) var(--ease-out);
+  }
+
+  .faq__a :global(a:hover) {
+    text-decoration-color: var(--accent);
+  }
+
+  /* ======================================================================
+     Contact details — labelled rows.
+     ====================================================================== */
+  .details {
+    margin: var(--space-l) 0 0;
+    max-width: var(--measure);
+  }
+
+  .details__row {
+    display: grid;
+    grid-template-columns: 7rem minmax(0, 1fr);
+    gap: var(--space-s);
+    align-items: baseline;
+    padding-block: var(--space-xs);
+    border-top: var(--rule) solid var(--rule-color);
+  }
+
+  .details__row:last-child {
+    border-bottom: var(--rule) solid var(--rule-color);
+  }
+
+  .details__label {
+    font-family: var(--font-mono);
+    font-size: var(--step--1);
+    letter-spacing: var(--tracking-wide);
+    text-transform: uppercase;
+    color: var(--ink-3);
+  }
+
+  .details__val {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--space-3xs) var(--space-m);
+    margin: 0;
+  }
+
+  @media (max-width: 40rem) {
+    .details__row {
+      grid-template-columns: 1fr;
+      gap: var(--space-3xs);
+    }
+  }
+</style>

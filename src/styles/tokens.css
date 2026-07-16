@@ -94,6 +94,13 @@
   --accent-ink: #a8442a;
   --accent-soft: rgba(217, 119, 87, 0.12);
 
+  /* Status. Terracotta sits close to red, so a form error tinted with --accent
+     would be indistinguishable from success. --danger is deliberately pushed
+     cooler and darker to stay separable, and success is pulled green so the two
+     states never rely on wording alone. */
+  --danger: #b3261e;
+  --success: #1f6f4a;
+
   /* --- Motion ----------------------------------------------------------
      Editorial motion is *paced*, not bouncy: things settle rather than spring.
      One shared easing keeps the whole site feeling like one hand made it. */
@@ -132,6 +139,9 @@
   --accent: #e08a69;
   --accent-ink: #f0a583;
   --accent-soft: rgba(224, 138, 105, 0.16);
+  /* Status colours also need lifting to stay legible on dark paper. */
+  --danger: #f2837b;
+  --success: #6fc79b;
 }
 
 @media (prefers-color-scheme: dark) {
@@ -147,5 +157,7 @@
     --accent: #e08a69;
     --accent-ink: #f0a583;
     --accent-soft: rgba(224, 138, 105, 0.16);
+    --danger: #f2837b;
+    --success: #6fc79b;
   }
 }

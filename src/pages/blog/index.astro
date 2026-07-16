@@ -1,0 +1,360 @@
+---
+export const prerender = false;
+
+import Base from '../../layouts/Base.astro';
+import { getPublishedPosts, getAuthor, getSettings, setting } from '../../lib/db';
+import { markdownToText, readingTime } from '../../lib/markdown';
+
+const [posts, settings, author] = await Promise.all([
+  getPublishedPosts(),
+  getSettings(),
+  getAuthor(1),
+]);
+
+const siteUrl = setting(settings, 'site_url', 'https://ibrahimaher.com').replace(/\/$/, '');
+const authorName = author?.name ?? setting(settings, 'site_name', 'Ibrahim Maher Al-Bander');
+
+// Categories in the order they first appear in the (already date-sorted) list,
+// so the filter bar reflects what Ibrahim actually writes about most recently
+// rather than an alphabetical list that means nothing to a reader.
+const categories = [...new Set(posts.map((p) => p.category).filter(Boolean))];
+
+/**
+ * Filtering is server-first: /blog/?category=Automation renders a filtered page
+ * with no JS at all. The client script below then re-uses the exact same
+ * `hidden` attribute to filter in place, so enhanced and unenhanced behaviour
+ * cannot drift apart. Every post is always in the DOM — the filter only hides.
+ */
+const requested = Astro.url.searchParams.get('category');
+const active = requested && categories.includes(requested) ? requested : null;
+
+const dateLabel = (d: string) =>
+  new Date(`${d}T00:00:00Z`).toLocaleDateString('en-GB', {
+    day: 'numeric',
+    month: 'long',
+    year: 'numeric',
+    timeZone: 'UTC',
+  });
+
+const rows = posts.map((post) => ({
+  post,
+  href: `/blog/${post.slug}`,
+  label: dateLabel(post.post_date),
+  excerpt: post.excerpt || markdownToText(post.body_md, 160),
+  readTime: post.read_time || readingTime(post.body_md),
+}));
+
+const metaTitle = `Writing | ${authorName}`;
+const metaDesc = setting(
+  settings,
+  'default_seo_description',
+  'Notes on AI automation, n8n workflows, social media marketing, and AI-assisted software development.'
+);
+
+const jsonLd = [
+  {
+    '@context': 'https://schema.org',
+    '@type': 'Blog',
+    '@id': `${siteUrl}/blog/`,
+    url: `${siteUrl}/blog/`,
+    name: `${authorName}'s Blog`,
+    description: metaDesc,
+    inLanguage: 'en',
+    author: {
+      '@type': 'Person',
+      name: authorName,
+      url: author?.profile_url || `${siteUrl}/about`,
+    },
+    publisher: { '@type': 'Person', name: authorName, url: siteUrl },
+    blogPost: posts.map((p) => ({
+      '@type': 'BlogPosting',
+      headline: p.title,
+      url: `${siteUrl}/blog/${p.slug}`,
+      datePublished: p.created_at || `${p.post_date}T00:00:00Z`,
+      articleSection: p.category,
+    })),
+  },
+  {
+    '@context': 'https://schema.org',
+    '@type': 'BreadcrumbList',
+    itemListElement: [
+      { '@type': 'ListItem', position: 1, name: 'Home', item: `${siteUrl}/` },
+      { '@type': 'ListItem', position: 2, name: 'Writing', item: `${siteUrl}/blog/` },
+    ],
+  },
+];
+---
+
+<Base
+  title={metaTitle}
+  description={metaDesc}
+  canonical="/blog/"
+  keywords="Ibrahim Al-Bander blog, AI automation blog, n8n blog, social media marketing blog, AI assisted development, Erbil Iraq tech blog"
+  jsonLd={jsonLd}
+>
+  <div class="shell index">
+    <header class="index__head stagger">
+      <p class="eyebrow" style="--i:0">Writing</p>
+      <h1 class="index__title" style="--i:1">
+        Notes from <span class="index__accent">doing the work</span>
+      </h1>
+      <p class="lede index__lede" style="--i:2">
+        AI automation, n8n workflows, social media marketing, and what it actually takes to build
+        and ship software with AI tools instead of a CS degree. Written from experience, not from
+        a content calendar.
+      </p>
+    </header>
+
+    {
+      categories.length > 1 && (
+        <nav class="index__filters" aria-label="Filter by category" data-filters>
+          <a
+            class:list={['index__filter', { 'is-active': !active }]}
+            href="/blog/"
+            data-filter="*"
+            aria-current={!active ? 'true' : undefined}
+          >
+            All <span class="index__count">{posts.length}</span>
+          </a>
+          {categories.map((cat) => (
+            <a
+              class:list={['index__filter', { 'is-active': active === cat }]}
+              href={`/blog/?category=${encodeURIComponent(cat)}`}
+              data-filter={cat}
+              aria-current={active === cat ? 'true' : undefined}
+            >
+              {cat} <span class="index__count">{posts.filter((p) => p.category === cat).length}</span>
+            </a>
+          ))}
+        </nav>
+      )
+    }
+
+    {/* A printed table of contents, not a grid of cards: date and category sit
+        out in the margin, the title carries the row. */}
+    <ol class="index__list" data-list>
+      {
+        rows.map(({ post, href, label, excerpt, readTime }) => (
+          <li class="reveal" data-category={post.category} hidden={active ? active !== post.category : undefined}>
+            <a class="entry" href={href}>
+              <span class="entry__margin">
+                <time class="entry__date" datetime={post.post_date}>
+                  {label}
+                </time>
+                <span class="entry__cat">{post.category}</span>
+              </span>
+              <span class="entry__body">
+                <span class="entry__title">{post.title}</span>
+                {excerpt && <span class="entry__excerpt">{excerpt}</span>}
+                <span class="entry__read">{readTime}</span>
+              </span>
+            </a>
+          </li>
+        ))
+      }
+    </ol>
+
+    <p class="index__empty muted" data-empty hidden>Nothing filed under that heading yet.</p>
+  </div>
+</Base>
+
+<script>
+  // Progressive enhancement only. Without JS the same links round-trip to the
+  // server, which sets the identical `hidden` attributes — so this script never
+  // becomes load-bearing, it just removes the page reload.
+  const filters = document.querySelector<HTMLElement>('[data-filters]');
+  const list = document.querySelector<HTMLElement>('[data-list]');
+  const empty = document.querySelector<HTMLElement>('[data-empty]');
+
+  if (filters && list) {
+    const apply = (cat: string) => {
+      let shown = 0;
+      list.querySelectorAll<HTMLLIElement>('li').forEach((li) => {
+        const match = cat === '*' || li.dataset.category === cat;
+        li.hidden = !match;
+        if (match) shown++;
+      });
+
+      filters.querySelectorAll<HTMLAnchorElement>('[data-filter]').forEach((a) => {
+        const on = a.dataset.filter === cat;
+        a.classList.toggle('is-active', on);
+        if (on) a.setAttribute('aria-current', 'true');
+        else a.removeAttribute('aria-current');
+      });
+
+      if (empty) empty.hidden = shown > 0;
+    };
+
+    filters.addEventListener('click', (e) => {
+      const link = (e.target as HTMLElement).closest<HTMLAnchorElement>('[data-filter]');
+      if (!link) return;
+      // Let modified clicks (new tab, etc.) behave normally.
+      if (e.metaKey || e.ctrlKey || e.shiftKey || e.altKey) return;
+      e.preventDefault();
+      const cat = link.dataset.filter || '*';
+      apply(cat);
+      history.pushState({ cat }, '', link.getAttribute('href') || '/blog/');
+    });
+
+    // Back/forward must put the list back where the reader left it.
+    addEventListener('popstate', () => {
+      const cat = new URL(location.href).searchParams.get('category');
+      apply(cat || '*');
+    });
+  }
+</script>
+
+<style>
+  .index {
+    padding-block: clamp(var(--space-l), 6vw, var(--space-2xl));
+  }
+
+  .index__head {
+    margin-bottom: var(--space-l);
+  }
+
+  .index__title {
+    font-size: var(--step-5);
+    margin-bottom: var(--space-m);
+  }
+
+  .index__accent {
+    color: var(--accent-ink);
+  }
+
+  .index__lede {
+    max-width: var(--measure);
+  }
+
+  .index__filters {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--space-3xs) var(--space-2xs);
+    padding-block: var(--space-s);
+    border-top: var(--rule) solid var(--rule-color);
+  }
+
+  .index__filter {
+    font-family: var(--font-mono);
+    font-size: var(--step--1);
+    letter-spacing: var(--tracking-wide);
+    text-transform: uppercase;
+    color: var(--ink-3);
+    text-decoration: none;
+    border: var(--rule) solid transparent;
+    border-radius: 999px;
+    padding: 0.15em 0.7em;
+    transition:
+      color var(--dur-fast) var(--ease-out),
+      border-color var(--dur-fast) var(--ease-out);
+  }
+
+  .index__filter:hover {
+    color: var(--accent-ink);
+    border-color: var(--rule-color);
+  }
+
+  .index__filter.is-active {
+    color: var(--ink);
+    border-color: var(--accent);
+  }
+
+  .index__count {
+    color: var(--ink-3);
+    font-size: 0.85em;
+  }
+
+  .index__list {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    border-top: var(--rule) solid var(--rule-color);
+  }
+
+  /* Same hover idiom as .related__item on a post: the row steps right, the
+     title takes the accent. Restraint, not a lift-and-shadow card. */
+  .entry {
+    display: grid;
+    grid-template-columns: 12rem minmax(0, 1fr);
+    gap: clamp(1.5rem, 4vw, 4rem);
+    align-items: baseline;
+    padding-block: var(--space-m);
+    border-bottom: var(--rule) solid var(--rule-color);
+    text-decoration: none;
+    transition: padding-left var(--dur-mid) var(--ease-out);
+  }
+
+  .entry:hover {
+    padding-left: var(--space-2xs);
+  }
+
+  .entry__margin {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-3xs);
+    font-family: var(--font-mono);
+    font-size: var(--step--1);
+    color: var(--ink-3);
+  }
+
+  .entry__cat {
+    letter-spacing: var(--tracking-wide);
+    text-transform: uppercase;
+    transition: color var(--dur-fast) var(--ease-out);
+  }
+
+  .entry:hover .entry__cat {
+    color: var(--accent);
+  }
+
+  .entry__body {
+    display: block;
+  }
+
+  .entry__title {
+    display: block;
+    font-family: var(--font-display);
+    font-size: var(--step-2);
+    font-weight: 600;
+    line-height: var(--leading-snug);
+    letter-spacing: var(--tracking-tight);
+    text-wrap: balance;
+    transition: color var(--dur-fast) var(--ease-out);
+  }
+
+  .entry:hover .entry__title {
+    color: var(--accent-ink);
+  }
+
+  .entry__excerpt {
+    display: block;
+    max-width: var(--measure);
+    margin-top: var(--space-2xs);
+    color: var(--ink-2);
+  }
+
+  .entry__read {
+    display: block;
+    margin-top: var(--space-2xs);
+    font-family: var(--font-mono);
+    font-size: var(--step--1);
+    color: var(--ink-3);
+  }
+
+  .index__empty {
+    padding-block: var(--space-l);
+  }
+
+  @media (max-width: 60rem) {
+    .entry {
+      grid-template-columns: 1fr;
+      gap: var(--space-2xs);
+    }
+
+    .entry__margin {
+      flex-direction: row;
+      gap: var(--space-2xs);
+      align-items: baseline;
+    }
+  }
+</style>

@@ -1,0 +1,289 @@
+---
+export const prerender = false;
+
+import Base from '../layouts/Base.astro';
+import { getSettings, setting } from '../lib/db';
+
+const settings = await getSettings();
+
+const siteUrl = setting(settings, 'site_url', 'https://ibrahimaher.com').replace(/\/$/, '');
+const siteName = setting(settings, 'site_name', 'Ibrahim Maher Al-Bander');
+
+// Title/description/keywords are the ones the old about.html already ranked on —
+// carried over verbatim rather than rewritten for the port.
+const metaTitle = 'About Ibrahim Maher Al-Bander | Marketer & AI Developer';
+const metaDesc =
+  'The story behind Ibrahim Maher Al-Bander: how a computer engineering graduate in Erbil, Iraq ended up running social media, accounting, and AI automation at once, and why he builds with n8n and Claude Code.';
+const metaKeywords =
+  'Ibrahim Maher Al-Bander, about Ibrahim Al-Bander, Erbil Iraq marketer, AI automation developer bio, n8n developer story, Northern Technical University graduate, Help Tech Co Ltd';
+
+const jsonLd = [
+  {
+    '@context': 'https://schema.org',
+    '@type': 'AboutPage',
+    url: `${siteUrl}/about`,
+    name: 'About Ibrahim Maher Al-Bander',
+    mainEntity: {
+      '@type': 'Person',
+      name: 'Ibrahim Maher Al-Bander',
+      url: siteUrl,
+      jobTitle: 'Social Media Marketing Specialist & AI Automation Developer',
+      worksFor: { '@type': 'Organization', name: 'Help Tech Co. Ltd.' },
+      alumniOf: { '@type': 'CollegeOrUniversity', name: 'Northern Technical University' },
+      email: 'mailto:me@ibrahimaher.com',
+      address: { '@type': 'PostalAddress', addressLocality: 'Erbil', addressCountry: 'IQ' },
+    },
+  },
+  {
+    '@context': 'https://schema.org',
+    '@type': 'BreadcrumbList',
+    itemListElement: [
+      { '@type': 'ListItem', position: 1, name: 'Home', item: `${siteUrl}/` },
+      { '@type': 'ListItem', position: 2, name: 'About', item: `${siteUrl}/about` },
+    ],
+  },
+];
+---
+
+<Base
+  title={metaTitle}
+  description={metaDesc}
+  canonical="/about"
+  keywords={metaKeywords}
+  ogType="profile"
+  jsonLd={jsonLd}
+>
+  <div class="shell about">
+    <header class="about__head stagger">
+      <nav class="about__crumbs" aria-label="Breadcrumb" style="--i:0">
+        <a class="link" href="/">Home</a>
+        <span aria-hidden="true">/</span>
+        <span class="muted">About</span>
+      </nav>
+
+      <p class="eyebrow" style="--i:1">About</p>
+
+      <h1 class="about__title" style="--i:2">
+        Three jobs, one thread: <span class="accent">learn it fast, ship it properly</span>
+      </h1>
+
+      <p class="lede about__lede" style="--i:3">
+        I am Ibrahim Maher Al-Bander, a social media marketer, accounts and inventory officer, and
+        freelance AI automation developer based in Erbil, Iraq. I currently hold three roles at once
+        at Help Tech Co. Ltd., and run an independent n8n automation practice on the side. None of
+        that was the plan when I started. It is just what happens when you say yes to the next
+        unfamiliar problem often enough.
+      </p>
+    </header>
+
+    {/*
+      Each chapter is a rail: a mono folio in the left margin, the prose on the
+      right. The folio replaces the old `divider-badge` — same device Ibrahim
+      already used on contact.html, moved into the margin where it belongs.
+    */}
+    <section class="section rail reveal" aria-labelledby="start-h">
+      <p class="eyebrow" aria-hidden="true">01</p>
+      <div class="chapter">
+        <h2 id="start-h" class="chapter__title">Where it started</h2>
+        <div class="prose">
+          <p>
+            I studied Computer Engineering Technology at Northern Technical University in Mosul,
+            graduating ranked 9th in my class with a capstone project building a CNN-based
+            traffic-sign recognition system in Python. That project is the reason I was never
+            intimidated by AI models later on; I had already spent months elbow-deep in how they
+            actually learn, long before ChatGPT made that fashionable.
+          </p>
+          <p>
+            After graduating, I did what a lot of engineering graduates in Iraq do: I took the work
+            that was in front of me. That meant freelance software testing on Upwork, building
+            Telegram bots and small automations for fun, and eventually a marketing internship at
+            YourVisio Media that turned into a full-time offer at Help Tech Co. Ltd.
+          </p>
+        </div>
+      </div>
+    </section>
+
+    <section class="section rail reveal" aria-labelledby="three-h">
+      <p class="eyebrow" aria-hidden="true">02</p>
+      <div class="chapter">
+        <h2 id="three-h" class="chapter__title">How three jobs became one job</h2>
+        <div class="prose">
+          <p>
+            I joined Help Tech as an Assistant Sales Manager, handling procurement and vendor
+            negotiation. A few months in, I picked up social media marketing because nobody else on
+            the team wanted to touch it, and grew the company Facebook page more than 500 percent.
+            Then the accounts and inventory role opened up with no system in place, so I built the
+            company's QuickBooks bookkeeping process from scratch, with no formal accounting
+            background, because someone had to and I was already the person who figured things out.
+          </p>
+          <p>
+            Somewhere in the middle of that, I started using n8n to stop doing the same reporting
+            work by hand every week. That habit turned into a genuine skill, then into freelance
+            client work, then into a small, real practice building production automations with
+            OpenAI, Claude, and Gemini behind them. I am not trying to collect job titles. Every one
+            of these roles showed up because something in the business needed doing and I was
+            willing to learn it under deadline instead of waiting for someone more qualified to show
+            up.
+          </p>
+        </div>
+      </div>
+    </section>
+
+    {/*
+      The old page rendered these three as boxed cards. Same words, but set as a
+      hairline-ruled list: the heading sits in the margin and the text runs
+      beside it, so they read as marginal notes rather than a feature grid.
+    */}
+    <section class="section rail reveal" aria-label="How I work">
+      <p class="eyebrow" aria-hidden="true">03</p>
+      <div class="chapter">
+        <ul class="values">
+          <li class="value">
+            <h3 class="value__title">Ownership of unfamiliar problems</h3>
+            <p class="value__body">
+              I have never waited for training before taking on a role. QuickBooks, n8n, prompt
+              engineering, they were all things I learned on the job, under deadline, because the
+              business needed them solved now.
+            </p>
+          </li>
+          <li class="value">
+            <h3 class="value__title">Documentation over heroics</h3>
+            <p class="value__body">
+              A system only I understand is not a finished system. Every automation I ship comes
+              with a README and a one-click import, and every process I set up gets handed off in a
+              way colleagues can actually run without me.
+            </p>
+          </li>
+          <li class="value">
+            <h3 class="value__title">Numbers and words, together</h3>
+            <p class="value__body">
+              Bookkeeping made my marketing reporting sharper. Marketing made my automations more
+              useful to actual humans, not just technically correct. I do not see accounting,
+              marketing, and automation as separate skillsets; they inform each other constantly.
+            </p>
+          </li>
+        </ul>
+      </div>
+    </section>
+
+    <section class="section rail reveal" aria-labelledby="ai-h">
+      <p class="eyebrow" aria-hidden="true">04</p>
+      <div class="chapter">
+        <h2 id="ai-h" class="chapter__title">Why AI tools are central to how I work now</h2>
+        <div class="prose">
+          <p>
+            I use ChatGPT, Claude, and Gemini daily, not as novelty but as working tools with
+            specific jobs: content drafting and campaign analysis in marketing, structured data
+            extraction in automation, and increasingly, direct software development. The clearest
+            proof point is <a href="/#projects">DAD LINK</a>, a live e-commerce store I designed and
+            shipped on Odoo with Claude Code doing most of the build work: product catalog, category
+            pages, on-page SEO, and blog content, not a demo, a real store with real distributors.
+          </p>
+          <p>
+            I think about AI work in four layers: prompt engineering, context engineering, harness
+            engineering, and loop engineering. Most people who say they "know AI" have only touched
+            the first one. I write more about that distinction, and about the automation and
+            marketing work itself, on <a href="/blog/">the blog</a>.
+          </p>
+        </div>
+      </div>
+    </section>
+
+    <div class="about__cta reveal">
+      <a href="/#experience" class="btn btn-ghost">
+        See the full work history <span aria-hidden="true">&rarr;</span>
+      </a>
+      <a href="/contact" class="btn">
+        Get in touch <span aria-hidden="true">&rarr;</span>
+      </a>
+    </div>
+  </div>
+</Base>
+
+<style>
+  .about {
+    padding-block: clamp(var(--space-l), 6vw, var(--space-2xl)) 0;
+  }
+
+  .about__head {
+    max-width: var(--measure);
+    margin-bottom: var(--space-l);
+  }
+
+  .about__crumbs {
+    display: flex;
+    gap: var(--space-2xs);
+    align-items: center;
+    font-family: var(--font-mono);
+    font-size: var(--step--1);
+    letter-spacing: var(--tracking-wide);
+    text-transform: uppercase;
+    color: var(--ink-3);
+    margin-bottom: var(--space-s);
+  }
+
+  .about__title {
+    font-size: var(--step-4);
+    margin-bottom: var(--space-m);
+  }
+
+  /* The second clause of the headline carries the accent, exactly as it did on
+     the old page — the one piece of colour in an otherwise ink-only hierarchy. */
+  .accent {
+    color: var(--accent-ink);
+  }
+
+  .about__lede {
+    max-width: var(--measure);
+  }
+
+  .chapter__title {
+    font-size: var(--step-2);
+    margin-bottom: var(--space-s);
+  }
+
+  .values {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+  }
+
+  .value {
+    display: grid;
+    grid-template-columns: minmax(0, 14rem) minmax(0, 1fr);
+    gap: clamp(1rem, 3vw, 2.5rem);
+    align-items: baseline;
+    padding-block: var(--space-m);
+    border-top: var(--rule) solid var(--rule-color);
+  }
+
+  .value:last-child {
+    border-bottom: var(--rule) solid var(--rule-color);
+  }
+
+  .value__title {
+    font-size: var(--step-0);
+    line-height: var(--leading-snug);
+  }
+
+  .value__body {
+    margin: 0;
+    color: var(--ink-2);
+    max-width: var(--measure);
+  }
+
+  @media (max-width: 48rem) {
+    .value {
+      grid-template-columns: 1fr;
+      gap: var(--space-2xs);
+    }
+  }
+
+  .about__cta {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--space-s);
+    padding-block: var(--space-xl);
+    border-top: var(--rule) solid var(--rule-color);
+  }
+</style>

@@ -1,0 +1,323 @@
+---
+export const prerender = false;
+
+import Base from '../../layouts/Base.astro';
+import {
+  getPostBySlug,
+  getAuthor,
+  getPublishedPosts,
+  parseTags,
+  getSettings,
+  setting,
+} from '../../lib/db';
+import { renderMarkdown, markdownToText, readingTime } from '../../lib/markdown';
+
+const { slug } = Astro.params;
+
+const post = slug ? await getPostBySlug(slug) : null;
+if (!post) return Astro.rewrite('/404');
+
+const [author, settings, all] = await Promise.all([
+  getAuthor(post.author_id),
+  getSettings(),
+  getPublishedPosts(),
+]);
+
+const siteUrl = setting(settings, 'site_url', 'https://ibrahimaher.com').replace(/\/$/, '');
+const authorName = author?.name ?? setting(settings, 'site_name', 'Ibrahim Maher Al-Bander');
+
+const body = renderMarkdown(post.body_md);
+const tags = parseTags(post.tags_json);
+
+// Every SEO field falls back sensibly, so a half-filled post in the admin still
+// renders correct metadata rather than an empty tag.
+const metaTitle = post.seo_title || `${post.title} | ${authorName}`;
+const metaDesc = post.seo_description || post.excerpt || markdownToText(post.body_md, 160);
+const canonical = post.canonical_url || `/blog/${post.slug}`;
+const readTime = post.read_time || readingTime(post.body_md);
+
+const published = post.created_at || `${post.post_date}T00:00:00Z`;
+const modified = post.updated_at || published;
+
+const dateLabel = new Date(`${post.post_date}T00:00:00Z`).toLocaleDateString('en-GB', {
+  day: 'numeric',
+  month: 'long',
+  year: 'numeric',
+  timeZone: 'UTC',
+});
+
+const wordCount = markdownToText(post.body_md, Number.MAX_SAFE_INTEGER)
+  .split(/\s+/)
+  .filter(Boolean).length;
+
+// Related: same category first, then most recent. Never links to itself.
+const related = all
+  .filter((p) => p.slug !== post.slug)
+  .sort((a, b) => Number(b.category === post.category) - Number(a.category === post.category))
+  .slice(0, 3);
+
+const jsonLd = [
+  {
+    '@context': 'https://schema.org',
+    '@type': 'BlogPosting',
+    headline: post.title,
+    description: metaDesc,
+    datePublished: published,
+    dateModified: modified,
+    articleSection: post.category,
+    keywords: post.seo_keywords || tags.join(', '),
+    wordCount,
+    inLanguage: 'en',
+    author: {
+      '@type': 'Person',
+      name: authorName,
+      url: author?.profile_url || `${siteUrl}/about`,
+    },
+    publisher: { '@type': 'Person', name: authorName, url: siteUrl },
+    mainEntityOfPage: { '@type': 'WebPage', '@id': `${siteUrl}${canonical}` },
+    ...(post.og_image || post.hero_image
+      ? { image: `${siteUrl}${post.og_image || post.hero_image}` }
+      : {}),
+  },
+  {
+    '@context': 'https://schema.org',
+    '@type': 'BreadcrumbList',
+    itemListElement: [
+      { '@type': 'ListItem', position: 1, name: 'Home', item: `${siteUrl}/` },
+      { '@type': 'ListItem', position: 2, name: 'Writing', item: `${siteUrl}/blog/` },
+      { '@type': 'ListItem', position: 3, name: post.title, item: `${siteUrl}${canonical}` },
+    ],
+  },
+];
+---
+
+<Base
+  title={metaTitle}
+  description={metaDesc}
+  canonical={canonical}
+  keywords={post.seo_keywords}
+  ogType="article"
+  ogImage={post.og_image || post.hero_image || undefined}
+  noindex={post.noindex === 1}
+  jsonLd={jsonLd}
+>
+  <article class="shell post">
+    <header class="post__head stagger">
+      <nav class="post__crumbs" aria-label="Breadcrumb" style="--i:0">
+        <a class="link" href="/blog/">Writing</a>
+        <span aria-hidden="true">/</span>
+        <span class="muted">{post.category}</span>
+      </nav>
+
+      <h1 class="post__title" style="--i:1">{post.title}</h1>
+
+      {post.excerpt && <p class="lede post__lede" style="--i:2">{post.excerpt}</p>}
+
+      <div class="post__meta" style="--i:3">
+        <span>By {authorName}</span>
+        <span aria-hidden="true">·</span>
+        <time datetime={post.post_date}>{dateLabel}</time>
+        <span aria-hidden="true">·</span>
+        <span>{readTime}</span>
+      </div>
+    </header>
+
+    {
+      post.hero_image && (
+        <img
+          class="post__hero reveal"
+          src={post.hero_image}
+          alt={post.hero_alt}
+          width="1200"
+          height="630"
+          loading="eager"
+        />
+      )
+    }
+
+    <div class="prose post__body" set:html={body} />
+
+    {
+      tags.length > 0 && (
+        <ul class="tags post__tags" aria-label="Topics">
+          {tags.map((t) => (
+            <li class="tag">{t}</li>
+          ))}
+        </ul>
+      )
+    }
+
+    {/* Per-post CTA — Ibrahim's own words, migrated from the original pages
+        rather than replaced with one generic template line. */}
+    {
+      post.cta_heading && (
+        <aside class="cta reveal">
+          <h2 class="cta__heading">{post.cta_heading}</h2>
+          {post.cta_md && <div class="cta__body prose" set:html={renderMarkdown(post.cta_md)} />}
+          <a class="btn" href="/contact">
+            Get in touch <span aria-hidden="true">&rarr;</span>
+          </a>
+        </aside>
+      )
+    }
+
+    {
+      related.length > 0 && (
+        <section class="related" aria-labelledby="related-h">
+          <h2 id="related-h" class="eyebrow">
+            Keep reading
+          </h2>
+          <ul class="related__list">
+            {related.map((r) => (
+              <li class="reveal">
+                <a class="related__item" href={`/blog/${r.slug}`}>
+                  <span class="related__cat">{r.category}</span>
+                  <span class="related__title">{r.title}</span>
+                </a>
+              </li>
+            ))}
+          </ul>
+        </section>
+      )
+    }
+  </article>
+</Base>
+
+<style>
+  .post {
+    padding-block: clamp(var(--space-l), 6vw, var(--space-2xl));
+  }
+
+  .post__head {
+    max-width: var(--measure);
+    margin-bottom: var(--space-l);
+  }
+
+  .post__crumbs {
+    display: flex;
+    gap: var(--space-2xs);
+    align-items: center;
+    font-family: var(--font-mono);
+    font-size: var(--step--1);
+    letter-spacing: var(--tracking-wide);
+    text-transform: uppercase;
+    color: var(--ink-3);
+    margin-bottom: var(--space-s);
+  }
+
+  .post__title {
+    font-size: var(--step-4);
+    margin-bottom: var(--space-s);
+  }
+
+  .post__lede {
+    max-width: var(--measure);
+    margin-bottom: var(--space-s);
+  }
+
+  .post__meta {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--space-2xs);
+    align-items: center;
+    font-size: var(--step--1);
+    color: var(--ink-3);
+    padding-top: var(--space-s);
+    border-top: var(--rule) solid var(--rule-color);
+  }
+
+  .post__hero {
+    width: 100%;
+    border-radius: 8px;
+    margin-bottom: var(--space-l);
+  }
+
+  .post__tags {
+    max-width: var(--measure);
+    margin-top: var(--space-l);
+  }
+
+  .cta {
+    max-width: var(--measure);
+    margin-top: var(--space-xl);
+    padding: var(--space-l);
+    background: var(--paper-2);
+    border: var(--rule) solid var(--rule-color);
+    border-radius: 10px;
+  }
+
+  .cta__heading {
+    font-size: var(--step-2);
+    margin-bottom: var(--space-xs);
+  }
+
+  .cta__body :global(p:last-child) {
+    margin-bottom: var(--space-m);
+  }
+
+  .related {
+    max-width: var(--measure);
+    margin-top: var(--space-2xl);
+    padding-top: var(--space-m);
+    border-top: var(--rule) solid var(--rule-color);
+  }
+
+  .related__list {
+    list-style: none;
+    padding: 0;
+    margin: var(--space-s) 0 0;
+  }
+
+  .related__item {
+    display: grid;
+    grid-template-columns: 8rem 1fr;
+    gap: var(--space-s);
+    align-items: baseline;
+    padding-block: var(--space-xs);
+    border-bottom: var(--rule) solid var(--rule-color);
+    text-decoration: none;
+    transition: padding-left var(--dur-mid) var(--ease-out);
+  }
+
+  .related__item:hover {
+    padding-left: var(--space-2xs);
+  }
+
+  .related__cat {
+    font-family: var(--font-mono);
+    font-size: var(--step--1);
+    text-transform: uppercase;
+    letter-spacing: var(--tracking-wide);
+    color: var(--ink-3);
+  }
+
+  .related__title {
+    font-family: var(--font-display);
+    font-weight: 600;
+    line-height: var(--leading-snug);
+    transition: color var(--dur-fast) var(--ease-out);
+  }
+
+  .related__item:hover .related__title {
+    color: var(--accent-ink);
+  }
+
+  @media (max-width: 40rem) {
+    .related__item {
+      grid-template-columns: 1fr;
+      gap: var(--space-3xs);
+    }
+  }
+
+  /* Heading anchors: invisible until hovered, so the prose stays clean but
+     every section is still linkable. */
+  .post__body :global(.heading-anchor) {
+    color: inherit;
+    text-decoration: none;
+  }
+
+  .post__body :global(h2),
+  .post__body :global(h3) {
+    scroll-margin-top: 5rem;
+  }
+</style>
