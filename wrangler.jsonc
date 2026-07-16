@@ -17,5 +17,14 @@
       "database_name": "ibrahimaher-content",
       "database_id": "91a1959f-be34-4dc2-9507-adb7be1357c7"
     }
+  ],
+  // Astro's adapter enables sessions and expects a SESSION KV binding. Left to
+  // auto-provision it tries to create this namespace on every deploy and fails
+  // once it exists, so it is bound explicitly.
+  "kv_namespaces": [
+    {
+      "binding": "SESSION",
+      "id": "3342754c519347cab313af75d4bc11c0"
+    }
   ]
 }

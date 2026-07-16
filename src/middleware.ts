@@ -38,8 +38,35 @@ async function tryRedirect(pathname: string): Promise<Response | null> {
   });
 }
 
+/**
+ * Canonical host: www -> apex, http -> https.
+ *
+ * This replaces public/_redirects, which was Pages-only syntax. Workers static
+ * assets reject it outright: `301!` (the Pages "force" suffix) parses as status
+ * 0, and absolute destination URLs are not allowed. Since Seobility scored the
+ * old site 0% on server config for exactly these redirects, the behaviour has to
+ * survive the move — so it lives here instead.
+ *
+ * Only runs for hosts that end in the canonical domain, so *.workers.dev preview
+ * URLs keep working normally rather than bouncing to production.
+ */
+function canonicalHostRedirect(url: URL, canonicalHost: string): Response | null {
+  const host = url.host;
+  if (host === canonicalHost) return null;
+  if (host !== `www.${canonicalHost}`) return null; // previews, localhost: leave alone
+
+  const to = new URL(url);
+  to.host = canonicalHost;
+  to.protocol = 'https:';
+  return new Response(null, { status: 301, headers: { Location: to.toString() } });
+}
+
 export const onRequest = defineMiddleware(async (context, next) => {
   const { pathname } = context.url;
+
+  // Cheap string compare, no DB — safe to run before anything else.
+  const hostRedirect = canonicalHostRedirect(context.url, 'ibrahimaher.com');
+  if (hostRedirect) return hostRedirect;
 
   if (!isProtected(pathname) || PUBLIC_ADMIN_PATHS.has(pathname)) {
     const response = await next();

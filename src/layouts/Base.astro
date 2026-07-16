@@ -54,6 +54,16 @@ const abs = (p: string) =>
 const canonicalUrl = canonical ? abs(canonical) : abs(Astro.url.pathname);
 const shareImage = abs(ogImage || defaultOg);
 
+/**
+ * Preview deploys (*.workers.dev) serve byte-identical content to production,
+ * which is textbook duplicate content. Any host that is not the canonical one
+ * is marked noindex automatically, so a preview can never compete with the real
+ * site in the index. Canonical tags alone are a hint; this is not.
+ */
+const canonicalHost = new URL(siteUrl).host;
+const isCanonicalHost = Astro.url.host === canonicalHost;
+const blockIndexing = noindex || !isCanonicalHost;
+
 // Resolve the share card once, so og:* and twitter:* cannot drift apart.
 const shareTitle = ogTitle || title;
 const shareDesc = ogDescription || description;
@@ -84,7 +94,7 @@ const year = new Date().getUTCFullYear();
     {keywords && <meta name="keywords" content={keywords} />}
     <meta name="author" content={siteName} />
     <link rel="canonical" href={canonicalUrl} />
-    {noindex && <meta name="robots" content="noindex, nofollow" />}
+    {blockIndexing && <meta name="robots" content="noindex, nofollow" />}
 
     <meta property="og:type" content={ogType} />
     <meta property="og:title" content={shareTitle} />
