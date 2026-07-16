@@ -475,6 +475,27 @@ main {
 :root[data-theme="dark"] .logo-light { display: none; }
 :root[data-theme="dark"] .logo-dark { display: block; }
 
+/* Workflow screenshots. Swapped as background-image rather than a pair of
+   <img> like .logo-light/.logo-dark above: that pattern downloads both
+   variants, which is free for a 1.5kB svg but not for a 50kB screenshot.
+   Only the matched rule's file is ever fetched. */
+.project-shot {
+  margin-top: 1.1rem;
+  aspect-ratio: 1400 / 783;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  background-color: var(--surface-2);
+  background-size: cover;
+  background-position: top center;
+  background-repeat: no-repeat;
+}
+.project-shot[data-shot="fraud-firewall"]   { background-image: url('/assets/workflows/fraud-firewall-light.webp'); }
+.project-shot[data-shot="ai-lead"]          { background-image: url('/assets/workflows/ai-lead-light.webp'); }
+.project-shot[data-shot="invoice-approval"] { background-image: url('/assets/workflows/invoice-approval-light.webp'); }
+:root[data-theme="dark"] .project-shot[data-shot="fraud-firewall"]   { background-image: url('/assets/workflows/fraud-firewall-dark.webp'); }
+:root[data-theme="dark"] .project-shot[data-shot="ai-lead"]          { background-image: url('/assets/workflows/ai-lead-dark.webp'); }
+:root[data-theme="dark"] .project-shot[data-shot="invoice-approval"] { background-image: url('/assets/workflows/invoice-approval-dark.webp'); }
+
 .job-eyebrow {
   font-size: 0.72rem;
   font-weight: 700;
