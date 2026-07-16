@@ -1,0 +1,112 @@
+---
+/**
+ * Dashboard. Server-rendered from D1 — no client fetch, so it is useful the
+ * instant it paints.
+ */
+import Admin from '../../layouts/Admin.astro';
+import { getAllPosts, getSettings, setting } from '../../lib/db';
+
+const posts = await getAllPosts();
+const settings = await getSettings();
+
+const published = posts.filter((p) => p.status === 'published');
+const drafts = posts.filter((p) => p.status !== 'published');
+const recent = [...posts]
+  .sort((a, b) => (b.updated_at || '').localeCompare(a.updated_at || ''))
+  .slice(0, 5);
+
+const gaId = setting(settings, 'ga_measurement_id');
+const siteUrl = setting(settings, 'site_url', 'https://ibrahimaher.com').replace(/\/$/, '');
+
+const fmt = (iso: string) => (iso || '').slice(0, 10);
+---
+
+<Admin title="Dashboard" section="dashboard">
+  <a slot="header-actions" class="btn btn--primary btn--sm" href="/admin/posts/new">New post</a>
+
+  <div class="stack" style="gap: var(--space-m);">
+    <section aria-labelledby="stats-h">
+      <h2 class="visually-hidden" id="stats-h">At a glance</h2>
+      <div class="stats">
+        <div class="stat">
+          <div class="stat__num">{posts.length}</div>
+          <div class="stat__label">Posts</div>
+        </div>
+        <div class="stat stat--accent">
+          <div class="stat__num">{published.length}</div>
+          <div class="stat__label">Published</div>
+        </div>
+        <div class="stat">
+          <div class="stat__num">{drafts.length}</div>
+          <div class="stat__label">Drafts</div>
+        </div>
+        <div class="stat">
+          <div class="stat__num">{gaId ? 'On' : 'Off'}</div>
+          <div class="stat__label">Analytics</div>
+        </div>
+      </div>
+    </section>
+
+    <section class="card" aria-labelledby="recent-h">
+      <div class="cluster" style="margin-bottom: var(--space-2xs);">
+        <h2 class="card__title" id="recent-h">Recently updated</h2>
+        <a class="btn btn--sm btn--ghost" href="/admin/posts" style="margin-left:auto;">All posts</a>
+      </div>
+
+      {
+        recent.length === 0 ? (
+          <p class="muted">
+            Nothing here yet. <a href="/admin/posts/new">Write your first post</a>.
+          </p>
+        ) : (
+          <div class="table-wrap">
+            <table class="table">
+              <thead>
+                <tr>
+                  <th scope="col">Title</th>
+                  <th scope="col">Status</th>
+                  <th scope="col">Updated</th>
+                </tr>
+              </thead>
+              <tbody>
+                {recent.map((p) => (
+                  <tr>
+                    <td>
+                      <a class="table__title" href={`/admin/posts/${p.id}`}>
+                        {p.title || '(untitled)'}
+                      </a>
+                    </td>
+                    <td>
+                      <span
+                        class={`badge badge--${p.status === 'published' ? 'published' : 'draft'}`}
+                      >
+                        <span class="badge__dot" aria-hidden="true" />
+                        {p.status === 'published' ? 'Published' : 'Draft'}
+                      </span>
+                    </td>
+                    <td class="muted">{fmt(p.updated_at) || '—'}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        )
+      }
+    </section>
+
+    <section class="card" aria-labelledby="quick-h">
+      <h2 class="card__title" id="quick-h">Jump to</h2>
+      <div class="cluster">
+        <a class="btn btn--sm" href="/admin/content/jobs">Jobs</a>
+        <a class="btn btn--sm" href="/admin/content/projects">Projects</a>
+        <a class="btn btn--sm" href="/admin/content/skills">Skills</a>
+        <a class="btn btn--sm" href="/admin/content/certifications">Certifications</a>
+        <a class="btn btn--sm" href="/admin/content/education">Education</a>
+        <a class="btn btn--sm" href="/admin/settings">Settings</a>
+        <a class="btn btn--sm" href={`${siteUrl}/blog/`} target="_blank" rel="noopener">
+          Live blog ↗
+        </a>
+      </div>
+    </section>
+  </div>
+</Admin>

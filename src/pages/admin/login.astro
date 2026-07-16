@@ -1,0 +1,139 @@
+---
+/**
+ * Standalone login. Does NOT use Admin.astro — there is nothing to navigate to
+ * yet, and a sidebar behind a login form is a lie about what you can reach.
+ */
+import '../../styles/admin.css';
+
+// The `next` param arrives from the middleware redirect. It is echoed into a
+// client-side redirect, so it is validated twice: here it is only read, and the
+// script below re-validates before ever using it. Never trust it as given.
+const rawNext = Astro.url.searchParams.get('next') ?? '';
+---
+
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="robots" content="noindex, nofollow" />
+    <title>Log in — Admin</title>
+    <link rel="icon" type="image/svg+xml" href="/assets/favicon.svg" />
+    <script is:inline>
+      (function () {
+        try {
+          var t = localStorage.getItem('theme');
+          if (t === 'light' || t === 'dark') document.documentElement.dataset.theme = t;
+        } catch (e) {}
+      })();
+    </script>
+  </head>
+
+  <body>
+    <main class="login">
+      <div class="login__card">
+        <h1 class="login__title">Sign in</h1>
+        <p class="login__sub">This is the private side of ibrahimaher.com.</p>
+
+        <form id="login-form" class="stack" novalidate>
+          <div class="field">
+            <label class="field__label" for="password">Password</label>
+            <input
+              class="input"
+              type="password"
+              id="password"
+              name="password"
+              autocomplete="current-password"
+              required
+              autofocus
+            />
+          </div>
+
+          <button class="btn btn--primary" id="submit" type="submit">Log in</button>
+
+          <p
+            class="status"
+            id="login-status"
+            role="status"
+            aria-live="polite"
+          >
+          </p>
+        </form>
+      </div>
+    </main>
+
+    <script define:vars={{ rawNext }}>
+      const form = document.getElementById('login-form');
+      const pw = document.getElementById('password');
+      const btn = document.getElementById('submit');
+      const status = document.getElementById('login-status');
+
+      /**
+       * Only ever redirect to a same-origin path inside /admin.
+       *
+       * `//evil.com` and `https://evil.com` both have to fail: the first is a
+       * protocol-relative URL that startsWith('/') would happily wave through,
+       * which is exactly the classic open-redirect bug. Parsing against the
+       * current origin and re-checking `origin` closes both.
+       */
+      function safeNext(value) {
+        if (!value) return '/admin';
+        try {
+          const url = new URL(value, window.location.origin);
+          if (url.origin !== window.location.origin) return '/admin';
+          if (url.pathname !== '/admin' && !url.pathname.startsWith('/admin/')) return '/admin';
+          if (url.pathname === '/admin/login') return '/admin';
+          return url.pathname + url.search;
+        } catch {
+          return '/admin';
+        }
+      }
+
+      function setStatus(msg, kind) {
+        status.textContent = msg;
+        status.className = 'status' + (kind ? ' status--' + kind : '');
+      }
+
+      form.addEventListener('submit', async (e) => {
+        e.preventDefault();
+        if (!pw.value) {
+          setStatus('Enter your password.', 'err');
+          pw.focus();
+          return;
+        }
+
+        btn.disabled = true;
+        setStatus('Checking…', 'busy');
+
+        try {
+          const res = await fetch('/api/auth/login', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ password: pw.value }),
+          });
+
+          let data = {};
+          try {
+            data = await res.json();
+          } catch {
+            // A non-JSON body means something upstream broke, not a bad password.
+            throw new Error(`Unexpected response from the server (${res.status}).`);
+          }
+
+          if (res.ok && data.ok) {
+            setStatus('Welcome back. Redirecting…', 'ok');
+            window.location.href = safeNext(rawNext);
+            return;
+          }
+
+          throw new Error(data.error || 'That password did not work.');
+        } catch (err) {
+          setStatus(err.message || 'Login failed.', 'err');
+          btn.disabled = false;
+          pw.select();
+          pw.focus();
+        }
+      });
+    </script>
+  </body>
+</html>

@@ -141,6 +141,17 @@ export const getProjects = () =>
 export const getAuthor = (id: number) =>
   first<Author>('SELECT * FROM authors WHERE id = ?', id);
 
+export interface Redirect {
+  id: number;
+  source: string;
+  destination: string;
+  code: number;
+}
+
+/** Looked up by src/middleware.ts only when a route 404s. */
+export const findRedirect = (source: string) =>
+  first<Redirect>('SELECT * FROM redirects WHERE source = ?', source);
+
 /** Public listing: drafts must never leak to the live site. */
 export const getPublishedPosts = (limit?: number) =>
   all<Post>(

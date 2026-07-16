@@ -1,0 +1,212 @@
+---
+/**
+ * Admin shell.
+ *
+ * Deliberately does NOT extend Base.astro: the public layout carries GA, the
+ * public nav, the RSS link and canonical/OG tags, none of which belong on a
+ * private tool. The one thing the admin must never omit is `noindex, nofollow`,
+ * so it is hard-coded here rather than passed in as a prop — a page cannot
+ * forget to opt in.
+ */
+import '../styles/admin.css';
+
+interface Props {
+  title: string;
+  /** Which sidebar entry to mark current. */
+  section?: 'dashboard' | 'posts' | 'content' | 'settings';
+  /** For content pages, the table whose sub-link is current. */
+  table?: string;
+}
+
+const { title, section = 'dashboard', table } = Astro.props;
+
+const CONTENT_TABLES = ['jobs', 'projects', 'skills', 'certifications', 'education'];
+---
+
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <!-- Mandatory: the admin must never be indexed, on any page. -->
+    <meta name="robots" content="noindex, nofollow" />
+    <title>{title} — Admin</title>
+    <link rel="icon" type="image/svg+xml" href="/assets/favicon.svg" />
+
+    {/* Match the public site: no flash of the wrong theme. */}
+    <script is:inline>
+      (function () {
+        try {
+          var t = localStorage.getItem('theme');
+          if (t === 'light' || t === 'dark') document.documentElement.dataset.theme = t;
+        } catch (e) {}
+      })();
+    </script>
+  </head>
+
+  <body>
+    <a class="skip-link" href="#admin-main">Skip to content</a>
+
+    <div class="admin" id="admin-shell">
+      <button class="admin__scrim" id="nav-scrim" type="button" tabindex="-1" aria-hidden="true"
+      ></button>
+
+      <aside class="admin__sidebar" id="admin-sidebar">
+        <a class="admin__brand" href="/admin">
+          <span>Ibrahim</span>
+          <span class="admin__brand-rule" aria-hidden="true"></span>
+          <span class="admin__brand-tag">admin</span>
+        </a>
+
+        <nav aria-label="Admin sections">
+          <div class="admin__nav-group">
+            <ul class="admin__nav-list">
+              <li>
+                <a
+                  class="admin__nav-link"
+                  href="/admin"
+                  aria-current={section === 'dashboard' ? 'page' : undefined}
+                >
+                  Dashboard
+                </a>
+              </li>
+              <li>
+                <a
+                  class="admin__nav-link"
+                  href="/admin/posts"
+                  aria-current={section === 'posts' ? 'page' : undefined}
+                >
+                  Posts
+                </a>
+              </li>
+            </ul>
+          </div>
+
+          <div class="admin__nav-group">
+            <h2 class="admin__nav-title">Content</h2>
+            <ul class="admin__nav-list">
+              {
+                CONTENT_TABLES.map((t) => (
+                  <li>
+                    <a
+                      class="admin__nav-link"
+                      href={`/admin/content/${t}`}
+                      aria-current={section === 'content' && table === t ? 'page' : undefined}
+                    >
+                      {t.charAt(0).toUpperCase() + t.slice(1)}
+                    </a>
+                  </li>
+                ))
+              }
+            </ul>
+          </div>
+
+          <div class="admin__nav-group">
+            <h2 class="admin__nav-title">Site</h2>
+            <ul class="admin__nav-list">
+              <li>
+                <a
+                  class="admin__nav-link"
+                  href="/admin/settings"
+                  aria-current={section === 'settings' ? 'page' : undefined}
+                >
+                  Settings
+                </a>
+              </li>
+              <li>
+                <a class="admin__nav-link" href="/" target="_blank" rel="noopener">
+                  View site ↗
+                </a>
+              </li>
+            </ul>
+          </div>
+        </nav>
+      </aside>
+
+      <div class="admin__main">
+        <header class="admin__header">
+          <button
+            class="btn btn--ghost btn--icon admin__menu-btn"
+            id="nav-toggle"
+            type="button"
+            aria-label="Open navigation"
+            aria-expanded="false"
+            aria-controls="admin-sidebar"
+          >
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+              <path d="M3 6h18M3 12h18M3 18h18" stroke-linecap="round"></path>
+            </svg>
+          </button>
+
+          <h1 class="admin__header-title">{title}</h1>
+
+          <slot name="header-actions" />
+
+          <button class="btn btn--ghost btn--icon" id="theme-toggle" type="button" aria-label="Switch between light and dark mode">
+            <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.6" aria-hidden="true">
+              <circle cx="12" cy="12" r="4.2"></circle>
+              <path d="M12 2.6v2.2M12 19.2v2.2M2.6 12h2.2M19.2 12h2.2M5.4 5.4l1.6 1.6M17 17l1.6 1.6M18.6 5.4L17 7M7 17l-1.6 1.6" stroke-linecap="round"></path>
+            </svg>
+          </button>
+
+          <button class="btn btn--sm" id="logout-btn" type="button">Log out</button>
+        </header>
+
+        <main class="admin__content" id="admin-main">
+          <slot />
+        </main>
+      </div>
+    </div>
+
+    <script>
+      // --- Sidebar drawer (narrow screens) --------------------------------
+      const shell = document.getElementById('admin-shell')!;
+      const toggle = document.getElementById('nav-toggle');
+      const scrim = document.getElementById('nav-scrim');
+
+      function setNav(open: boolean) {
+        shell.dataset.nav = open ? 'open' : 'closed';
+        toggle?.setAttribute('aria-expanded', String(open));
+        scrim?.setAttribute('aria-hidden', String(!open));
+      }
+
+      toggle?.addEventListener('click', () => setNav(shell.dataset.nav !== 'open'));
+      scrim?.addEventListener('click', () => setNav(false));
+
+      // Escape closes the drawer, but must not steal Escape from the editor's
+      // own handlers when the drawer is already shut.
+      document.addEventListener('keydown', (e) => {
+        if (e.key === 'Escape' && shell.dataset.nav === 'open') {
+          setNav(false);
+          toggle?.focus();
+        }
+      });
+
+      // --- Theme -----------------------------------------------------------
+      document.getElementById('theme-toggle')?.addEventListener('click', () => {
+        const root = document.documentElement;
+        const current =
+          root.dataset.theme ||
+          (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light');
+        const next = current === 'dark' ? 'light' : 'dark';
+        root.dataset.theme = next;
+        try {
+          localStorage.setItem('theme', next);
+        } catch {}
+      });
+
+      // --- Logout ----------------------------------------------------------
+      const logout = document.getElementById('logout-btn') as HTMLButtonElement | null;
+      logout?.addEventListener('click', async () => {
+        logout.disabled = true;
+        try {
+          await fetch('/api/auth/logout', { method: 'POST' });
+        } catch {
+          // A failed logout still clears client state and sends them to login;
+          // the cookie is httpOnly so there is nothing else we can do here.
+        }
+        window.location.href = '/admin/login';
+      });
+    </script>
+  </body>
+</html>
