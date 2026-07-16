@@ -1,0 +1,151 @@
+/*
+  Design tokens — editorial / typographic direction.
+
+  Inherited deliberately from the previous site so this reads as an evolution of
+  Ibrahim's site rather than a different person's: the terracotta accent, the
+  Sora + Inter pairing, and the self-hosted woff2 files all carry over.
+
+  What changes is the *system*: a real modular type scale, a paper/ink palette
+  instead of generic slate-and-card, and spacing derived from the text measure
+  rather than a UI kit's 4px grid.
+*/
+
+/* --- Fonts: same files as the old site, already in /assets/fonts ---------- */
+@font-face {
+  font-family: 'Inter';
+  font-style: normal;
+  font-weight: 400 700;
+  font-display: swap;
+  src: url('/assets/fonts/inter-latin.woff2') format('woff2');
+  unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD;
+}
+@font-face {
+  font-family: 'Inter';
+  font-style: normal;
+  font-weight: 400 700;
+  font-display: swap;
+  src: url('/assets/fonts/inter-latin-ext.woff2') format('woff2');
+  unicode-range: U+0100-02BA, U+02BD-02C5, U+02C7-02CC, U+02CE-02D7, U+02DD-02FF, U+0304, U+0308, U+0329, U+1D00-1DBF, U+1E00-1E9F, U+1EF2-1EFF, U+2020, U+20A0-20AB, U+20AD-20C0, U+2113, U+2C60-2C7F, U+A720-A7FF;
+}
+@font-face {
+  font-family: 'Sora';
+  font-style: normal;
+  font-weight: 500 800;
+  font-display: swap;
+  src: url('/assets/fonts/sora-latin.woff2') format('woff2');
+  unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD;
+}
+@font-face {
+  font-family: 'Sora';
+  font-style: normal;
+  font-weight: 500 800;
+  font-display: swap;
+  src: url('/assets/fonts/sora-latin-ext.woff2') format('woff2');
+  unicode-range: U+0100-02BA, U+02BD-02C5, U+02C7-02CC, U+02CE-02D7, U+02DD-02FF, U+0304, U+0308, U+0329, U+1D00-1DBF, U+1E00-1E9F, U+1EF2-1EFF, U+2020, U+20A0-20AB, U+20AD-20C0, U+2113, U+2C60-2C7F, U+A720-A7FF;
+}
+
+:root {
+  /* --- Type -------------------------------------------------------------
+     Display face for headings, body face for prose, mono for code and the
+     small technical marginalia that give the page its engineered feel. */
+  --font-display: 'Sora', ui-sans-serif, system-ui, sans-serif;
+  --font-body: 'Inter', ui-sans-serif, system-ui, sans-serif;
+  --font-mono: ui-monospace, 'SF Mono', 'Cascadia Code', Menlo, monospace;
+
+  /* Fluid modular scale (~1.25 minor third at small, ~1.333 at large).
+     clamp() means no layout jumps at breakpoints — size tracks the viewport. */
+  --step--1: clamp(0.83rem, 0.80rem + 0.15vw, 0.91rem);
+  --step-0:  clamp(1.00rem, 0.96rem + 0.22vw, 1.13rem);
+  --step-1:  clamp(1.25rem, 1.18rem + 0.36vw, 1.50rem);
+  --step-2:  clamp(1.56rem, 1.44rem + 0.61vw, 2.00rem);
+  --step-3:  clamp(1.95rem, 1.74rem + 1.05vw, 2.66rem);
+  --step-4:  clamp(2.44rem, 2.08rem + 1.79vw, 3.55rem);
+  --step-5:  clamp(3.05rem, 2.45rem + 3.00vw, 4.74rem);
+  --step-6:  clamp(3.81rem, 2.79rem + 5.09vw, 6.31rem);
+
+  --leading-tight: 1.05;   /* display headlines — set tight, like print */
+  --leading-snug: 1.25;
+  --leading-body: 1.65;    /* long-form prose */
+  --tracking-tight: -0.03em;
+  --tracking-wide: 0.08em; /* eyebrows / small caps */
+
+  /* Measure: prose caps at ~68ch so lines stay readable. */
+  --measure: 68ch;
+  --measure-narrow: 54ch;
+
+  /* --- Space: derived from the type scale, not an arbitrary 4px grid ----- */
+  --space-3xs: 0.25rem;
+  --space-2xs: 0.5rem;
+  --space-xs: 0.75rem;
+  --space-s: 1rem;
+  --space-m: 1.5rem;
+  --space-l: 2.5rem;
+  --space-xl: 4rem;
+  --space-2xl: 6rem;
+  --space-3xl: 9rem;
+
+  /* --- Layout: asymmetric editorial grid -------------------------------- */
+  --page-gutter: clamp(1.25rem, 5vw, 4rem);
+  --content-max: 72rem;
+  --rule: 1px;
+
+  /* --- Accent: carried over from the old site (terracotta) -------------- */
+  --accent: #d97757;
+  --accent-ink: #a8442a;
+  --accent-soft: rgba(217, 119, 87, 0.12);
+
+  /* --- Motion ----------------------------------------------------------
+     Editorial motion is *paced*, not bouncy: things settle rather than spring.
+     One shared easing keeps the whole site feeling like one hand made it. */
+  --ease-out: cubic-bezier(0.22, 1, 0.36, 1);
+  --ease-in-out: cubic-bezier(0.65, 0, 0.35, 1);
+  --dur-fast: 160ms;
+  --dur-mid: 320ms;
+  --dur-slow: 620ms;
+
+  color-scheme: light dark;
+}
+
+/* --- Palette: paper and ink, not slate-and-card -------------------------- */
+:root,
+:root[data-theme='light'] {
+  --paper: #faf8f5;        /* warm off-white — paper, not #fff */
+  --paper-2: #f2eee8;
+  --surface: #ffffff;
+  --ink: #16130f;          /* warm near-black — ink, not #000 */
+  --ink-2: #4a443c;        /* secondary prose */
+  --ink-3: #837a6e;        /* marginalia, captions */
+  --rule-color: rgba(22, 19, 15, 0.14);
+  --shadow: 0 1px 2px rgba(22, 19, 15, 0.04), 0 8px 24px rgba(22, 19, 15, 0.06);
+}
+
+:root[data-theme='dark'] {
+  --paper: #12100e;
+  --paper-2: #1a1714;
+  --surface: #1d1a16;
+  --ink: #f4f1ec;
+  --ink-2: #bdb5aa;
+  --ink-3: #8b8276;
+  --rule-color: rgba(244, 241, 236, 0.16);
+  --shadow: 0 1px 2px rgba(0, 0, 0, 0.3), 0 8px 24px rgba(0, 0, 0, 0.35);
+  /* Terracotta lifted slightly for contrast on dark paper. */
+  --accent: #e08a69;
+  --accent-ink: #f0a583;
+  --accent-soft: rgba(224, 138, 105, 0.16);
+}
+
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme='light']) {
+    --paper: #12100e;
+    --paper-2: #1a1714;
+    --surface: #1d1a16;
+    --ink: #f4f1ec;
+    --ink-2: #bdb5aa;
+    --ink-3: #8b8276;
+    --rule-color: rgba(244, 241, 236, 0.16);
+    --shadow: 0 1px 2px rgba(0, 0, 0, 0.3), 0 8px 24px rgba(0, 0, 0, 0.35);
+    --accent: #e08a69;
+    --accent-ink: #f0a583;
+    --accent-soft: rgba(224, 138, 105, 0.16);
+  }
+}

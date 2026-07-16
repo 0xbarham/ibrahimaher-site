@@ -1,0 +1,21 @@
+{
+  // @astrojs/cloudflare generates `main` and `assets` at build time — declaring
+  // them here breaks the build, because @cloudflare/vite-plugin validates `main`
+  // before dist/ exists. Only bindings and account-level config belong here.
+  //
+  // Secrets (ADMIN_PASSWORD_HASH, SESSION_SECRET) are set with
+  // `wrangler secret put <NAME>`, or via .dev.vars locally — never committed.
+  "name": "ibrahimaher",
+  "compatibility_date": "2026-07-16",
+  "compatibility_flags": ["nodejs_compat"],
+  "observability": {
+    "enabled": true
+  },
+  "d1_databases": [
+    {
+      "binding": "DB",
+      "database_name": "ibrahimaher-content",
+      "database_id": "91a1959f-be34-4dc2-9507-adb7be1357c7"
+    }
+  ]
+}
