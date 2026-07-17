@@ -11,6 +11,28 @@
   "observability": {
     "enabled": true
   },
+  // The production hostnames. Declared here rather than passed as --domains on
+  // a single deploy, so every later deploy reasserts them instead of depending
+  // on whoever happened to run the cutover.
+  //
+  // NOT YET ATTACHED as of 2026-07-17. Both hostnames still point at the v1
+  // PAGES project, and the attach fails with 409 / code 100117: "already has
+  // externally managed DNS records". Detaching them from Pages does NOT clear
+  // those records — they are standing records in the zone, so they must be
+  // deleted before a Worker Custom Domain can take the hostname. Doing that
+  // needs dns_records:write, which the current OAuth token does not carry
+  // (zone:read only). Until the records are removed, deploys will report
+  // "Some triggers failed to deploy" and only workers.dev will serve.
+  "routes": [
+    { "pattern": "ibrahimaher.com", "custom_domain": true },
+    { "pattern": "www.ibrahimaher.com", "custom_domain": true }
+  ],
+  // Explicit because declaring `routes` turns the workers.dev route OFF by
+  // default — which silently 404'd the staging URL the moment the routes above
+  // were added. With the custom domains not yet attached, that left the Worker
+  // reachable at no hostname at all. Keep this true regardless: it is the
+  // staging URL, and it costs nothing beside a custom domain.
+  "workers_dev": true,
   "d1_databases": [
     {
       "binding": "DB",
