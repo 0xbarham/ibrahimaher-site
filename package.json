@@ -6,6 +6,7 @@
   "scripts": {
     "dev": "astro dev",
     "build": "astro build",
+    "postbuild": "node -e \"const f='dist/client/_redirects';require('fs').existsSync(f)&&require('fs').writeFileSync(f,'')\"",
     "preview": "wrangler pages dev dist",
     "check": "astro check"
   },
