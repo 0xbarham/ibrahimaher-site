@@ -11,21 +11,52 @@
   "observability": {
     "enabled": true
   },
-  // The production hostnames. Declared here rather than passed as --domains on
-  // a single deploy, so every later deploy reasserts them instead of depending
-  // on whoever happened to run the cutover.
+  // `binding` and `directory` are still left to the adapter (see above) — only
+  // this one knob is set here.
   //
-  // NOT YET ATTACHED as of 2026-07-17. Both hostnames still point at the v1
-  // PAGES project, and the attach fails with 409 / code 100117: "already has
-  // externally managed DNS records". Detaching them from Pages does NOT clear
-  // those records — they are standing records in the zone, so they must be
-  // deleted before a Worker Custom Domain can take the hostname. Doing that
-  // needs dns_records:write, which the current OAuth token does not carry
-  // (zone:read only). Until the records are removed, deploys will report
-  // "Some triggers failed to deploy" and only workers.dev will serve.
+  // The asset router runs BEFORE the Worker, and its default
+  // `html_handling: "auto-trailing-slash"` special-cases any path ending in
+  // `index.html`. Nothing in dist/client is HTML (every route is SSR from D1),
+  // so that default has nothing legitimate to do here — it just swallows two
+  // legacy URLs before src/middleware.ts can 301 them, and answers /index.html
+  // with a 404 and /blog/index.html with a 500. Measured: with the default,
+  // /about.html reached the middleware and redirected fine while both
+  // index.html forms did not.
+  //
+  // "none" disables that special-casing only. Real assets (/_astro/*,
+  // /assets/*, robots.txt, llms.txt) are matched by exact path and are
+  // unaffected.
+  "assets": {
+    "html_handling": "none"
+  },
+  // The production hostnames. Declared here rather than passed on a single
+  // deploy, so every later deploy reasserts them instead of depending on
+  // whoever happened to run the cutover.
+  //
+  // These are ZONE ROUTES, not Custom Domains, and that is deliberate.
+  //
+  // Custom Domains cannot be attached here: both hostnames already resolve via
+  // standing DNS records owned by the v1 PAGES project, so the attach fails
+  // with 409 / code 100117 ("already has externally managed DNS records").
+  // Detaching them from Pages does NOT clear those records — they persist in
+  // the zone and must be deleted first, which needs dns_records:write. The
+  // OAuth token carries zone:read only, so that door is closed.
+  //
+  // A zone route needs no DNS write at all: the hostname already resolves
+  // (proxied, at the v1 Pages project), and a matching Worker route is
+  // evaluated FIRST and wins. Verified 2026-07-17 by pointing a throwaway
+  // `ibrahimaher.com/__cutovertest*` route at this Worker while the homepage
+  // still served v1 — the test path returned this Worker's 404 and the rest of
+  // the site stayed untouched. Propagation took ~30s, so a check run straight
+  // after the API call reads as a failure when it is not.
+  //
+  // Consequence worth knowing: the Pages project still holds the custom domains
+  // and is now a silent fallback. Deleting these two routes reverts the entire
+  // site to v1 within a minute — that is the rollback, and it is why Pages is
+  // deliberately left attached rather than tidied up.
   "routes": [
-    { "pattern": "ibrahimaher.com", "custom_domain": true },
-    { "pattern": "www.ibrahimaher.com", "custom_domain": true }
+    { "pattern": "ibrahimaher.com/*", "zone_name": "ibrahimaher.com" },
+    { "pattern": "www.ibrahimaher.com/*", "zone_name": "ibrahimaher.com" }
   ],
   // Explicit because declaring `routes` turns the workers.dev route OFF by
   // default — which silently 404'd the staging URL the moment the routes above

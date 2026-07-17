@@ -62,6 +62,45 @@ function canonicalHostRedirect(url: URL, canonicalHost: string): Response | null
 }
 
 /**
+ * Legacy `.html` URLs -> the extensionless form.
+ *
+ * v1 was a static Pages site of real files: /about.html, /blog/foo.html. Pages
+ * normalised those to the clean form itself, so the sitemap and every indexed
+ * URL is already extensionless and the move to Workers keeps its URLs. Old
+ * inbound links, bookmarks and backlinks still carry the extension though, and
+ * nothing on Workers normalises them — measured on the deployed v2, each shape
+ * degraded differently: /about.html and /index.html 404'd, and /blog/foo.html
+ * answered 200, serving the SAME post on two URLs (the canonical tag deduped
+ * it, but a canonical is only a hint). All of those now 301.
+ *
+ * KNOWN EXCEPTION — `/blog/index.html` still 500s and this cannot fix it.
+ * Astro matches a route BEFORE running middleware, and /blog/ is the one
+ * directory holding both index.astro and [slug].astro; that match throws on the
+ * literal lowercase "index.html" and never reaches this function. Verified by
+ * elimination on the deployed Worker: /blog/Index.html, /blog/indexx.html,
+ * /admin/index.html and /nope/index.html all 301 correctly — only that exact
+ * string fails. Assets `html_handling` is already "none", so the asset router
+ * is not the cause. Fixing it needs a zone Redirect Rule (no rulesets scope on
+ * this token) or an upstream Astro fix. Left as-is deliberately: the URL is not
+ * in the sitemap, is linked from nowhere on the site, and v1 only ever answered
+ * it with a redirect, so nothing should hold it but a stale external link.
+ */
+function legacyHtmlRedirect(url: URL): Response | null {
+  const { pathname } = url;
+  if (!pathname.endsWith('.html')) return null;
+
+  // `/x/index.html` names a directory index, not a page called "index" — it has
+  // to land on `/x/`, not `/x/index`, which is itself a 404 here.
+  const clean = pathname.endsWith('/index.html')
+    ? pathname.slice(0, -'index.html'.length)
+    : pathname.slice(0, -'.html'.length);
+
+  const to = new URL(url);
+  to.pathname = clean;
+  return new Response(null, { status: 301, headers: { Location: to.pathname + to.search } });
+}
+
+/**
  * Edge-cache public pages.
  *
  * Every page is rendered on demand from D1, so without this each visit costs a
@@ -104,6 +143,11 @@ export const onRequest = defineMiddleware(async (context, next) => {
   // Cheap string compare, no DB — safe to run before anything else.
   const hostRedirect = canonicalHostRedirect(context.url, 'ibrahimaher.com');
   if (hostRedirect) return hostRedirect;
+
+  // After the host hop, so a link to the apex resolves in ONE redirect rather
+  // than two. No DB either, so it stays on the cheap path.
+  const htmlRedirect = legacyHtmlRedirect(context.url);
+  if (htmlRedirect) return htmlRedirect;
 
   if (!isProtected(pathname) || PUBLIC_ADMIN_PATHS.has(pathname)) {
     const response = await next();
