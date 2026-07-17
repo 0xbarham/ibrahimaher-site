@@ -80,6 +80,45 @@ a {
   color: inherit;
 }
 
+/*
+  Kill the grey box a mobile browser paints over whatever you tap.
+
+  It is drawn on the element's border box, so on a link that wraps to two lines
+  or a card with a stretched ::after hit area it lands as a rectangle nothing on
+  the page shares an edge with — it reads as a rendering fault rather than as
+  feedback. The property is inherited, so setting it once here covers everything.
+
+  Only :hover states replace it, and a touch device has none — so without the
+  :active rule below, every tap on this site would give no feedback at all.
+  Removing the highlight is only safe together with that.
+*/
+html {
+  -webkit-tap-highlight-color: transparent;
+}
+
+/*
+  Touch-only, deliberately. On a pointer device :hover already answers the press
+  and this would fight it; `(hover: none)` is the honest test for "this input has
+  no hover to fall back on".
+
+  Opacity, not the transform .btn:active uses: this covers anything tappable,
+  including cards and nav links, and shifting a card's geometry under the finger
+  is a bigger gesture than a press deserves.
+
+  Deliberately not transitioned. :where() has zero specificity, so a transition
+  declared here loses to every component that sets its own (.nav__link already
+  transitions color) — the fade would land on some taps and not others. Raising
+  the specificity to win would REPLACE those transitions rather than add to them,
+  so the choice is an inconsistent fade or a consistent instant one. Instant is
+  also the better answer under a finger: the response is the point, not the
+  animation.
+*/
+@media (hover: none) {
+  :where(a, button, [role='button']):active {
+    opacity: 0.55;
+  }
+}
+
 :where(button, a, input, textarea, select):focus-visible {
   outline: 2px solid var(--accent);
   outline-offset: 3px;
