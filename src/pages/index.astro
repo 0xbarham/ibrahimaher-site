@@ -937,10 +937,15 @@ if (featured?.external_url) {
      Light/dark logo swap.
 
      IMPORTANT: `.logo-light` is only applied when a dark counterpart exists.
-     The previous rule hid every light mark in dark mode, so Help Tech and
-     YourVisio — which have no dark variant in D1 — vanished completely.
-     Marks without a counterpart keep the neutral `.logo-mark` class, are never
-     hidden, and sit on a plate (below) so dark ink stays legible on dark paper.
+     The previous rule hid every light mark in dark mode, so the marks with no
+     dark variant in D1 vanished completely. Marks without a counterpart keep the
+     neutral `.logo-mark` class, are never hidden, and sit on a plate (below) so
+     dark ink stays legible on dark paper.
+
+     As of migration 0007 that is EVERY logo on this page: n8n was the last mark
+     carrying a dark variant, and therefore the last one rendering unplated. These
+     rules stay because the branch is still live — setting a dark variant on any
+     row in the admin opts that logo back out of the plate.
      ====================================================================== */
   .logo-mark {
     width: 100%;
@@ -972,11 +977,22 @@ if (featured?.external_url) {
 
   /* ----------------------------------------------------------------------
      Plate: a light, rounded card behind single-variant marks.
-     Help Tech's mark is dark ink on transparency and YourVisio's is a dark
-     green mark on cream — both need a light ground to read on dark paper.
-     Keeping the plate in BOTH themes means the brand colours stay correct
-     (an invert filter would turn Help Tech's red into cyan) and the mark
-     does not shift appearance between modes.
+     Help Tech's mark is dark ink on transparency, YourVisio's is a dark green
+     mark on cream, and n8n's is a pink node glyph beside a near-black wordmark —
+     each needs a light ground to read on dark paper. Keeping the plate in BOTH
+     themes means the brand colours stay correct (an invert filter would turn
+     Help Tech's red into cyan) and the mark does not shift appearance between
+     modes.
+
+     n8n reached the plate late, via migration 0007. It shipped a white variant,
+     which took the swap branch instead and left it the one unboxed mark in a
+     column of boxed ones. The white file cannot be combined with the plate —
+     white on #faf8f5 is invisible — so the plate and the swap are mutually
+     exclusive by construction, not by preference.
+
+     A wide mark letterboxes here (n8n's logo is 296x80 against Help Tech's
+     97x125) and that is fine: the plate, not the glyph, is what the eye lines up
+     down the column.
      ---------------------------------------------------------------------- */
   .job__logo--plate,
   .work__icon--plate {
