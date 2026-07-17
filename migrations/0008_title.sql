@@ -1,0 +1,42 @@
+-- Migration 0008: shorten the homepage title, and lead with the target identity.
+--
+-- Semrush flagged the homepage (1 failed / 18 passed) for title length. The old
+-- value was 76 characters:
+--
+--   Ibrahim Maher Al-Bander | Social Media Marketing, Accounting & AI Automation
+--
+-- against this very row's own admin help text: "Under 60 characters where
+-- possible." Google truncates the SERP title around 580-600px, so the tail was
+-- being cut anyway — the only real question was which words survive the cut.
+--
+-- The new value is 55 characters, and it is a positioning decision rather than a
+-- trim (Ibrahim's call, 2026-07-17: "AI Automation, Developer, n8n"):
+--
+--   * The old title led with "Social Media Marketing" — the identity he is
+--     moving AWAY from — and gave three co-equal identities, which asks Google to
+--     classify one person as three half-people.
+--   * Head terms ("AI automation") are not winnable for a one-person site against
+--     zapier.com / n8n.io. The title's real job here is the NAME, which he already
+--     ranks for, plus the identity to attach to it.
+--   * "n8n" is the defensible term: specific, demonstrably shipped, and the wedge
+--     the whole site argues for.
+--
+-- Marketing and accounting are NOT lost — they remain in the meta description,
+-- the H1 tagline, jobTitle, knowsAbout, the Experience section and llms.txt. Only
+-- the 60-character shop window changed.
+--
+-- Deliberately NOT touched here, to keep one decision per migration:
+--   * `default_seo_description` still opens "Social media marketer, accounts and
+--     inventory officer…". The same argument applies, but it is a separate call.
+--   * Person.jobTitle (index.astro) still reads "Social Media Marketing Specialist
+--     & AI Automation Developer". It should match LinkedIn string-for-string —
+--     Google weighs off-site corroboration over self-description — so changing it
+--     here WITHOUT changing LinkedIn would make the entity worse, not better.
+--     Change both, in that order, or neither.
+--
+-- Matched on `key`, the settings lookup, which the admin cannot edit (only `value`
+-- is editable), so a re-run updates 1 row to the same value.
+
+UPDATE settings
+SET value = 'Ibrahim Maher Al-Bander | AI Automation & n8n Developer'
+WHERE key = 'default_seo_title';
