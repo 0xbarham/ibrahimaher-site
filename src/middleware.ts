@@ -82,17 +82,13 @@ function canonicalHostRedirect(url: URL, canonicalHost: string): Response | null
  * answered 200, serving the SAME post on two URLs (the canonical tag deduped
  * it, but a canonical is only a hint). All of those now 301.
  *
- * KNOWN EXCEPTION — `/blog/index.html` still 500s and this cannot fix it.
- * Astro matches a route BEFORE running middleware, and /blog/ is the one
- * directory holding both index.astro and [slug].astro; that match throws on the
- * literal lowercase "index.html" and never reaches this function. Verified by
- * elimination on the deployed Worker: /blog/Index.html, /blog/indexx.html,
- * /admin/index.html and /nope/index.html all 301 correctly — only that exact
- * string fails. Assets `html_handling` is already "none", so the asset router
- * is not the cause. Fixing it needs a zone Redirect Rule (no rulesets scope on
- * this token) or an upstream Astro fix. Left as-is deliberately: the URL is not
- * in the sitemap, is linked from nowhere on the site, and v1 only ever answered
- * it with a redirect, so nothing should hold it but a stale external link.
+ * KNOWN EXCEPTION — `/blog/index.html` never reaches this function, and is
+ * redirected by a route in astro.config.mjs instead. Astro resolves props
+ * BEFORE running middleware, and for that one path prop resolution throws
+ * (`TypeError: Missing parameter: slug`) — so onRequest is never called and a
+ * 301 cannot be issued from here. The full mechanism is documented at the
+ * `redirects` key in astro.config.mjs. Every other shape — /blog/Index.html,
+ * /blog/foo.html, /admin/index.html, /nope/index.html — is handled below.
  */
 function legacyHtmlRedirect(url: URL): Response | null {
   const { pathname } = url;

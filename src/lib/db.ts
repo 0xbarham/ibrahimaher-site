@@ -45,6 +45,10 @@ export interface Post {
   twitter_title: string;
   twitter_description: string;
   twitter_image: string;
+  // Per-post CTA (migration 0004). Read by blog/[slug].astro via SELECT *; kept
+  // on the interface so the column list here stays the source of truth.
+  cta_heading: string;
+  cta_md: string;
 }
 
 export interface Job {
@@ -70,6 +74,8 @@ export interface Project {
   icon_dark: string | null;
   featured: number;
   featured_logo: string | null;
+  /** Dark-theme featured logo. Null falls back to a light plate, exactly like the job logos. */
+  featured_logo_dark: string | null;
   external_url: string | null;
   external_label: string | null;
   /** Light-theme screenshot. Also the fallback when `image_dark` is unset. */

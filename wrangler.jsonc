@@ -79,5 +79,21 @@
       "binding": "SESSION",
       "id": "3342754c519347cab313af75d4bc11c0"
     }
+  ],
+  // Binary for admin-uploaded images. The `media` D1 table (migration 0002) was
+  // always described as "the queryable index" for this bucket — key, url, mime,
+  // bytes, dimensions — but the bucket itself never existed, so nothing could
+  // write to it and every image path in the DB points at a build-time asset
+  // under public/assets/ that only changes by committing a file and redeploying.
+  //
+  // R2 must be enabled on the ACCOUNT before this binding can resolve: the API
+  // answers `code: 10042 "Please enable R2 through the Cloudflare Dashboard"`,
+  // and no API token can flip that switch — it is a one-time dashboard action.
+  // Enabled and bucket created 2026-07-17.
+  "r2_buckets": [
+    {
+      "binding": "MEDIA",
+      "bucket_name": "ibrahimaher-media"
+    }
   ]
 }

@@ -23,6 +23,16 @@ interface Props {
   twitterTitle?: string;
   twitterDescription?: string;
   twitterImage?: string;
+  /**
+   * OG article:* metadata. Emitted only when ogType === 'article', so a non-article
+   * page passing none of these changes nothing. The ranking-relevant values already
+   * live in the BlogPosting JSON-LD; these mirror them into the OG namespace that
+   * Facebook/LinkedIn cards and several SEO crawlers read.
+   */
+  articlePublishedTime?: string;
+  articleModifiedTime?: string;
+  articleAuthor?: string;
+  articleSection?: string;
   /** JSON-LD graph node(s) for this page. */
   jsonLd?: Record<string, unknown> | Record<string, unknown>[];
 }
@@ -40,6 +50,10 @@ const {
   twitterTitle,
   twitterDescription,
   twitterImage,
+  articlePublishedTime,
+  articleModifiedTime,
+  articleAuthor,
+  articleSection,
   jsonLd,
 } = Astro.props;
 
@@ -48,6 +62,19 @@ const siteName = setting(settings, 'site_name', 'Ibrahim Maher Al-Bander');
 const siteUrl = setting(settings, 'site_url', 'https://ibrahimaher.com').replace(/\/$/, '');
 const gaId = setting(settings, 'ga_measurement_id'); // blank disables analytics
 const defaultOg = setting(settings, 'default_og_image', '/assets/og-image.png');
+const defaultOgAlt = setting(settings, 'default_og_image_alt');
+const ogLocale = setting(settings, 'og_locale', 'en_US');
+const googleVerification = setting(settings, 'google_site_verification');
+const bingVerification = setting(settings, 'bing_site_verification');
+
+/**
+ * Settings booleans are TEXT '0'/'1' (settings.value is TEXT; the admin checkbox
+ * writes back `checked ? '1' : '0'`). Compare against '1' explicitly — the string
+ * '0' is truthy in JS, so `if (value)` would read an unticked box as ticked and
+ * noindex the entire site.
+ */
+const forceNoindex = setting(settings, 'robots_noindex') === '1';
+const bigImagePreview = setting(settings, 'robots_max_image_preview') === '1';
 
 // Same logic this file always had, now shared: blog/[slug].astro concatenated
 // its own and shipped a doubled origin in every post's JSON-LD. See lib/url.ts.
@@ -64,7 +91,19 @@ const shareImage = abs(ogImage || defaultOg);
  */
 const canonicalHost = new URL(siteUrl).host;
 const isCanonicalHost = Astro.url.host === canonicalHost;
-const blockIndexing = noindex || !isCanonicalHost;
+const blockIndexing = noindex || !isCanonicalHost || forceNoindex;
+
+/**
+ * One robots tag, not two. `max-image-preview:large` is an indexing hint, so it
+ * is meaningless on a page that is already noindex — emitting both would be a
+ * self-contradicting tag. Blocking always wins; the preview hint only applies to
+ * pages that are actually indexable.
+ */
+const robotsContent = blockIndexing
+  ? 'noindex, nofollow'
+  : bigImagePreview
+    ? 'max-image-preview:large'
+    : '';
 
 // Resolve the share card once, so og:* and twitter:* cannot drift apart.
 const shareTitle = ogTitle || title;
@@ -72,6 +111,37 @@ const shareDesc = ogDescription || description;
 const xTitle = twitterTitle || shareTitle;
 const xDesc = twitterDescription || shareDesc;
 const xImage = twitterImage ? abs(twitterImage) : shareImage;
+
+/**
+ * The admin's handle box is free text, so accept the three things a human will
+ * actually put in it — `ibrahim`, `@ibrahim`, or a pasted profile URL — and
+ * normalise to the `@name` form. X drops twitter:site outright if the value is
+ * not exactly that shape, which fails silently: the card still renders, just
+ * without attribution, so there is nothing to notice.
+ *
+ * The scheme is OPTIONAL in that first replace for a reason: Chrome's address
+ * bar displays `x.com/ibrahim` and hides the `https://`, so copying what is on
+ * screen — the single most likely way this box gets a URL — yields a schemeless
+ * one. Requiring the scheme matched neither, left the host in place, and the tag
+ * shipped as `@x.com`: still the wrong-shape value X silently discards, only now
+ * from a paste that looked perfectly reasonable.
+ */
+const handleName = setting(settings, 'twitter_handle')
+  .trim()
+  .replace(/^(?:https?:\/\/)?(?:www\.)?(?:twitter|x)\.com\//i, '')
+  .replace(/^@/, '')
+  .replace(/[/?#].*$/, '');
+const twitterHandle = handleName ? `@${handleName}` : '';
+
+/**
+ * The alt setting describes the DEFAULT share image specifically, so it may only
+ * be emitted when that image is the one actually on the card. A post carrying its
+ * own hero picture is described by its own alt text — captioning it with the
+ * site-wide default would state something untrue about the image to exactly the
+ * readers who depend on alt text most.
+ */
+const ogAltApplies = defaultOgAlt !== '' && !ogImage;
+const xAltApplies = ogAltApplies && !twitterImage;
 
 const ldArray = jsonLd ? (Array.isArray(jsonLd) ? jsonLd : [jsonLd]) : [];
 
@@ -96,7 +166,15 @@ const year = new Date().getUTCFullYear();
     {keywords && <meta name="keywords" content={keywords} />}
     <meta name="author" content={siteName} />
     <link rel="canonical" href={canonicalUrl} />
-    {blockIndexing && <meta name="robots" content="noindex, nofollow" />}
+    {robotsContent && <meta name="robots" content={robotsContent} />}
+
+    {/*
+      Search-engine ownership proofs. Both are emitted only when set: an empty
+      content="" is not a harmless no-op — Search Console reads it as a failed
+      verification rather than an absent one.
+    */}
+    {googleVerification && <meta name="google-site-verification" content={googleVerification} />}
+    {bingVerification && <meta name="msvalidate.01" content={bingVerification} />}
 
     <meta property="og:type" content={ogType} />
     <meta property="og:title" content={shareTitle} />
@@ -104,12 +182,40 @@ const year = new Date().getUTCFullYear();
     <meta property="og:url" content={canonicalUrl} />
     <meta property="og:site_name" content={siteName} />
     <meta property="og:image" content={shareImage} />
-    <meta property="og:locale" content="en_US" />
+    {/*
+      Dimensions let Facebook/LinkedIn render the large summary card on the FIRST
+      scrape, before they fetch and decode the file. Emitted only for the fixed
+      1200x630 default share image — a page passing its own ogImage may be any
+      size, so its dimensions are left unstated rather than mis-declared.
+    */}
+    {!ogImage && (
+      <>
+        <meta property="og:image:width" content="1200" />
+        <meta property="og:image:height" content="630" />
+      </>
+    )}
+    {ogAltApplies && <meta property="og:image:alt" content={defaultOgAlt} />}
+    <meta property="og:locale" content={ogLocale} />
+    {ogType === 'article' && articlePublishedTime && (
+      <meta property="article:published_time" content={articlePublishedTime} />
+    )}
+    {ogType === 'article' && articleModifiedTime && (
+      <meta property="article:modified_time" content={articleModifiedTime} />
+    )}
+    {ogType === 'article' && articleAuthor && (
+      <meta property="article:author" content={articleAuthor} />
+    )}
+    {ogType === 'article' && articleSection && (
+      <meta property="article:section" content={articleSection} />
+    )}
 
     <meta name="twitter:card" content="summary_large_image" />
+    {twitterHandle && <meta name="twitter:site" content={twitterHandle} />}
+    {twitterHandle && <meta name="twitter:creator" content={twitterHandle} />}
     <meta name="twitter:title" content={xTitle} />
     <meta name="twitter:description" content={xDesc} />
     <meta name="twitter:image" content={xImage} />
+    {xAltApplies && <meta name="twitter:image:alt" content={defaultOgAlt} />}
 
     <meta name="theme-color" content="#faf8f5" media="(prefers-color-scheme: light)" />
     <meta name="theme-color" content="#12100e" media="(prefers-color-scheme: dark)" />
@@ -236,7 +342,11 @@ const year = new Date().getUTCFullYear();
       </div>
     </header>
 
-    <main id="main">
+    {/* tabindex=-1 so the skip link moves keyboard focus here, not just scroll —
+        WebKit does not reliably move focus to a non-focusable fragment target. It
+        is not a tab stop, and its focus ring is suppressed below since the reader
+        triggered the jump deliberately. */}
+    <main id="main" tabindex="-1">
       <slot />
     </main>
 
@@ -574,6 +684,13 @@ const year = new Date().getUTCFullYear();
 
       .site-footer p {
         margin: 0;
+      }
+
+      /* The skip link's target. #main is focusable (tabindex=-1) only so focus
+         lands here when the link is used; it is not a tab stop, so a focus ring
+         on a whole-page region would be a jarring box with no keyboard purpose. */
+      #main:focus {
+        outline: none;
       }
     </style>
   </body>

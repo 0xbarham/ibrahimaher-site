@@ -27,6 +27,14 @@ import Admin from '../../layouts/Admin.astro';
 </Admin>
 
 <script>
+  /*
+    buildImageControl lives in src/lib/schema.ts — see the note there. It is the
+    same control admin/content/[table].astro renders for `kind: 'image'`, imported
+    rather than copied so `default_og_image` here and `projects.image` there can
+    never drift into two different ideas of what an image field is.
+  */
+  import { buildImageControl } from '../../lib/schema';
+
   interface Row {
     key: string;
     value: string;
@@ -129,6 +137,13 @@ import Admin from '../../layouts/Admin.astro';
     }
 
     let input: HTMLInputElement | HTMLTextAreaElement;
+    /**
+     * What actually goes in the DOM. It is the input itself for every type but
+     * `image`, which wraps its path box in a thumbnail — hence the split: this
+     * used to append `input` directly, which would have torn the image control's
+     * input back out of its own wrapper.
+     */
+    let control: HTMLElement;
     const type = (row.type || 'text').toLowerCase();
 
     if (type === 'textarea' || type === 'text_long') {
@@ -136,20 +151,43 @@ import Admin from '../../layouts/Admin.astro';
       (input as HTMLTextAreaElement).rows = 3;
       input.className = 'textarea';
       input.value = row.value ?? '';
+      control = input;
     } else if (type === 'boolean' || type === 'bool') {
       input = document.createElement('input');
       input.className = 'checkbox';
       (input as HTMLInputElement).type = 'checkbox';
-      (input as HTMLInputElement).checked = row.value === '1' || row.value === 'true';
+      /*
+        `=== '1'` exactly, and nothing else. '1' is what read() below writes, and
+        '1' is the only thing Base.astro accepts (`setting(...) === '1'`), so any
+        third spelling this box called "ticked" would be a value the site reads
+        as off — the admin showing one state while the live page renders the
+        other, with no error to notice. Migration 0010 seeds the first boolean
+        rows as the STRING '0' for the same reason. Accepting 'true' here was
+        that disagreement: nothing writes it, and if a hand-edited row ever held
+        it, this box would tick while the site stayed switched off.
+      */
+      (input as HTMLInputElement).checked = row.value === '1';
+      control = input;
+    } else if (type === 'image') {
+      // `default_og_image` is the only row of this type today, and it fell
+      // through to a bare text box: a path with no way to see what it points at.
+      const media = buildImageControl({
+        id: uid,
+        value: row.value ?? '',
+        label: row.label || row.key,
+      });
+      input = media.input;
+      control = media.el;
     } else {
       input = document.createElement('input');
       input.className = 'input';
       (input as HTMLInputElement).type =
         type === 'number' ? 'number' : type === 'url' ? 'url' : type === 'email' ? 'email' : 'text';
       input.value = row.value ?? '';
+      control = input;
     }
     input.id = uid;
-    left.append(input);
+    left.append(control);
 
     /**
      * The GA warning is a genuine footgun guard: Base.astro renders the whole

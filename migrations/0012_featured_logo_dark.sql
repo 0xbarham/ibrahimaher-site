@@ -1,0 +1,21 @@
+-- Migration 0012: give the featured project logo a dark-theme slot, so EVERY logo
+-- placeholder on the site now carries a light + dark pair the admin can fill later.
+--
+-- Every other logo/mark already had this: jobs.logo_dark, projects.icon_dark,
+-- projects.image_dark. The featured (headline) logo was the one exception — a lone
+-- `featured_logo` with no counterpart — so DAD LINK's dark-ink "DAD" lettering had
+-- nowhere to swap to and rendered raw on the dark headline surface. index.astro now
+-- mirrors the job-logo treatment: with this column set it swaps by theme, and with
+-- it NULL the mark sits on a light plate in both themes (legible either way).
+--
+-- Additive and backward-compatible: a nullable TEXT column. The currently-live
+-- Worker never reads it; the new Worker reads it via `SELECT *` and treats NULL as
+-- "use the plate", so applying this before OR after the deploy is safe. NULL is the
+-- deliberate seed — no official dark DAD LINK asset exists yet, and the plate is the
+-- correct fallback until one is uploaded through the admin media library.
+--
+-- SQLite has no `ADD COLUMN IF NOT EXISTS`; this migration is therefore run ONCE.
+-- Re-running errors with "duplicate column name" (harmless — the column already
+-- exists), unlike a data migration that could corrupt on replay.
+
+ALTER TABLE projects ADD COLUMN featured_logo_dark TEXT;

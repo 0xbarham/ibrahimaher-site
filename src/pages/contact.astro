@@ -12,14 +12,22 @@ const siteUrl = setting(settings, 'site_url', 'https://ibrahimaher.com').replace
 // can be rotated from the admin without a redeploy.
 const web3formsKey = setting(settings, 'web3forms_key');
 
-// Title/description/keywords carried over verbatim from the old contact.html.
-const metaTitle = 'Contact Ibrahim Maher Al-Bander | Marketing, Accounts & AI Automation';
+// Keywords are still the old contact.html's. Title and description are not: both
+// were over length as ported (69 and 171), so both were rewritten to fit the
+// 60 / 120-160 windows Google actually renders. The title lost "Accounts" rather
+// than the name — "Contact <name>" is the query this page can win, and marketing
+// and automation are the two things people write in about; accounts work survives
+// in the description, the "Best for" aside and the reason dropdown. The
+// description now mirrors the page's own lede (offer, location, "I reply myself")
+// instead of the generic "Get in touch with…" opener, which spent 18 characters
+// before saying anything.
+const metaTitle = 'Contact Ibrahim Maher Al-Bander | Marketing & Automation';
 const metaDesc =
-  'Get in touch with Ibrahim Maher Al-Bander for social media marketing, accounts and bookkeeping work, or n8n AI automation projects. Based in Erbil, Iraq, available remote.';
+  'Marketing role, accounts position, or an n8n automation project: send a note. Based in Erbil, open to remote work, and I reply to every message myself.';
 const metaKeywords =
   'contact Ibrahim Al-Bander, hire n8n developer Erbil, hire AI automation developer Iraq, hire social media marketer Erbil, Ibrahim Maher Al-Bander email';
 
-const jsonLd = [
+const jsonLd: Record<string, unknown>[] = [
   {
     '@context': 'https://schema.org',
     '@type': 'ContactPage',
@@ -74,6 +82,24 @@ const faqs = [
     a: 'Whatever gets me to a useful reply fastest: what you\'re trying to solve, roughly what tools or platforms are involved, and any timeline or budget constraints you already have in mind. Vague "let\'s chat" messages get a reply too, just a slower one.',
   },
 ];
+
+/*
+ * FAQPage node, built from the same `faqs` array rendered below so the structured
+ * data can never describe an answer the page does not show — the homepage does the
+ * same with its own FAQ block. Google restricted FAQ rich results to gov/health
+ * sites in 2023, so this earns no snippet; the value is structured-data consistency
+ * and AI-answer extraction (Bing/Copilot, ChatGPT, Perplexity). The answers are
+ * plain text with no inline HTML, so they are safe as JSON-LD literals.
+ */
+jsonLd.push({
+  '@context': 'https://schema.org',
+  '@type': 'FAQPage',
+  mainEntity: faqs.map((f) => ({
+    '@type': 'Question',
+    name: f.q,
+    acceptedAnswer: { '@type': 'Answer', text: f.a },
+  })),
+});
 
 const reasons = [
   'Marketing role or project',
@@ -351,8 +377,12 @@ const reasons = [
     border-top: var(--rule) solid var(--rule-color);
   }
 
+  /* --accent-ink, not --accent: the site's per-theme "accent on paper" role
+     (5.62:1 light / 9.42:1 dark), so the focused underline clears the 3:1 SC 1.4.11
+     floor that bare --accent (2.94:1 light) misses. The global --accent-ink focus
+     ring (below) is the primary keyboard cue; this is the ambient emphasis. */
   .field:focus-within {
-    border-color: var(--accent);
+    border-color: var(--accent-ink);
   }
 
   .field__label {
@@ -376,10 +406,10 @@ const reasons = [
     padding: 0;
   }
 
-  .field__input:focus {
-    outline: none;
-  }
-
+  /* No outline:none here. The global :focus-visible ring (2px --accent-ink) is the
+     keyboard focus indicator; suppressing it left these inputs with only the 1px
+     underline, which under-served keyboard users on the site's main conversion form.
+     :focus-visible means mouse clicks still get no ring, only the underline. */
   .field:focus-within .field__label {
     color: var(--accent-ink);
   }

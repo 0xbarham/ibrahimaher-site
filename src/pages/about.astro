@@ -9,11 +9,17 @@ const settings = await getSettings();
 const siteUrl = setting(settings, 'site_url', 'https://ibrahimaher.com').replace(/\/$/, '');
 const siteName = setting(settings, 'site_name', 'Ibrahim Maher Al-Bander');
 
-// Title/description/keywords are the ones the old about.html already ranked on —
-// carried over verbatim rather than rewritten for the port.
+// Title and keywords are the ones the old about.html already ranked on, carried
+// over verbatim. The description is not: at 206 characters it was the longest on
+// the site and Google cut it around "running social media…", so the Claude Code
+// and n8n half — the only part that differentiates this page — never rendered.
+// The rewrite drops the "The story behind <name>:" preamble (the name is already
+// in the title, the URL and the H1) and switches to first person, matching both
+// the page's own lede and every other description on the site. Third person here
+// was an artifact of the old file, not a deliberate choice.
 const metaTitle = 'About Ibrahim Maher Al-Bander | Marketer & AI Developer';
 const metaDesc =
-  'The story behind Ibrahim Maher Al-Bander: how a computer engineering graduate in Erbil, Iraq ended up running social media, accounting, and AI automation at once, and why he builds with n8n and Claude Code.';
+  'How a computer engineering graduate in Erbil ended up running social media, accounts, and AI automation at once, and why I build with n8n and Claude Code.';
 const metaKeywords =
   'Ibrahim Maher Al-Bander, about Ibrahim Al-Bander, Erbil Iraq marketer, AI automation developer bio, n8n developer story, Northern Technical University graduate, Help Tech Co Ltd';
 

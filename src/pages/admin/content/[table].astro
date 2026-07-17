@@ -2,11 +2,12 @@
 /**
  * Generic row editor for the simple content tables.
  *
- * Driven entirely by TABLE_COLUMNS, which is the same allowlist the API
+ * The field list is still bounded by TABLE_COLUMNS, the same allowlist the API
  * validates against — so the form can never offer a column the API will reject.
+ * What each column LOOKS like now comes from CONTENT_FIELDS in schema.ts.
  */
 import Admin from '../../../layouts/Admin.astro';
-import { TABLE_COLUMNS, isTable } from '../../../lib/schema';
+import { columnsFor, contentFieldsFor, isTable } from '../../../lib/schema';
 
 const { table } = Astro.params;
 
@@ -19,30 +20,48 @@ if (!table || !isTable(table) || !ALLOWED.includes(table)) {
   return Astro.rewrite('/404');
 }
 
-const columns = TABLE_COLUMNS[table] as readonly string[];
+const columns = columnsFor(table);
 const label = table.charAt(0).toUpperCase() + table.slice(1);
 
-/** Column name -> control. Mirrors the conventions the schema encodes. */
-function kindOf(col: string): string {
-  if (col === 'sort_order') return 'number';
-  if (col === 'featured') return 'boolean';
-  if (col === 'tags_json') return 'tags';
-  if (col.endsWith('_html')) return 'html';
-  if (col.endsWith('_url')) return 'url';
-  return 'text';
-}
+/*
+ * Controls come from CONTENT_FIELDS in schema.ts — the same per-column metadata
+ * shape POST_FIELDS gives the post editor. It replaced a `kindOf(col)` that
+ * guessed the control from the column NAME, which is how `hidden` ended up as a
+ * text box and quietly deleted a project from the live site. Nothing about the
+ * field list is decided here any more; only the *behaviour* of each `kind` is,
+ * exactly as in admin/posts/[id].astro.
+ */
+const fieldMeta = contentFieldsFor(table);
 
-const humanize = (c: string) =>
-  c
-    .replace(/_json$/, '')
-    .replace(/_html$/, '')
-    .replace(/_/g, ' ')
-    .replace(/^./, (m) => m.toUpperCase());
+/**
+ * Sections, in order. These mirror the post editor's tabs, except a row is
+ * short enough that stacking the sections beats hiding three quarters of them
+ * behind tabs — a project has 14 columns, not 30.
+ *
+ * A described field with no group falls back to Basics; an undescribed column
+ * gets the last section, which is named to be alarming because it is.
+ */
+const GROUPS = [
+  { key: 'basics', label: 'Basics' },
+  { key: 'media', label: 'Images' },
+  { key: 'link', label: 'Link' },
+  { key: 'placement', label: 'Placement' },
+] as const;
+
+const sections = [
+  ...GROUPS.map((g) => ({
+    key: g.key as string,
+    label: g.label as string,
+    fields: fieldMeta.filter((f) => !f.unspecified && (f.group ?? 'basics') === g.key),
+  })),
+  { key: 'unknown', label: 'Not editable', fields: fieldMeta.filter((f) => f.unspecified) },
+].filter((s) => s.fields.length > 0);
+
+// One section is not a grouping, it is a heading over the whole card — noise.
+const showLegends = sections.length > 1;
 
 /** The column that best identifies a row in its collapsed header. */
 const titleCol = columns.includes('title') ? 'title' : columns.includes('category') ? 'category' : columns[1];
-
-const fieldMeta = columns.map((c) => ({ name: c, kind: kindOf(c), label: humanize(c) }));
 ---
 
 <Admin title={label} section="content" table={table}>
@@ -66,16 +85,23 @@ const fieldMeta = columns.map((c) => ({ name: c, kind: kindOf(c), label: humaniz
   </div>
 </Admin>
 
-<script define:vars={{ table, fieldMeta, titleCol }}>
-  window.__TABLE__ = { table, fieldMeta, titleCol };
+<script define:vars={{ table, sections, titleCol, showLegends }}>
+  window.__TABLE__ = { table, sections, titleCol, showLegends };
 </script>
 
 <script>
+  import { buildImageControl } from '../../../lib/schema';
+  import type { ContentField } from '../../../lib/schema';
+
   const CFG = (window as any).__TABLE__ as {
     table: string;
-    fieldMeta: { name: string; kind: string; label: string }[];
+    sections: { key: string; label: string; fields: ContentField[] }[];
     titleCol: string;
+    showLegends: boolean;
   };
+
+  /** Sections are for layout; validation and seeding want the flat list. */
+  const allFields = CFG.sections.flatMap((s) => s.fields);
 
   const rowsEl = document.getElementById('rows')!;
   const statusEl = document.getElementById('page-status')!;
@@ -202,6 +228,175 @@ const fieldMeta = columns.map((c) => ({ name: c, kind: kindOf(c), label: humaniz
     return holder;
   }
 
+  // --- Field rendering --------------------------------------------------
+  function hintEl(text: string, css = ''): HTMLElement {
+    const p = document.createElement('p');
+    p.className = 'field__hint';
+    p.textContent = text;
+    if (css) p.style.cssText = css;
+    return p;
+  }
+
+  /**
+   * Marks a control the save gate will refuse, and clears the mark the moment
+   * the reader does something about it — a field that stays red while you type
+   * into it is just shouting.
+   */
+  function markRequired(el: HTMLElement, f: ContentField) {
+    if (!f.required) return;
+    el.setAttribute('aria-required', 'true');
+    el.addEventListener('input', () => el.removeAttribute('aria-invalid'));
+  }
+
+  /**
+   * A column TABLE_COLUMNS allows but CONTENT_FIELDS does not describe safely.
+   *
+   * Read-only, and with no `data-field`, so collect() cannot see it and the API
+   * never receives it — PUT only writes the columns present in the body, so the
+   * stored value survives untouched. That is the entire point: the previous
+   * behaviour was a friendly text box that seeded '' into an INTEGER column and
+   * took a project off the live site without a word.
+   */
+  function unspecifiedField(f: ContentField, uid: string, raw: unknown): HTMLElement {
+    const field = document.createElement('div');
+    field.className = 'field field--wide';
+
+    const lab = document.createElement('label');
+    lab.className = 'field__label';
+    lab.htmlFor = uid;
+    lab.textContent = f.label;
+    field.append(lab);
+
+    const i = document.createElement('input');
+    i.className = 'input input--mono';
+    i.id = uid;
+    i.type = 'text';
+    i.value = raw === null || raw === undefined ? '' : String(raw);
+    i.readOnly = true;
+    field.append(i);
+
+    const warn = document.createElement('div');
+    warn.className = 'warn-box';
+    const s = document.createElement('span');
+    const strong = document.createElement('strong');
+    strong.textContent = 'No field metadata:';
+    const code = document.createElement('code');
+    code.textContent = f.name;
+    s.append(
+      strong,
+      document.createTextNode(' '),
+      code,
+      document.createTextNode(
+        ' is an allowed column, but CONTENT_FIELDS in src/lib/schema.ts does not describe it — or ' +
+          'describes an INTEGER column with a control that can produce an empty string. It is shown ' +
+          'read-only and is not sent when you save. Add it to CONTENT_FIELDS to edit it.'
+      )
+    );
+    warn.append(s);
+    field.append(warn);
+    return field;
+  }
+
+  function buildField(
+    f: ContentField,
+    row: Record<string, any>,
+    uid: string,
+    markDirty: () => void,
+    onTitle: (v: string) => void
+  ): HTMLElement {
+    const raw = row[f.name] ?? '';
+
+    if (f.unspecified) return unspecifiedField(f, uid, row[f.name]);
+
+    const field = document.createElement('div');
+    field.className = 'field';
+
+    if (f.kind === 'boolean') {
+      field.className = 'field field--check';
+      const input = document.createElement('input');
+      input.className = 'checkbox';
+      input.type = 'checkbox';
+      input.id = uid;
+      input.dataset.field = f.name;
+      input.dataset.kind = 'boolean';
+      input.checked = Number(row[f.name]) === 1;
+      input.addEventListener('change', markDirty);
+      const lab = document.createElement('label');
+      lab.className = 'field__label';
+      lab.htmlFor = uid;
+      lab.textContent = f.label;
+      field.append(input, lab);
+      if (f.hint) field.append(hintEl(f.hint, 'flex-basis:100%;'));
+      return field;
+    }
+
+    const lab = document.createElement('label');
+    lab.className = 'field__label';
+    lab.htmlFor = uid;
+    lab.textContent = f.label;
+    if (f.required) {
+      const req = document.createElement('span');
+      req.className = 'field__req';
+      req.textContent = 'Required';
+      lab.append(req);
+    }
+    field.append(lab);
+    if (f.hint) field.append(hintEl(f.hint));
+
+    if (f.kind === 'tags') {
+      field.className = 'field field--wide';
+      const holder = tagInput(f.name, String(raw || '[]'), markDirty);
+      holder.querySelector<HTMLInputElement>('.tags__input')!.id = uid;
+      field.append(holder);
+      return field;
+    }
+
+    if (f.kind === 'html' || f.kind === 'textarea') {
+      field.className = 'field field--wide';
+      const t = document.createElement('textarea');
+      t.className = f.kind === 'html' ? 'textarea textarea--mono' : 'textarea';
+      t.id = uid;
+      t.rows = f.rows ?? 4;
+      t.dataset.field = f.name;
+      t.dataset.kind = f.kind;
+      t.value = String(raw);
+      t.addEventListener('input', markDirty);
+      markRequired(t, f);
+      field.append(t);
+      return field;
+    }
+
+    if (f.kind === 'image') {
+      const media = buildImageControl({
+        id: uid,
+        value: String(raw),
+        field: f.name,
+        label: f.label,
+      });
+      media.input.addEventListener('input', markDirty);
+      markRequired(media.input, f);
+      field.append(media.el);
+      return field;
+    }
+
+    const i = document.createElement('input');
+    i.className = 'input';
+    i.id = uid;
+    i.type =
+      f.kind === 'number' ? 'number' : f.kind === 'url' ? 'url' : f.kind === 'date' ? 'date' : 'text';
+    if (f.kind === 'number') i.inputMode = 'numeric';
+    i.dataset.field = f.name;
+    i.dataset.kind = f.kind;
+    i.value = String(raw);
+    markRequired(i, f);
+    i.addEventListener('input', () => {
+      markDirty();
+      if (f.name === CFG.titleCol) onTitle(i.value);
+    });
+    field.append(i);
+    return field;
+  }
+
   // --- Row rendering ----------------------------------------------------
   function buildRow(row: Record<string, any>, isNew = false): HTMLElement {
     const card = document.createElement('section');
@@ -267,79 +462,32 @@ const fieldMeta = columns.map((c) => ({ name: c, kind: kindOf(c), label: humaniz
     card.append(head);
 
     // Fields
-    const grid = document.createElement('div');
-    grid.className = 'field-grid';
+    const onTitle = (v: string) => {
+      name.textContent = v || '(untitled)';
+    };
 
-    for (const f of CFG.fieldMeta) {
-      const uid = `${CFG.table}-${row.id ?? 'new'}-${f.name}`;
-      const field = document.createElement('div');
-      field.className = 'field';
+    for (const s of CFG.sections) {
+      const grid = document.createElement('div');
+      grid.className = 'field-grid';
+      for (const f of s.fields) {
+        const uid = `${CFG.table}-${row.id ?? 'new'}-${f.name}`;
+        grid.append(buildField(f, row, uid, markDirty, onTitle));
+      }
 
-      if (f.kind === 'boolean') {
-        field.className = 'field field--check';
-        const input = document.createElement('input');
-        input.className = 'checkbox';
-        input.type = 'checkbox';
-        input.id = uid;
-        input.dataset.field = f.name;
-        input.dataset.kind = 'boolean';
-        input.checked = Number(row[f.name]) === 1;
-        input.addEventListener('change', markDirty);
-        const lab = document.createElement('label');
-        lab.className = 'field__label';
-        lab.htmlFor = uid;
-        lab.textContent = f.label;
-        field.append(input, lab);
-        grid.append(field);
+      if (!CFG.showLegends) {
+        card.append(grid);
         continue;
       }
 
-      const lab = document.createElement('label');
-      lab.className = 'field__label';
-      lab.htmlFor = uid;
-      lab.textContent = f.label;
-      field.append(lab);
-
-      if (f.kind === 'tags') {
-        field.className = 'field field--wide';
-        const holder = tagInput(f.name, row[f.name] ?? '[]', markDirty);
-        const inner = holder.querySelector<HTMLInputElement>('.tags__input')!;
-        inner.id = uid;
-        field.append(holder);
-      } else if (f.kind === 'html') {
-        field.className = 'field field--wide';
-        const t = document.createElement('textarea');
-        t.className = 'textarea textarea--mono';
-        t.id = uid;
-        t.rows = 4;
-        t.dataset.field = f.name;
-        t.dataset.kind = 'html';
-        t.value = row[f.name] ?? '';
-        t.addEventListener('input', markDirty);
-        field.append(t);
-        const hint = document.createElement('p');
-        hint.className = 'field__hint';
-        hint.textContent = 'Raw HTML — rendered as-is on the public site.';
-        field.append(hint);
-      } else {
-        const i = document.createElement('input');
-        i.className = 'input';
-        i.id = uid;
-        i.type = f.kind === 'number' ? 'number' : f.kind === 'url' ? 'url' : 'text';
-        i.dataset.field = f.name;
-        i.dataset.kind = f.kind;
-        i.value = row[f.name] ?? '';
-        i.addEventListener('input', () => {
-          markDirty();
-          if (f.name === CFG.titleCol) name.textContent = i.value || '(untitled)';
-        });
-        field.append(i);
-      }
-
-      grid.append(field);
+      const set = document.createElement('fieldset');
+      set.className = 'fieldset';
+      const leg = document.createElement('legend');
+      leg.className = 'fieldset__legend';
+      leg.textContent = s.label;
+      set.append(leg, grid);
+      card.append(set);
     }
 
-    card.append(grid);
     return card;
   }
 
@@ -357,9 +505,38 @@ const fieldMeta = columns.map((c) => ({ name: c, kind: kindOf(c), label: humaniz
   }
 
   // --- Actions ----------------------------------------------------------
+  /**
+   * The `required` flags in schema.ts are enforced here and nowhere else.
+   *
+   * D1 will not catch these: '' satisfies NOT NULL on a TEXT column, so a
+   * project with no title and no body saves cleanly, returns ok, and then
+   * renders as an empty card on the live site. Same shape as the title+slug gate
+   * in admin/posts/[id].astro.
+   */
+  function firstMissing(body: Record<string, any>) {
+    return (
+      allFields.find((f) => f.required && !String(body[f.name] ?? '').trim()) ?? null
+    );
+  }
+
   async function saveRow(card: HTMLElement) {
     const body = collect(card);
     const isNew = card.dataset.new === 'true';
+
+    const missing = firstMissing(body);
+    if (missing) {
+      setStatus(
+        `${missing.label} is required — blank saves fine and then renders as an empty card on the live site.`,
+        'err',
+        true
+      );
+      const el = card.querySelector<HTMLElement>(`[data-field="${missing.name}"]`);
+      el?.setAttribute('aria-invalid', 'true');
+      el?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      el?.focus();
+      return;
+    }
+
     const btn = card.querySelector<HTMLButtonElement>('[data-save]')!;
     btn.disabled = true;
     setStatus('Saving…', 'busy', true);
@@ -521,7 +698,18 @@ const fieldMeta = columns.map((c) => ({ name: c, kind: kindOf(c), label: humaniz
 
   document.getElementById('add-row')?.addEventListener('click', () => {
     const blank: Record<string, any> = {};
-    for (const f of CFG.fieldMeta) blank[f.name] = f.kind === 'boolean' ? 0 : '';
+    /*
+      Seeded BY KIND, never by a blanket ''. A number seeded '' collects back as
+      null and a boolean as 0, so neither can hand SQLite the empty string an
+      INTEGER column silently stores as TEXT. Undescribed columns are seeded with
+      nothing at all: they carry no data-field, so the INSERT omits them and the
+      column default applies — which is the correct answer for a column this page
+      admits it does not understand.
+    */
+    for (const f of allFields) {
+      if (f.unspecified) continue;
+      blank[f.name] = f.kind === 'boolean' ? 0 : f.kind === 'number' ? null : '';
+    }
     // Put it at the end by default rather than fighting existing rows for slot 0.
     blank.sort_order = rows.length
       ? Math.max(...rows.map((r) => Number(r.sort_order) || 0)) + 1

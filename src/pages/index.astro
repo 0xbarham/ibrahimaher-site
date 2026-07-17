@@ -68,8 +68,16 @@ const asset = (p: string): string => (/^(https?:)?\//.test(p) ? p : `/${p}`);
 const cssUrl = (p: string): string =>
   `url("${p.replace(/["'()\\\s]/g, (c) => `%${c.charCodeAt(0).toString(16).padStart(2, '0')}`)}")`;
 
+/*
+ * `smallProjects` excludes the featured row BY IDENTITY, not by the flag.
+ * Filtering on `featured !== 1` looks equivalent and is not: with two rows
+ * flagged, `find` promotes the first and the filter drops BOTH, so the second
+ * appears nowhere on the page — no error, just a project that stops existing.
+ * The admin lets you tick `featured` on any number of rows, so this is reachable
+ * from the UI. Identity keeps the extras in the grid instead of eating them.
+ */
 const featured = projects.find((p) => p.featured === 1) ?? null;
-const smallProjects = projects.filter((p) => p.featured !== 1);
+const smallProjects = projects.filter((p) => p !== featured);
 
 const dateLabel = (d: string) =>
   new Date(`${d}T00:00:00Z`).toLocaleDateString('en-GB', {
@@ -498,15 +506,35 @@ if (featured?.external_url) {
                 <p class="eyebrow headline__eyebrow">Featured build</p>
 
                 {featured.featured_logo && (
-                  <img
-                    class="headline__logo"
-                    src={asset(featured.featured_logo)}
-                    alt="DAD LINK logo"
-                    loading="lazy"
-                    decoding="async"
-                    width="120"
-                    height="60"
-                  />
+                  /*
+                    Same light/dark swap + plate fallback as the job logos: with a
+                    dark variant set it swaps by theme, and with none it sits on a
+                    light plate in BOTH themes so a dark-ink mark (DAD LINK's "DAD"
+                    lettering) stays legible on the dark headline surface. featured_logo_dark
+                    is the slot the admin fills to opt out of the plate.
+                  */
+                  <span class:list={['headline__logo', { 'headline__logo--plate': !featured.featured_logo_dark }]}>
+                    <img
+                      class:list={['logo-mark', { 'logo-light': featured.featured_logo_dark }]}
+                      src={asset(featured.featured_logo)}
+                      alt="DAD LINK logo"
+                      loading="lazy"
+                      decoding="async"
+                      width="120"
+                      height="60"
+                    />
+                    {featured.featured_logo_dark && (
+                      <img
+                        class="logo-mark logo-dark"
+                        src={asset(featured.featured_logo_dark)}
+                        alt="DAD LINK logo"
+                        loading="lazy"
+                        decoding="async"
+                        width="120"
+                        height="60"
+                      />
+                    )}
+                  </span>
                 )}
 
                 <h3 class="headline__title" id="featured-h">
@@ -1010,7 +1038,8 @@ if (featured?.external_url) {
      down the column.
      ---------------------------------------------------------------------- */
   .job__logo--plate,
-  .work__icon--plate {
+  .work__icon--plate,
+  .headline__logo--plate {
     background: #faf8f5;
     border: var(--rule) solid var(--rule-color);
     border-radius: var(--radius-md);
@@ -1283,10 +1312,14 @@ if (featured?.external_url) {
   }
 
   .headline__logo {
+    display: inline-flex;
+    margin-bottom: var(--space-m);
+  }
+
+  .headline__logo img {
     width: 120px;
     height: auto;
     object-fit: contain;
-    margin-bottom: var(--space-m);
   }
 
   /* Two steps above .work__title — this is the thing that has to read first. */

@@ -355,6 +355,16 @@ a {
   margin: 0;
 }
 
+/* Marks a field the SAVE GATE refuses — deliberately not every NOT NULL column,
+   because '' satisfies NOT NULL and most of them are happy blank. */
+.field__req {
+  font-size: 0.65rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: var(--tracking-wide);
+  color: var(--accent-ink);
+}
+
 .input,
 .textarea,
 .select {
@@ -373,6 +383,14 @@ a {
 .textarea:focus,
 .select:focus {
   border-color: var(--accent);
+}
+
+/* Set by the save gate, cleared on the next keystroke. --danger, not --accent:
+   terracotta is the focus colour, so an --accent border here would read as
+   "you are in this box", which is the opposite of the message. */
+.input[aria-invalid='true'],
+.textarea[aria-invalid='true'] {
+  border-color: var(--danger);
 }
 
 .textarea {
@@ -403,6 +421,162 @@ a {
   accent-color: var(--accent);
   flex: none;
   cursor: pointer;
+}
+
+/* --- Image fields ------------------------------------------------------- */
+/*
+   An image field is a PATH box, an actions row, an optional library panel, and a
+   preview — built by buildImageControl in src/lib/schema.ts, which both the row
+   editor and Settings import so the two can never drift.
+
+   The preview earns its place regardless of where the path came from: a mistyped
+   one is otherwise indistinguishable from a correct one until you load the live
+   page and find a hole in it. Uploads and typed paths land in the same box and
+   are proved the same way.
+*/
+.media-field {
+  display: flex;
+  flex-direction: column;
+  gap: 0.3rem;
+  min-width: 0;
+}
+
+/* The WHOLE field is the drop target, not just the thumb: asking someone to hit
+   a 4.5rem box with a file in hand is a fiddly thing, and there is nothing else
+   in the field a dropped image could plausibly mean. The thumb is what lights up
+   because it is the part that is about to change. */
+.media-field--drop .media-field__thumb {
+  border-color: var(--accent);
+  background: var(--accent-soft);
+}
+
+/* Status shares the buttons' row rather than taking one of its own. It is a live
+   region, so it stays in the DOM permanently and is simply empty most of the
+   time — an aria-live region that only exists once it has something to say is
+   announced unreliably, if at all. Free-riding on this row costs it no height. */
+.media-field__actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.4rem;
+}
+
+.media-field__status {
+  flex: 1 1 8rem;
+  min-width: 0;
+}
+
+/* One box, four shapes: a 1400x783 screenshot, a 1200x630 share image, a 52x52
+   logo, and the text of a 404. `contain` plus a floor and a ceiling on the height
+   keep all four the same size on the page, so the form does not jump around as
+   the reader types a path. */
+.media-field__thumb {
+  display: grid;
+  place-items: center;
+  min-height: 4.5rem;
+  padding: var(--space-3xs);
+  background: var(--paper-2);
+  border: var(--rule) solid var(--rule-color);
+  border-radius: 5px;
+  overflow: hidden;
+}
+
+.media-field__thumb img {
+  max-width: 100%;
+  max-height: 7rem;
+  object-fit: contain;
+}
+
+/* Mono because it carries a path back to the reader; `anywhere` because it is
+   the one string on the page with no spaces to break at. */
+.media-field__note {
+  font-family: var(--font-mono);
+  font-size: 0.7rem;
+  color: var(--ink-3);
+  text-align: center;
+  overflow-wrap: anywhere;
+}
+
+/* --- Media library picker ----------------------------------------------- */
+/*
+   The disclosure under an image field's Library button. Inline rather than a
+   modal on purpose: picking a screenshot is a decision made AGAINST the rest of
+   the row — the title it belongs to, the alt text beside it — and a dialog would
+   cover exactly that context to show four thumbnails.
+*/
+.media-lib {
+  padding: var(--space-3xs);
+  background: var(--paper-2);
+  border: var(--rule) solid var(--rule-color);
+  border-radius: 5px;
+}
+
+/* Capped and scrolled. The library only grows, and this panel opens inside a
+   field that is one of five on a row — uncapped, the first open would push the
+   rest of the form off the screen. */
+.media-lib__grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(6.5rem, 1fr));
+  gap: var(--space-3xs);
+  max-height: 15rem;
+  overflow-y: auto;
+}
+
+.media-lib__item {
+  display: flex;
+  flex-direction: column;
+  gap: 0.15rem;
+  min-width: 0;
+  padding: 0.3rem;
+  background: var(--surface);
+  border: var(--rule) solid var(--rule-color);
+  border-radius: 4px;
+  text-align: left;
+  cursor: pointer;
+}
+
+.media-lib__item:hover {
+  border-color: var(--accent);
+}
+
+/* aria-current is the styling hook AND the announcement: the image already in
+   the box is the one worth finding fastest in a grid of near-identical
+   screenshots, and a purely visual mark would say that to sighted readers only. */
+.media-lib__item[aria-current='true'] {
+  border-color: var(--accent);
+  background: var(--accent-soft);
+}
+
+.media-lib__thumb {
+  width: 100%;
+  height: 3.5rem;
+  object-fit: contain;
+  background: var(--paper-2);
+  border-radius: 3px;
+}
+
+/* Truncated, not wrapped: filenames are long and alike, and a grid whose cells
+   grow to fit them stops being scannable. Only the PIXELS are clipped — the text
+   node is intact, and it is what names the button in the accessibility tree, so
+   a screen reader still hears the whole filename. */
+.media-lib__name {
+  font-size: 0.72rem;
+  color: var(--ink-2);
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+
+.media-lib__meta {
+  font-size: 0.66rem;
+  color: var(--ink-3);
+}
+
+.media-lib__empty {
+  margin: 0;
+  padding: var(--space-3xs);
+  font-size: 0.78rem;
+  color: var(--ink-3);
 }
 
 /* --- Badges ------------------------------------------------------------- */
@@ -1129,6 +1303,39 @@ kbd {
 
 .row__spacer {
   margin-left: auto;
+}
+
+/*
+   Sections within a row. A real <fieldset>, not a div, so a screen reader
+   announces "Images" with every control inside it — the row editor has no other
+   structure, and "Card icon (dark theme)" means very little read on its own.
+
+   min-width:0 is load-bearing, not tidying: fieldset ships with an implicit
+   min-width:min-content that no other element has, and without this override the
+   .field-grid inside refuses to shrink and pushes the whole card into horizontal
+   scroll on a phone.
+*/
+.fieldset {
+  border: 0;
+  padding: 0;
+  margin: 0;
+  min-width: 0;
+}
+
+.fieldset + .fieldset {
+  margin-top: var(--space-s);
+  padding-top: var(--space-s);
+  border-top: var(--rule) solid var(--rule-color);
+}
+
+.fieldset__legend {
+  padding: 0;
+  margin-bottom: var(--space-2xs);
+  font-size: 0.7rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: var(--tracking-wide);
+  color: var(--ink-3);
 }
 
 /* --- Settings ----------------------------------------------------------- */

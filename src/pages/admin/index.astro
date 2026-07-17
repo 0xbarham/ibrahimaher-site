@@ -2,21 +2,347 @@
 /**
  * Dashboard. Server-rendered from D1 — no client fetch, so it is useful the
  * instant it paints.
+ *
+ * Everything on this page comes from ONE batch() round trip. That is worth the
+ * slightly awkward SQL: this is the admin's landing page, so its query cost is
+ * paid on every visit, and D1 bills latency per statement rather than per row.
+ *
+ * Deliberately does NOT call getAllPosts(). That helper is `SELECT *`, which
+ * drags every post's body_md across the wire — by far the largest column in the
+ * schema — to render a five-row list of titles. The recent-posts statement below
+ * asks for the four columns the table actually prints.
  */
 import Admin from '../../layouts/Admin.astro';
-import { getAllPosts, getSettings, setting } from '../../lib/db';
+import { db, getSettings, setting } from '../../lib/db';
 
-const posts = await getAllPosts();
+/*
+ * Table counts as scalar subqueries rather than the obvious UNION ALL chain.
+ * D1 caps a compound SELECT at five terms and rejects a sixth outright with
+ * SQLITE_ERROR 7500, "too many terms in compound SELECT" — measured against the
+ * live database, not inferred from SQLite's own (much higher) default. There are
+ * seven tables to count here, so the UNION ALL form cannot express this query at
+ * all. Scalar subqueries carry no such cap, read the same rows, and do not break
+ * the day an eighth table is added.
+ */
+const INVENTORY_SQL = `
+  SELECT
+    (SELECT COUNT(*) FROM posts)          AS posts,
+    (SELECT COUNT(*) FROM projects)       AS projects,
+    (SELECT COUNT(*) FROM jobs)           AS jobs,
+    (SELECT COUNT(*) FROM skills)         AS skills,
+    (SELECT COUNT(*) FROM certifications) AS certifications,
+    (SELECT COUNT(*) FROM education)      AS education,
+    (SELECT COUNT(*) FROM redirects)      AS redirects
+`;
+
+/*
+ * Post health.
+ *
+ * `no_description` tests seo_description AND excerpt together because the blog
+ * template falls back from one to the other — either alone being empty is normal
+ * and means nothing. Only losing both actually ships a page with no description.
+ *
+ * The two LENGTH checks encode the limits POST_FIELDS already states in its own
+ * hints ("under 60 characters", "140-160"). They are untidiness, not breakage,
+ * and are presented as notes further down for exactly that reason.
+ */
+const POST_HEALTH_SQL = `
+  SELECT
+    SUM(CASE WHEN status = 'published' THEN 1 ELSE 0 END)  AS published,
+    SUM(CASE WHEN status <> 'published' THEN 1 ELSE 0 END) AS drafts,
+    SUM(CASE WHEN status = 'published' AND noindex = 1 THEN 1 ELSE 0 END)
+      AS noindexed,
+    SUM(CASE WHEN status = 'published' AND TRIM(seo_description) = ''
+              AND TRIM(excerpt) = '' THEN 1 ELSE 0 END)
+      AS no_description,
+    SUM(CASE WHEN status = 'published' AND hero_image IS NOT NULL
+              AND TRIM(hero_image) <> '' AND TRIM(hero_alt) = '' THEN 1 ELSE 0 END)
+      AS hero_no_alt,
+    SUM(CASE WHEN status = 'published' AND LENGTH(seo_title) > 60 THEN 1 ELSE 0 END)
+      AS long_seo_title,
+    SUM(CASE WHEN status = 'published' AND LENGTH(seo_description) > 160 THEN 1 ELSE 0 END)
+      AS long_seo_description
+  FROM posts
+`;
+
+/*
+ * Project health. Every clause here mirrors something src/pages/index.astro
+ * actually does, so a count that fires means the live homepage is affected.
+ *
+ * `bad_hidden` is not paranoia. SQLite applies INTEGER affinity only to a
+ * well-formed numeric string, and '' is not one, so a `hidden` ever written as an
+ * empty string stays TEXT. getProjects() filters on `hidden = 0`, and TEXT ''
+ * never equals INTEGER 0, so the row disappears from the live site while still
+ * looking un-ticked in the admin. content/[table].astro no longer guesses its
+ * controls from column names — CONTENT_FIELDS in lib/schema.ts describes them,
+ * and INTEGER_COLUMNS refuses any control that can emit '' — so new rows cannot
+ * land that way. This counts rows still carrying the damage, which that fix
+ * cannot undo retroactively.
+ *
+ * `featured_live` counts what the homepage elects, not what is flagged: the
+ * featured panel is chosen with `find((p) => p.featured === 1)` over the
+ * hidden = 0 listing. So a featured project that is also hidden elects nobody and
+ * the panel vanishes, and a second featured row is demoted to an ordinary card.
+ * Both are reachable from the admin — the row editor puts a plain checkbox on
+ * every row with nothing stopping a second tick.
+ *
+ * `card_no_image` and `image_no_alt` both exclude the ELECTED row — the single
+ * one index.astro promotes into the headline panel — and both exclude it BY
+ * IDENTITY, because that is what index.astro does: `find((p) => p.featured === 1)`
+ * over the hidden = 0, sort_order ASC listing, then `filter((p) => p !== featured)`
+ * for the grid. Both clauses used to test the FLAG instead, and that is wrong in
+ * opposite directions:
+ *
+ *   * `featured <> 1` excluded EVERY ticked row. The page promotes only the
+ *     first and puts the rest back in the grid as ordinary cards, so a second
+ *     ticked row with no screenshot went uncounted — on a card the homepage
+ *     really does render without its image frame.
+ *   * `image_no_alt` excluded nobody, so it counted the elected row. The
+ *     headline panel renders no <img> for `image` at all — it carries its weight
+ *     with scale and a logo — making that a red breakage about an element that
+ *     does not exist. Latent rather than live only because the featured row's
+ *     image is NULL today; setting one would fire it.
+ *
+ * `IS NOT`, not `<>`, and the difference is load-bearing. With no visible
+ * featured row the subquery is NULL, `id <> NULL` is NULL, the CASE falls
+ * through to ELSE 0, and card_no_image silently counts nothing — in precisely
+ * the state the `featured_live = 0` breakage below exists to report, i.e. one
+ * that is known to be reachable. `IS NOT` compares NULLs rather than propagating
+ * them, so a page with no featured row still checks every card. Measured on D1:
+ * three visible cards, one imageless, none featured — `<>` gave 0, `IS NOT` gave 1.
+ *
+ * `image_no_alt` is otherwise the one that is a real defect rather than a
+ * cosmetic gap: index.astro renders `alt={p.image_alt}` unconditionally once
+ * `p.image` is set, so an empty alt ships `alt=""`, which tells a screen reader
+ * the screenshot is decorative instead of describing it.
+ */
+const ELECTED_PROJECT =
+  '(SELECT id FROM projects WHERE hidden = 0 AND featured = 1 ORDER BY sort_order ASC LIMIT 1)';
+
+const PROJECT_HEALTH_SQL = `
+  SELECT
+    SUM(CASE WHEN hidden = 0 THEN 1 ELSE 0 END) AS live,
+    SUM(CASE WHEN hidden = 1 THEN 1 ELSE 0 END) AS hidden,
+    SUM(CASE WHEN typeof(hidden) <> 'integer' THEN 1 ELSE 0 END) AS bad_hidden,
+    SUM(CASE WHEN hidden = 0 AND featured = 1 THEN 1 ELSE 0 END) AS featured_live,
+    SUM(CASE WHEN hidden = 0 AND id IS NOT ${ELECTED_PROJECT}
+              AND (image IS NULL OR TRIM(image) = '') THEN 1 ELSE 0 END)
+      AS card_no_image,
+    SUM(CASE WHEN hidden = 0 AND id IS NOT ${ELECTED_PROJECT}
+              AND image IS NOT NULL AND TRIM(image) <> ''
+              AND TRIM(image_alt) = '' THEN 1 ELSE 0 END)
+      AS image_no_alt
+  FROM projects
+`;
+
+/*
+ * Ties on updated_at are the norm, not the exception: every post was backfilled
+ * with the same timestamp, so id DESC is what actually orders this list until the
+ * first real edit. Without the tiebreak the order would be whatever D1 felt like
+ * that request.
+ */
+const RECENT_SQL = `
+  SELECT id, title, status, updated_at
+  FROM posts
+  ORDER BY updated_at DESC, id DESC
+  LIMIT 5
+`;
+
+interface RecentPost {
+  id: number;
+  title: string;
+  status: string;
+  updated_at: string;
+}
+
+const [inventoryRes, postRes, projectRes, recentRes] = await db().batch([
+  db().prepare(INVENTORY_SQL),
+  db().prepare(POST_HEALTH_SQL),
+  db().prepare(PROJECT_HEALTH_SQL),
+  db().prepare(RECENT_SQL),
+]);
+
+/*
+ * SUM(...) over zero rows is NULL, not 0 — an empty projects table would
+ * otherwise render "NaN" across the panel rather than a calm set of zeroes.
+ */
+const n = (v: unknown): number => Number(v ?? 0) || 0;
+
+const row = (res: D1Result<unknown>): Record<string, unknown> =>
+  (res.results?.[0] ?? {}) as Record<string, unknown>;
+
+const inv = row(inventoryRes);
+const post = row(postRes);
+const proj = row(projectRes);
+const recent = (recentRes.results ?? []) as RecentPost[];
+
+const published = n(post.published);
+const drafts = n(post.drafts);
+const liveProjects = n(proj.live);
+const hiddenProjects = n(proj.hidden);
+const featuredLive = n(proj.featured_live);
+
 const settings = await getSettings();
-
-const published = posts.filter((p) => p.status === 'published');
-const drafts = posts.filter((p) => p.status !== 'published');
-const recent = [...posts]
-  .sort((a, b) => (b.updated_at || '').localeCompare(a.updated_at || ''))
-  .slice(0, 5);
-
 const gaId = setting(settings, 'ga_measurement_id');
 const siteUrl = setting(settings, 'site_url', 'https://ibrahimaher.com').replace(/\/$/, '');
+
+/** "1 project" / "3 projects" — every count on this page is small and human-facing. */
+const count = (v: number, noun: string) => `${v} ${noun}${v === 1 ? '' : 's'}`;
+
+interface Issue {
+  /** The danger-coloured lead-in of .warn-box, or the opening clause of a note. */
+  label: string;
+  text: string;
+  href: string;
+  action: string;
+}
+
+/*
+ * Two severities, because collapsing them would cost the panel its credibility.
+ * `breakages` are states where the live site is already wrong — they earn the red
+ * .warn-box. `notes` are things worth knowing that are not faults; they read as
+ * plain muted lines. Eight over-long meta descriptions dressed in red would only
+ * teach the reader to ignore the whole panel, which is how a health check dies.
+ */
+const breakages: Issue[] = [];
+const notes: Issue[] = [];
+
+const PROJECTS_HREF = '/admin/content/projects';
+const POSTS_HREF = '/admin/posts';
+
+if (n(proj.bad_hidden) > 0) {
+  breakages.push({
+    label: `${count(n(proj.bad_hidden), 'project')} cannot appear on the live site.`,
+    text:
+      'Their hidden flag is stored as text rather than a number, so the public query skips them ' +
+      'even though the admin shows the box un-ticked. Open each one, tick hidden on and off again, ' +
+      'and save to rewrite the value.',
+    href: PROJECTS_HREF,
+    action: 'Fix projects',
+  });
+}
+
+if (featuredLive === 0 && liveProjects > 0) {
+  breakages.push({
+    label: 'No featured project.',
+    text:
+      'The homepage renders its headline panel only when a visible project is flagged featured. ' +
+      'Nothing claims that slot right now, so the section is missing from the live page entirely.',
+    href: PROJECTS_HREF,
+    action: 'Pick one',
+  });
+}
+
+if (featuredLive > 1) {
+  breakages.push({
+    label: `${featuredLive} projects are flagged featured.`,
+    text:
+      'The homepage promotes only the first by sort order. The rest fall back to ordinary cards in ' +
+      'the grid below it — no error, just a headline slot they were never going to get.',
+    href: PROJECTS_HREF,
+    action: 'Leave one',
+  });
+}
+
+if (n(proj.card_no_image) > 0) {
+  breakages.push({
+    label: `${count(n(proj.card_no_image), 'project card')} has no screenshot.`,
+    text:
+      'The card renders without its image frame while every other card in the grid keeps one, so the ' +
+      'row it sits in reads as broken rather than sparse.',
+    href: PROJECTS_HREF,
+    action: 'Add an image',
+  });
+}
+
+if (n(proj.image_no_alt) > 0) {
+  breakages.push({
+    label: `${count(n(proj.image_no_alt), 'project screenshot')} has no alt text.`,
+    text:
+      'The homepage ships alt="" for it, which tells a screen reader the image is decorative and ' +
+      'safe to skip. It is not — it is the only thing showing what the project looks like.',
+    href: PROJECTS_HREF,
+    action: 'Describe it',
+  });
+}
+
+if (n(post.no_description) > 0) {
+  breakages.push({
+    label: `${count(n(post.no_description), 'published post')} has no description.`,
+    text:
+      'Both the meta description and the excerpt are empty, and the excerpt is what the description ' +
+      'falls back to — so the post ships with nothing for a search result to quote.',
+    href: POSTS_HREF,
+    action: 'Write one',
+  });
+}
+
+if (n(post.hero_no_alt) > 0) {
+  breakages.push({
+    label: `${count(n(post.hero_no_alt), 'post hero image')} has no alt text.`,
+    text: 'The image is set but undescribed, so a screen reader announces nothing in its place.',
+    href: POSTS_HREF,
+    action: 'Describe it',
+  });
+}
+
+if (n(post.noindexed) > 0) {
+  notes.push({
+    label: `${count(n(post.noindexed), 'published post')} hidden from search.`,
+    text: 'Published and reachable, but excluded from the sitemap and marked noindex.',
+    href: POSTS_HREF,
+    action: 'Review',
+  });
+}
+
+if (n(post.long_seo_title) > 0) {
+  notes.push({
+    label: `${count(n(post.long_seo_title), 'title tag')} over 60 characters.`,
+    text: 'Google truncates the tail in results.',
+    href: POSTS_HREF,
+    action: 'Trim',
+  });
+}
+
+if (n(post.long_seo_description) > 0) {
+  notes.push({
+    label: `${count(n(post.long_seo_description), 'meta description')} over 160 characters.`,
+    text: 'Likely to be cut short in results.',
+    href: POSTS_HREF,
+    action: 'Trim',
+  });
+}
+
+if (!gaId) {
+  notes.push({
+    label: 'Analytics is off.',
+    text: 'No measurement id is set, so no tracking script is emitted on any page.',
+    href: '/admin/settings',
+    action: 'Settings',
+  });
+}
+
+/*
+ * Redirects carries no link: TABLE_COLUMNS knows the table, but the row editor
+ * rejects it and no page has been built for it, so the count is the only view of
+ * it that exists. Worth printing rather than hiding — the slug field warns that
+ * renaming a post breaks links "unless you add a redirect", and this is the only
+ * place that says whether any exist.
+ */
+const inventory: { label: string; rows: number; href: string | null; note?: string }[] = [
+  { label: 'Posts', rows: n(inv.posts), href: POSTS_HREF },
+  { label: 'Projects', rows: n(inv.projects), href: PROJECTS_HREF },
+  { label: 'Jobs', rows: n(inv.jobs), href: '/admin/content/jobs' },
+  { label: 'Skills', rows: n(inv.skills), href: '/admin/content/skills' },
+  { label: 'Certifications', rows: n(inv.certifications), href: '/admin/content/certifications' },
+  { label: 'Education', rows: n(inv.education), href: '/admin/content/education' },
+  {
+    label: 'Redirects',
+    rows: n(inv.redirects),
+    href: null,
+    note: 'No editor yet — added by migration only.',
+  },
+];
 
 const fmt = (iso: string) => (iso || '').slice(0, 10);
 ---
@@ -28,29 +354,75 @@ const fmt = (iso: string) => (iso || '').slice(0, 10);
     <section aria-labelledby="stats-h">
       <h2 class="visually-hidden" id="stats-h">At a glance</h2>
       <div class="stats">
-        <div class="stat">
-          <div class="stat__num">{posts.length}</div>
-          <div class="stat__label">Posts</div>
-        </div>
         <div class="stat stat--accent">
-          <div class="stat__num">{published.length}</div>
-          <div class="stat__label">Published</div>
+          <div class="stat__num">{published}</div>
+          <div class="stat__label">Published posts</div>
         </div>
         <div class="stat">
-          <div class="stat__num">{drafts.length}</div>
+          <div class="stat__num">{drafts}</div>
           <div class="stat__label">Drafts</div>
         </div>
         <div class="stat">
-          <div class="stat__num">{gaId ? 'On' : 'Off'}</div>
-          <div class="stat__label">Analytics</div>
+          <div class="stat__num">{liveProjects}</div>
+          <div class="stat__label">Projects live</div>
+        </div>
+        <div class="stat">
+          <div class="stat__num">{hiddenProjects}</div>
+          <div class="stat__label">Projects hidden</div>
         </div>
       </div>
+    </section>
+
+    <section class="card" aria-labelledby="health-h">
+      <h2 class="card__title" id="health-h">Health</h2>
+
+      {
+        breakages.length === 0 ? (
+          <p class="status status--ok">
+            Nothing on the live site is broken. Exactly one project is featured, every project card
+            has its screenshot and alt text, and every published post has a description.
+          </p>
+        ) : (
+          <p class="status status--err">
+            {count(breakages.length, 'thing')} on the live site {breakages.length === 1 ? 'needs' : 'need'} a fix.
+          </p>
+        )
+      }
+
+      {/* Successive .warn-box siblings space themselves — no wrapper gap needed. */}
+      <div>
+        {
+          breakages.map((issue) => (
+            <div class="warn-box">
+              <span>
+                <strong>{issue.label}</strong> {issue.text}{' '}
+                <a href={issue.href}>{issue.action}</a>
+              </span>
+            </div>
+          ))
+        }
+      </div>
+
+      {
+        notes.length > 0 && (
+          <div class="stack" style="gap: var(--space-2xs); margin-top: var(--space-s);">
+            {notes.map((note) => (
+              <p class="muted" style="margin:0;">
+                <strong>{note.label}</strong> {note.text} <a href={note.href}>{note.action}</a>
+              </p>
+            ))}
+          </div>
+        )
+      }
     </section>
 
     <section class="card" aria-labelledby="recent-h">
       <div class="cluster" style="margin-bottom: var(--space-2xs);">
         <h2 class="card__title" id="recent-h">Recently updated</h2>
         <a class="btn btn--sm btn--ghost" href="/admin/posts" style="margin-left:auto;">All posts</a>
+        <a class="btn btn--sm btn--ghost" href={`${siteUrl}/blog/`} target="_blank" rel="noopener">
+          Live blog ↗
+        </a>
       </div>
 
       {
@@ -94,18 +466,37 @@ const fmt = (iso: string) => (iso || '').slice(0, 10);
       }
     </section>
 
-    <section class="card" aria-labelledby="quick-h">
-      <h2 class="card__title" id="quick-h">Jump to</h2>
-      <div class="cluster">
-        <a class="btn btn--sm" href="/admin/content/jobs">Jobs</a>
-        <a class="btn btn--sm" href="/admin/content/projects">Projects</a>
-        <a class="btn btn--sm" href="/admin/content/skills">Skills</a>
-        <a class="btn btn--sm" href="/admin/content/certifications">Certifications</a>
-        <a class="btn btn--sm" href="/admin/content/education">Education</a>
-        <a class="btn btn--sm" href="/admin/settings">Settings</a>
-        <a class="btn btn--sm" href={`${siteUrl}/blog/`} target="_blank" rel="noopener">
-          Live blog ↗
-        </a>
+    <section class="card" aria-labelledby="inventory-h">
+      <h2 class="card__title" id="inventory-h">Everything in the database</h2>
+
+      <div class="table-wrap">
+        <table class="table">
+          <thead>
+            <tr>
+              <th scope="col">Table</th>
+              <th scope="col">Rows</th>
+            </tr>
+          </thead>
+          <tbody>
+            {
+              inventory.map((t) => (
+                <tr>
+                  <td>
+                    {t.href ? (
+                      <a class="table__title" href={t.href}>
+                        {t.label}
+                      </a>
+                    ) : (
+                      <span class="table__title">{t.label}</span>
+                    )}
+                    {t.note && <span class="muted"> — {t.note}</span>}
+                  </td>
+                  <td class="muted">{t.rows}</td>
+                </tr>
+              ))
+            }
+          </tbody>
+        </table>
       </div>
     </section>
   </div>
