@@ -46,7 +46,10 @@ const readTime = post.read_time || readingTime(post.body_md);
  */
 const abs = makeAbs(siteUrl);
 const canonicalAbs = abs(canonical);
-const imageSrc = post.og_image || post.hero_image;
+// Falls back to the post's own dynamically-rendered share card (its title on the
+// themed 1200x630 image), so every post has a real share image without one being
+// uploaded per post. A custom og_image or hero_image, when set, still wins.
+const imageSrc = post.og_image || post.hero_image || `/assets/og/${post.slug}.png`;
 
 const published = post.created_at || `${post.post_date}T00:00:00Z`;
 const modified = post.updated_at || published;
@@ -111,7 +114,7 @@ const jsonLd = [
   articleModifiedTime={modified}
   articleSection={post.category}
   articleAuthor={author?.profile_url || `${siteUrl}/about`}
-  ogImage={post.og_image || post.hero_image || undefined}
+  ogImage={post.og_image || post.hero_image || `/assets/og/${post.slug}.png`}
   ogTitle={post.og_title || undefined}
   ogDescription={post.og_description || undefined}
   twitterTitle={post.twitter_title || undefined}

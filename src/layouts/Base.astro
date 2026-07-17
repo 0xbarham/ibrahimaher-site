@@ -61,7 +61,7 @@ const settings = await getSettings();
 const siteName = setting(settings, 'site_name', 'Ibrahim Maher Al-Bander');
 const siteUrl = setting(settings, 'site_url', 'https://ibrahimaher.com').replace(/\/$/, '');
 const gaId = setting(settings, 'ga_measurement_id'); // blank disables analytics
-const defaultOg = setting(settings, 'default_og_image', '/assets/og-image.png');
+const defaultOg = setting(settings, 'default_og_image', '/assets/og/default.png');
 const defaultOgAlt = setting(settings, 'default_og_image_alt');
 const ogLocale = setting(settings, 'og_locale', 'en_US');
 const googleVerification = setting(settings, 'google_site_verification');
@@ -82,6 +82,14 @@ const abs = makeAbs(siteUrl);
 
 const canonicalUrl = canonical ? abs(canonical) : abs(Astro.url.pathname);
 const shareImage = abs(ogImage || defaultOg);
+
+/**
+ * The dynamic /og/* cards and the static /assets/og-image.png fallback are all
+ * exactly 1200x630, so their dimensions can be declared. A page passing its own
+ * arbitrary ogImage may be any size, so dimensions are declared only for these
+ * known-standard share images — never guessed for a custom one.
+ */
+const stdShareImage = shareImage.includes('/og/') || shareImage.endsWith('og-image.png');
 
 /**
  * Preview deploys (*.workers.dev) serve byte-identical content to production,
@@ -188,7 +196,7 @@ const year = new Date().getUTCFullYear();
       1200x630 default share image — a page passing its own ogImage may be any
       size, so its dimensions are left unstated rather than mis-declared.
     */}
-    {!ogImage && (
+    {stdShareImage && (
       <>
         <meta property="og:image:width" content="1200" />
         <meta property="og:image:height" content="630" />
