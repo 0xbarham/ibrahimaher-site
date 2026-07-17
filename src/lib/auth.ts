@@ -6,20 +6,51 @@
  * The cookie format and secret names are unchanged, so existing secrets keep
  * working: base64url(JSON payload) + "." + HMAC-SHA256(payload, SESSION_SECRET)
  *
- * Threat model note: ADMIN_PASSWORD_HASH is an unsalted SHA-256 of the password,
- * inherited from the previous implementation. SHA-256 is a *fast* hash, so if the
- * hash ever leaked it would be cheap to brute-force. It is not public, and only
- * one operator exists, so this is a known, accepted weakness rather than an
- * unnoticed one — see verifyPassword() for the upgrade path.
+ * Credentials live in D1 (`admin_users`, migration 0009), NOT in a secret. The
+ * previous scheme required an ADMIN_PASSWORD_HASH secret that was never set, so
+ * isAuthConfigured() was permanently false and login answered 500 for everyone —
+ * the admin was locked, owner included. Moving to D1 lets the owner create his
+ * own account on first run and rotate it later without a redeploy.
+ *
+ * That also retires the weakness the old comment here admitted to:
+ * ADMIN_PASSWORD_HASH was an UNSALTED SHA-256 — a fast hash, cheap to
+ * brute-force from a leak. Passwords are now PBKDF2-SHA256 with a per-row salt.
+ *
+ * SESSION_SECRET keeps its meaning and the cookie format is unchanged —
+ * base64url(JSON payload) + "." + HMAC-SHA256(payload, SESSION_SECRET) — so this
+ * is not a breaking change for anything already holding a session.
  */
 import { env } from 'cloudflare:workers';
+import { db } from './db';
 
 const COOKIE_NAME = 'admin_session';
 const SESSION_TTL_MS = 1000 * 60 * 60 * 8; // 8 hours
 
+/*
+ * PBKDF2 cost. OWASP's floor for PBKDF2-SHA256 is well above this; the ceiling
+ * here is not security but the Workers CPU budget — this runs inside the request,
+ * and blowing the limit turns "log in" into an opaque 1102 rather than a slow
+ * login. 100k is the compromise, and `iterations` is stored per-row so it can be
+ * raised later without invalidating the existing hash.
+ */
+const PBKDF2_ITERATIONS = 100_000;
+
+export interface AdminUser {
+  id: number;
+  username: string;
+  password_hash: string;
+  created_at: string;
+  updated_at: string;
+}
+
 interface AdminEnv {
   SESSION_SECRET?: string;
-  ADMIN_PASSWORD_HASH?: string;
+  /**
+   * One-time gate for /api/auth/setup. Without it a public setup page is a
+   * CMS-takeover race: whoever POSTs first owns the site. It matters only until
+   * an admin row exists — after that setup is closed regardless of its value.
+   */
+  SETUP_TOKEN?: string;
 }
 
 function adminEnv(): AdminEnv {
@@ -62,20 +93,132 @@ export function constantTimeEqual(a: string, b: string): boolean {
   return diff === 0;
 }
 
-export function isAuthConfigured(): boolean {
-  const e = adminEnv();
-  return Boolean(e.SESSION_SECRET && e.ADMIN_PASSWORD_HASH);
+function fromBase64UrlBytes(b64url: string): Uint8Array {
+  const bin = fromBase64Url(b64url);
+  const out = new Uint8Array(bin.length);
+  for (let i = 0; i < bin.length; i++) out[i] = bin.charCodeAt(i);
+  return out;
+}
+
+async function pbkdf2(password: string, salt: Uint8Array, iterations: number): Promise<Uint8Array> {
+  const key = await crypto.subtle.importKey(
+    'raw',
+    new TextEncoder().encode(password),
+    'PBKDF2',
+    false,
+    ['deriveBits']
+  );
+  const bits = await crypto.subtle.deriveBits(
+    { name: 'PBKDF2', salt: salt as BufferSource, iterations, hash: 'SHA-256' },
+    key,
+    256
+  );
+  return new Uint8Array(bits);
+}
+
+/** `pbkdf2$sha256$<iterations>$<salt>$<hash>`, salt and hash base64url. */
+export async function hashPassword(password: string): Promise<string> {
+  const salt = crypto.getRandomValues(new Uint8Array(16));
+  const hash = await pbkdf2(password, salt, PBKDF2_ITERATIONS);
+  return `pbkdf2$sha256$${PBKDF2_ITERATIONS}$${toBase64Url(salt)}$${toBase64Url(hash)}`;
 }
 
 /**
- * @returns true only when the password matches the configured hash.
- * Upgrade path: to move off unsalted SHA-256, store a PBKDF2/scrypt string here
- * and branch on a prefix — the cookie format would not need to change.
+ * Verify against a stored hash string.
+ *
+ * Every malformed-field path returns false rather than throwing: this parses a
+ * value from the database on the login path, and an exception here would be a
+ * 500 that leaks "your stored hash is broken" to an anonymous caller.
  */
-export async function verifyPassword(password: string): Promise<boolean> {
-  const e = adminEnv();
-  if (!e.ADMIN_PASSWORD_HASH) return false;
-  return constantTimeEqual(await sha256Hex(password), e.ADMIN_PASSWORD_HASH);
+async function verifyStoredPassword(password: string, stored: string): Promise<boolean> {
+  const parts = stored.split('$');
+  if (parts.length !== 5) return false;
+  const [scheme, hashName, itersRaw, saltB64, expected] = parts;
+  if (scheme !== 'pbkdf2' || hashName !== 'sha256') return false;
+
+  const iterations = Number(itersRaw);
+  // Guard the cost read out of the DB: a row saying `1` would make the KDF free.
+  if (!Number.isInteger(iterations) || iterations < 10_000 || iterations > 1_000_000) return false;
+
+  let salt: Uint8Array;
+  try {
+    salt = fromBase64UrlBytes(saltB64);
+  } catch {
+    return false;
+  }
+  if (salt.length === 0) return false;
+
+  const actual = toBase64Url(await pbkdf2(password, salt, iterations));
+  return constantTimeEqual(actual, expected);
+}
+
+export async function findAdmin(username: string): Promise<AdminUser | null> {
+  return (
+    (await db()
+      .prepare('SELECT * FROM admin_users WHERE username = ?')
+      .bind(username)
+      .first<AdminUser>()) ?? null
+  );
+}
+
+export async function adminExists(): Promise<boolean> {
+  const row = await db().prepare('SELECT 1 AS n FROM admin_users LIMIT 1').first<{ n: number }>();
+  return Boolean(row);
+}
+
+/** Auth is usable once a secret exists to sign cookies AND an account exists. */
+export async function isAuthConfigured(): Promise<boolean> {
+  if (!adminEnv().SESSION_SECRET) return false;
+  return adminExists();
+}
+
+/** Setup is open only while there is no account to take over. */
+export async function isSetupOpen(): Promise<boolean> {
+  if (!adminEnv().SESSION_SECRET || !adminEnv().SETUP_TOKEN) return false;
+  return !(await adminExists());
+}
+
+export function verifySetupToken(token: string): boolean {
+  const expected = adminEnv().SETUP_TOKEN;
+  if (!expected) return false;
+  return constantTimeEqual(token, expected);
+}
+
+/**
+ * Create the first admin. Returns false if one already existed.
+ *
+ * The guard is `WHERE NOT EXISTS` inside the INSERT rather than a read-then-write:
+ * SQLite evaluates it atomically, so two setup requests racing cannot both
+ * create an account — the loser changes 0 rows and is reported as "already
+ * configured". A check-then-insert would have a window between the two.
+ */
+export async function createAdminIfNone(username: string, password: string): Promise<boolean> {
+  const now = new Date().toISOString().replace(/\.\d{3}Z$/, 'Z');
+  const hash = await hashPassword(password);
+  const res = await db()
+    .prepare(
+      `INSERT INTO admin_users (username, password_hash, created_at, updated_at)
+       SELECT ?, ?, ?, ? WHERE NOT EXISTS (SELECT 1 FROM admin_users)`
+    )
+    .bind(username, hash, now, now)
+    .run();
+  return (res.meta?.changes ?? 0) === 1;
+}
+
+/**
+ * @returns true only when the username exists AND the password matches.
+ *
+ * When the user is unknown this still runs a full PBKDF2 against a dummy hash
+ * before returning. Skipping it would make "no such user" measurably faster than
+ * "wrong password" and turn the login form into a username oracle.
+ */
+export async function verifyCredentials(username: string, password: string): Promise<boolean> {
+  const admin = await findAdmin(username);
+  if (!admin) {
+    await pbkdf2(password, new Uint8Array(16), PBKDF2_ITERATIONS);
+    return false;
+  }
+  return verifyStoredPassword(password, admin.password_hash);
 }
 
 export async function createSessionCookie(): Promise<string> {

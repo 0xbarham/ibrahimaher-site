@@ -4,11 +4,25 @@
  * yet, and a sidebar behind a login form is a lie about what you can reach.
  */
 import '../../styles/admin.css';
+import { isSetupOpen } from '../../lib/auth';
+
+export const prerender = false;
 
 // The `next` param arrives from the middleware redirect. It is echoed into a
 // client-side redirect, so it is validated twice: here it is only read, and the
 // script below re-validates before ever using it. Never trust it as given.
 const rawNext = Astro.url.searchParams.get('next') ?? '';
+
+/*
+ * First run: no admin row yet, so this page becomes the signup rather than the
+ * login. isSetupOpen() also requires SETUP_TOKEN to be configured, so the form is
+ * never offered when it could not succeed anyway.
+ *
+ * This flips to false permanently the moment the account is created. The server
+ * enforces that independently in /api/auth/setup, so a stale cached page showing
+ * the setup form would be a cosmetic problem, not a way in.
+ */
+const setupMode = await isSetupOpen();
 ---
 
 <!doctype html>
@@ -17,7 +31,7 @@ const rawNext = Astro.url.searchParams.get('next') ?? '';
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <meta name="robots" content="noindex, nofollow" />
-    <title>Log in — Admin</title>
+    <title>{setupMode ? 'Create your admin account — Admin' : 'Log in — Admin'}</title>
     <link rel="icon" type="image/svg+xml" href="/assets/favicon.svg" />
     <script is:inline>
       (function () {
@@ -32,10 +46,48 @@ const rawNext = Astro.url.searchParams.get('next') ?? '';
   <body>
     <main class="login">
       <div class="login__card">
-        <h1 class="login__title">Sign in</h1>
-        <p class="login__sub">This is the private side of ibrahimaher.com.</p>
+        <h1 class="login__title">{setupMode ? 'Create your account' : 'Sign in'}</h1>
+        <p class="login__sub">
+          {
+            setupMode
+              ? 'No admin account exists yet. Choose the username and password you want, and enter your setup code. This form disappears once the account is created.'
+              : 'This is the private side of ibrahimaher.com.'
+          }
+        </p>
 
         <form id="login-form" class="stack" novalidate>
+          {
+            setupMode && (
+              <div class="field">
+                <label class="field__label" for="token">Setup code</label>
+                <input
+                  class="input"
+                  type="password"
+                  id="token"
+                  name="token"
+                  autocomplete="off"
+                  required
+                  autofocus
+                />
+              </div>
+            )
+          }
+
+          <div class="field">
+            <label class="field__label" for="username">Username</label>
+            <input
+              class="input"
+              type="text"
+              id="username"
+              name="username"
+              autocomplete={setupMode ? 'username' : 'username'}
+              autocapitalize="none"
+              spellcheck="false"
+              required
+              autofocus={!setupMode}
+            />
+          </div>
+
           <div class="field">
             <label class="field__label" for="password">Password</label>
             <input
@@ -43,13 +95,33 @@ const rawNext = Astro.url.searchParams.get('next') ?? '';
               type="password"
               id="password"
               name="password"
-              autocomplete="current-password"
+              autocomplete={setupMode ? 'new-password' : 'current-password'}
               required
-              autofocus
             />
+            {setupMode && <p class="field__hint">At least 12 characters. Length beats symbols.</p>}
           </div>
 
-          <button class="btn btn--primary" id="submit" type="submit">Log in</button>
+          {
+            setupMode && (
+              <div class="field">
+                <label class="field__label" for="confirm">
+                  Confirm password
+                </label>
+                <input
+                  class="input"
+                  type="password"
+                  id="confirm"
+                  name="confirm"
+                  autocomplete="new-password"
+                  required
+                />
+              </div>
+            )
+          }
+
+          <button class="btn btn--primary" id="submit" type="submit">
+            {setupMode ? 'Create account' : 'Log in'}
+          </button>
 
           <p
             class="status"
@@ -62,11 +134,15 @@ const rawNext = Astro.url.searchParams.get('next') ?? '';
       </div>
     </main>
 
-    <script define:vars={{ rawNext }}>
+    <script define:vars={{ rawNext, setupMode }}>
       const form = document.getElementById('login-form');
       const pw = document.getElementById('password');
+      const user = document.getElementById('username');
       const btn = document.getElementById('submit');
       const status = document.getElementById('login-status');
+      // Present only in setup mode.
+      const token = document.getElementById('token');
+      const confirm = document.getElementById('confirm');
 
       /**
        * Only ever redirect to a same-origin path inside /admin.
@@ -96,20 +172,52 @@ const rawNext = Astro.url.searchParams.get('next') ?? '';
 
       form.addEventListener('submit', async (e) => {
         e.preventDefault();
+
+        if (!user.value.trim()) {
+          setStatus('Enter your username.', 'err');
+          user.focus();
+          return;
+        }
         if (!pw.value) {
           setStatus('Enter your password.', 'err');
           pw.focus();
           return;
         }
 
+        // Client-side checks in setup mode are courtesy only — the server
+        // re-validates all of this, and is the thing that actually decides.
+        if (setupMode) {
+          if (!token.value) {
+            setStatus('Enter your setup code.', 'err');
+            token.focus();
+            return;
+          }
+          if (pw.value.length < 12) {
+            setStatus('Password must be at least 12 characters.', 'err');
+            pw.focus();
+            return;
+          }
+          if (pw.value !== confirm.value) {
+            setStatus('The two passwords do not match.', 'err');
+            confirm.select();
+            confirm.focus();
+            return;
+          }
+        }
+
         btn.disabled = true;
-        setStatus('Checking…', 'busy');
+        setStatus(setupMode ? 'Creating your account…' : 'Checking…', 'busy');
 
         try {
-          const res = await fetch('/api/auth/login', {
+          const endpoint = setupMode ? '/api/auth/setup' : '/api/auth/login';
+          const payload = setupMode
+            ? { token: token.value, username: user.value.trim(), password: pw.value }
+            : { username: user.value.trim(), password: pw.value };
+
+          const res = await fetch(endpoint, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ password: pw.value }),
+            body: JSON.stringify(payload),
           });
 
           let data = {};
@@ -121,14 +229,16 @@ const rawNext = Astro.url.searchParams.get('next') ?? '';
           }
 
           if (res.ok && data.ok) {
-            setStatus('Welcome back. Redirecting…', 'ok');
+            // Setup signs you in as it creates the account, so both paths land
+            // in the same place.
+            setStatus(setupMode ? 'Account created. Redirecting…' : 'Welcome back. Redirecting…', 'ok');
             window.location.href = safeNext(rawNext);
             return;
           }
 
-          throw new Error(data.error || 'That password did not work.');
+          throw new Error(data.error || 'That did not work.');
         } catch (err) {
-          setStatus(err.message || 'Login failed.', 'err');
+          setStatus(err.message || (setupMode ? 'Setup failed.' : 'Login failed.'), 'err');
           btn.disabled = false;
           pw.select();
           pw.focus();

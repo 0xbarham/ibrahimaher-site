@@ -7,12 +7,21 @@
  * not a denylist of private ones. A new /admin/* page is therefore protected the
  * moment it is created — forgetting to register it fails closed, not open.
  */
+import type { APIContext, MiddlewareNext } from 'astro';
 import { defineMiddleware } from 'astro:middleware';
 import { isAuthed, getCookie } from './lib/auth';
 import { findRedirect } from './lib/db';
 
 /** Paths under a protected prefix that must stay reachable while logged out. */
-const PUBLIC_ADMIN_PATHS = new Set(['/admin/login', '/api/auth/login', '/api/auth/logout']);
+const PUBLIC_ADMIN_PATHS = new Set([
+  '/admin/login',
+  '/api/auth/login',
+  '/api/auth/logout',
+  // First-run only. It cannot require a session — it exists to create the account
+  // a session would come from. It gates itself on SETUP_TOKEN + "no admin row
+  // yet" and answers 403 forever after. See api/auth/setup.ts.
+  '/api/auth/setup',
+]);
 
 const PROTECTED_PREFIXES = ['/admin', '/api/content', '/api/settings', '/api/media'];
 
@@ -137,7 +146,57 @@ function addPublicCacheHeaders(request: Request, pathname: string, response: Res
   response.headers.set('Vary', 'Accept-Encoding');
 }
 
-export const onRequest = defineMiddleware(async (context, next) => {
+/**
+ * Security headers, on EVERY response this Worker returns.
+ *
+ * Semrush reported "2 subdomains don't support HSTS" — ibrahimaher.com and
+ * www.ibrahimaher.com, i.e. both of them, because nothing set the header at all.
+ *
+ * Deliberately NOT folded into addPublicCacheHeaders: that function has five
+ * early returns (non-200, non-GET, /api/, /admin, authed session), so reusing it
+ * would give the admin panel — the only authenticated surface on the site — no
+ * security headers, and skip every redirect. www.ibrahimaher.com ONLY ever
+ * answers with a 301, so a header that rides on 200s alone leaves that hostname
+ * failing exactly as reported.
+ *
+ * max-age is one year, with NO includeSubDomains and NO preload:
+ *  - includeSubDomains binds every future subdomain of the zone to HTTPS-only,
+ *    forever, to fix a finding about the only two hostnames that exist.
+ *  - preload is, in practice, irreversible.
+ * Neither is needed to clear the finding. Ramp them later if wanted.
+ *
+ * Scope limit worth knowing: static assets (/_astro/*, robots.txt, llms.txt) are
+ * served by Cloudflare's asset router BEFORE this Worker runs, so they do not get
+ * these headers. Fixing that properly means enabling HSTS at the zone (SSL/TLS ->
+ * Edge Certificates), which needs dashboard access this token does not have.
+ */
+function addSecurityHeaders(response: Response): Response {
+  // A response can be immutable (redirects built elsewhere, cached bodies), and
+  // headers.set() throws on those rather than failing quietly. Rebuild on throw.
+  try {
+    response.headers.set('Strict-Transport-Security', 'max-age=31536000');
+    response.headers.set('X-Content-Type-Options', 'nosniff');
+    response.headers.set('Referrer-Policy', 'strict-origin-when-cross-origin');
+    return response;
+  } catch {
+    const copy = new Response(response.body, response);
+    copy.headers.set('Strict-Transport-Security', 'max-age=31536000');
+    copy.headers.set('X-Content-Type-Options', 'nosniff');
+    copy.headers.set('Referrer-Policy', 'strict-origin-when-cross-origin');
+    return copy;
+  }
+}
+
+/**
+ * The routing decisions.
+ *
+ * Split out from onRequest so that EVERY exit — host redirect, .html redirect,
+ * admin bounce, 401, 404-redirect, normal page — leaves through a single place
+ * that attaches the security headers. Wrapping six separate `return`s is how one
+ * of them silently gets missed, and the one that would get missed here is a
+ * redirect, which is all www.ibrahimaher.com ever answers with.
+ */
+async function handle(context: APIContext, next: MiddlewareNext): Promise<Response> {
   const { pathname } = context.url;
 
   // Cheap string compare, no DB — safe to run before anything else.
@@ -178,4 +237,8 @@ export const onRequest = defineMiddleware(async (context, next) => {
   // Preserve where they were headed so login can return them there.
   if (pathname !== '/admin') to.searchParams.set('next', pathname);
   return context.redirect(to.pathname + to.search, 302);
+}
+
+export const onRequest = defineMiddleware(async (context, next) => {
+  return addSecurityHeaders(await handle(context, next));
 });
