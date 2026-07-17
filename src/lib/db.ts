@@ -72,7 +72,10 @@ export interface Project {
   featured_logo: string | null;
   external_url: string | null;
   external_label: string | null;
+  /** Light-theme screenshot. Also the fallback when `image_dark` is unset. */
   image: string | null;
+  /** Dark-theme counterpart. Null means "use `image` in both themes". */
+  image_dark: string | null;
   image_alt: string;
   /** Hidden from the public site but kept editable in the admin. */
   hidden: number;

@@ -53,6 +53,20 @@ const decode = (s: string): string =>
 /** Logo paths are stored relative ("assets/logos/…"), as the old root-level page used them. */
 const asset = (p: string): string => (/^(https?:)?\//.test(p) ? p : `/${p}`);
 
+/**
+ * Wrap a path as a CSS url() token for an inline `style` attribute.
+ *
+ * Astro escapes the attribute for HTML, which stops a value breaking out of the
+ * tag, but not out of the CSS value — a quote or paren would close the url() and
+ * let the rest be read as declarations. The only caller passes a literal from
+ * `aiTools` below, so this is a guard rather than a live fix, but it is what
+ * makes the token safe to build from anything, including a D1 path later.
+ * encodeURI is deliberately not used: it leaves quotes and parens intact, and
+ * would double-encode a path that already carries a %.
+ */
+const cssUrl = (p: string): string =>
+  `url("${p.replace(/["'()\\\s]/g, (c) => `%${c.charCodeAt(0).toString(16).padStart(2, '0')}`)}")`;
+
 const featured = projects.find((p) => p.featured === 1) ?? null;
 const smallProjects = projects.filter((p) => p.featured !== 1);
 
@@ -103,33 +117,57 @@ const disciplines = [
 ];
 
 /* The daily tool strip, verbatim from the old page. Paths keep the `?v=2`
-   cache-buster the D1 rows use for the n8n marks. */
+   cache-buster the D1 rows use for the n8n marks.
+
+   Each mark rests in the page's ink colour and takes its brand colour on hover.
+   Two mechanisms, because the assets are not alike:
+
+   - `mask` — the Claude, OpenAI and Gemini files are single-path monochrome
+     glyphs (#12151c, with #f3f5f8 counterparts). There is no colour version of
+     any of them to swap to, so the glyph is used as a CSS mask and painted from
+     underneath. A mask reads only alpha, so one file serves both themes and the
+     `-white` counterparts are no longer needed here.
+   - `light`/`dark` — n8n is a two-colour wordmark that already carries its brand
+     pink (#EA4B71). Masking would flatten that away, so it keeps the <img> pair
+     and desaturates at rest instead.
+
+   Brand colours are the marks' own, not the site's. Claude's #D97757 happening
+   to equal --accent is a coincidence worth keeping honest: --accent is tuned per
+   theme and would drift the logo off-brand in dark mode. */
 const aiTools = [
   {
     name: 'Claude',
-    light: 'assets/logos/claude-logo.svg',
-    dark: 'assets/logos/claude-logo-white.svg',
+    slug: 'claude',
+    mask: 'assets/logos/claude-logo.svg',
     use: `Claude Code writes and ships the production code: this site, DAD LINK's build work, and the custom n8n function nodes I can't do with built-in blocks alone.`,
   },
   {
     name: 'ChatGPT',
-    light: 'assets/logos/openai-logo.svg',
-    dark: 'assets/logos/openai-logo-white.svg',
+    slug: 'chatgpt',
+    mask: 'assets/logos/openai-logo.svg',
     use: `Fast day-to-day thinking: drafting client messages, brainstorming campaign angles, and quick lookups where I don't need a full coding session.`,
   },
   {
     name: 'Gemini',
-    light: 'assets/logos/gemini-logo.svg',
-    dark: 'assets/logos/gemini-logo-white.svg',
+    slug: 'gemini',
+    mask: 'assets/logos/gemini-logo.svg',
     use: `The model behind my n8n workflows that read and judge things: screening invoice emails for fraud, scoring inbound leads, and extracting structured data from documents.`,
   },
   {
     name: 'n8n',
+    slug: 'n8n',
     light: 'assets/logos/n8n-logo.svg?v=2',
     dark: 'assets/logos/n8n-logo-white.svg?v=2',
     use: `The automation platform that wires the models above into Gmail, Sheets, Telegram, Calendar, and GoHighLevel to run as unattended production workflows.`,
   },
-];
+] satisfies {
+  name: string;
+  slug: string;
+  use: string;
+  mask?: string;
+  light?: string;
+  dark?: string;
+}[];
 
 /* Contact rows, verbatim from the old contact section. The form itself stays
    on /contact — these are just the details, set as labelled rows. */
@@ -513,22 +551,48 @@ if (featured?.external_url) {
                 <li class="work reveal">
                   {p.image && (
                     /*
-                      The screenshots are dark n8n canvases dropped onto warm
-                      paper. Framing them — inset inside a padded, rounded, hairline
-                      surface — is what stops that contrast reading as a pasted
-                      rectangle. width/height + aspect-ratio reserve the box before
-                      the lazy image arrives, so nothing shifts.
+                      Framing the shot — inset inside a padded, rounded, hairline
+                      surface — is what stops it reading as a pasted rectangle.
+                      width/height reserve the box before the lazy image arrives,
+                      so nothing shifts.
+
+                      A pair of lazy <img>, not a themed background-image. The
+                      rule of thumb that an <img> always downloads its src even
+                      under display:none is only true of EAGER images: a
+                      loading="lazy" image that is display:none never intersects
+                      the viewport, so it is never fetched — measured here, and it
+                      only arrives if a theme toggle reveals it. That buys the
+                      single-variant fetch a background swap would give AND keeps
+                      real lazy loading, native alt text and intrinsic sizing,
+                      which a background-image on a div gives up. These sit ~5
+                      screens down; as backgrounds they fetched on load and were
+                      half the page's weight.
+
+                      `shot-light` is only set when a dark counterpart exists —
+                      same reasoning as the logo swap below: a lone screenshot
+                      must never be hidden in dark mode.
                     */
                     <figure class="work__frame">
                       <img
-                        class="work__shot settle-in"
+                        class:list={['work__shot', 'settle-in', { 'shot-light': p.image_dark }]}
                         src={asset(p.image)}
                         alt={p.image_alt}
                         loading="lazy"
                         decoding="async"
-                        width="1600"
-                        height="840"
+                        width="1400"
+                        height="783"
                       />
+                      {p.image_dark && (
+                        <img
+                          class="work__shot settle-in shot-dark"
+                          src={asset(p.image_dark)}
+                          alt={p.image_alt}
+                          loading="lazy"
+                          decoding="async"
+                          width="1400"
+                          height="783"
+                        />
+                      )}
                     </figure>
                   )}
 
@@ -659,27 +723,39 @@ if (featured?.external_url) {
                 aiTools.map((t) => (
                   <div class="tool reveal">
                     <dt class="tool__name">
-                      <span class="tool__mark">
-                        <img
-                          class="logo-light"
-                          src={asset(t.light)}
-                          alt=""
-                          aria-hidden="true"
-                          loading="lazy"
-                          decoding="async"
-                          width="20"
-                          height="20"
-                        />
-                        <img
-                          class="logo-dark"
-                          src={asset(t.dark)}
-                          alt=""
-                          aria-hidden="true"
-                          loading="lazy"
-                          decoding="async"
-                          width="20"
-                          height="20"
-                        />
+                      <span
+                        class:list={[
+                          'tool__mark',
+                          `tool__mark--${t.slug}`,
+                          { 'tool__mark--masked': 'mask' in t },
+                        ]}
+                        aria-hidden="true"
+                        style={'mask' in t ? `--mark:${cssUrl(asset(t.mask))}` : undefined}
+                      >
+                        {'light' in t && (
+                          <img
+                            class="logo-light"
+                            src={asset(t.light)}
+                            alt=""
+                            aria-hidden="true"
+                            loading="lazy"
+                            decoding="async"
+                            width="20"
+                            height="20"
+                          />
+                        )}
+                        {'dark' in t && (
+                          <img
+                            class="logo-dark"
+                            src={asset(t.dark)}
+                            alt=""
+                            aria-hidden="true"
+                            loading="lazy"
+                            decoding="async"
+                            width="20"
+                            height="20"
+                          />
+                        )}
                       </span>
                       {t.name}
                     </dt>
@@ -1335,9 +1411,13 @@ if (featured?.external_url) {
     display: block;
     width: 100%;
     height: auto;
-    /* Reserves the box before the lazy image lands — no CLS. */
-    aspect-ratio: 1600 / 840;
+    /* Reserves the box before the lazy image lands — no CLS. Must match the
+       real 1400x783 asset; a wrong ratio letterboxes or crops it. */
+    aspect-ratio: 1400 / 783;
     object-fit: cover;
+    /* Fills the reserved box while the image is in flight, so the frame reads
+       as a deliberate surface rather than a hole. */
+    background-color: var(--paper-2);
     border-radius: var(--radius-md);
     /*
       The transform on this element belongs to `.settle-in`'s scroll-driven
@@ -1346,6 +1426,44 @@ if (featured?.external_url) {
       hover scale would simply never fire. The card's hover reads through the
       frame's shadow, the underline and the arrow instead.
     */
+  }
+
+  /* ----------------------------------------------------------------------
+     Light/dark screenshot swap — same shape as the logo swap above, and for
+     the same reason: `.shot-light` is only applied when a dark counterpart
+     exists, so a project with a single screenshot is never hidden.
+
+     display:none is what keeps this cheap. The hidden variant is lazy, so it
+     never intersects the viewport and is never fetched; toggling the theme
+     reveals it and only then does it load.
+     ---------------------------------------------------------------------- */
+  .shot-dark {
+    display: none;
+  }
+
+  :root[data-theme='dark'] .shot-light {
+    display: none;
+  }
+
+  :root[data-theme='dark'] .shot-dark {
+    display: block;
+  }
+
+  /*
+    Mandatory, not belt-and-braces: Base.astro only writes data-theme when
+    localStorage holds an explicit choice, so a first-time visitor on an
+    OS-dark machine has no data-theme at all. Without this they get the light
+    screenshot on dark paper. (The v1 rules this is ported from omit exactly
+    this fallback and have that bug.)
+  */
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme='light']) .shot-light {
+      display: none;
+    }
+
+    :root:not([data-theme='light']) .shot-dark {
+      display: block;
+    }
   }
 
   .work__head {
@@ -1536,10 +1654,112 @@ if (featured?.external_url) {
     line-height: var(--leading-snug);
   }
 
+  /* ----------------------------------------------------------------------
+     Tool marks: page ink at rest, brand colour on hover.
+
+     Hovering the whole row rather than the 20px mark — the row is the thing
+     that reads as one item, and a 20px hover target is a poor one.
+     ---------------------------------------------------------------------- */
+  .tool__mark {
+    display: inline-block;
+    flex: none;
+    width: 20px;
+    height: 20px;
+  }
+
   .tool__mark img {
     width: 20px;
     height: 20px;
     object-fit: contain;
+  }
+
+  /* Claude / OpenAI / Gemini: the glyph is a mask, the colour is painted under
+     it. The SVG's own fill never renders, so one file covers both themes. */
+  .tool__mark--masked {
+    position: relative;
+    background-color: var(--ink);
+    -webkit-mask: var(--mark) center / contain no-repeat;
+    mask: var(--mark) center / contain no-repeat;
+  }
+
+  /*
+    The brand colour rides on ::after and cross-fades its opacity, rather than
+    swapping background-color on hover. Two reasons: background-image is not
+    animatable, so Gemini's gradient would snap in while the flat marks faded,
+    and this way every mark uses one transition and they all feel the same.
+    The parent's mask clips the pseudo-element, so it takes the glyph's shape.
+  */
+  .tool__mark--masked::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    opacity: 0;
+    transition: opacity var(--dur-mid) var(--ease-out);
+  }
+
+  .tool__mark--claude::after {
+    background: #d97757;
+  }
+
+  /*
+    OpenAI's purple is the one brand colour here that is only legible on light
+    paper: #412991 measures 10.15:1 on --paper but 1.76:1 on dark --paper, so in
+    dark mode the mark did not turn purple, it vanished. Every other mark lands
+    at 5-6:1 in dark (claude 6.08, gemini 5.12-6.09), which is what made this one
+    read as a bug rather than a look.
+
+    So it gets a lighter tint of the same hue in dark mode — the same thing the
+    site already does for --accent (#d97757 -> #e08a69 in tokens.css). #9b84de is
+    6.10:1 on dark paper, i.e. it now sits exactly where Claude's mark sits.
+    Fidelity is kept where it can be seen and traded only where it could not.
+  */
+  .tool__mark--chatgpt::after {
+    background: #412991;
+  }
+
+  :root[data-theme='dark'] .tool__mark--chatgpt::after {
+    background: #9b84de;
+  }
+
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme='light']) .tool__mark--chatgpt::after {
+      background: #9b84de;
+    }
+  }
+
+  /* Gemini's mark is a gradient in Google's own branding, not a flat colour —
+     masking is what makes rendering it as one practical. */
+  .tool__mark--gemini::after {
+    background: linear-gradient(135deg, #4796e3 0%, #9177c7 50%, #d96570 100%);
+  }
+
+  /* n8n already ships its brand pink, so it desaturates at rest instead —
+     otherwise it would be the one mark that is always colourful and the hover
+     would read as broken on it alone. */
+  .tool__mark--n8n img {
+    filter: grayscale(1);
+    transition: filter var(--dur-mid) var(--ease-out);
+  }
+
+  /* Gated on a real pointer: on touch, :hover sticks after a tap and would
+     leave one mark stuck colourful with no way to clear it. */
+  @media (hover: hover) {
+    .tool:hover .tool__mark--masked::after {
+      opacity: 1;
+    }
+
+    .tool:hover .tool__mark--n8n img {
+      filter: none;
+    }
+  }
+
+  /* A colour cross-fade is not motion, but honour an explicit request for no
+     animation by making the change instant rather than removing it. */
+  @media (prefers-reduced-motion: reduce) {
+    .tool__mark--masked::after,
+    .tool__mark--n8n img {
+      transition: none;
+    }
   }
 
   .tool__use {
