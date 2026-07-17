@@ -67,12 +67,22 @@ function defaultCard() {
   </div>`;
 }
 
-function postCard({ title, category, readTime }) {
+/** Trim an excerpt to ~two lines on the card, cutting on a word boundary. */
+function clampExcerpt(s) {
+  const t = String(s || '').trim();
+  if (t.length <= 120) return t;
+  return t.slice(0, 118).replace(/\s+\S*$/, '') + '…';
+}
+
+function postCard({ title, category, readTime, excerpt }) {
   const len = String(title).length;
-  const size = len > 62 ? 52 : len > 44 ? 60 : 68;
+  // Larger than before, and the excerpt below fills the lower block so the card
+  // reads full like the default card instead of a small title in empty space.
+  const size = len > 66 ? 56 : len > 46 ? 64 : 74;
+  const ex = clampExcerpt(excerpt);
   const dot = `<div style="display:flex;width:8px;height:8px;border-radius:9999px;background:${C.ink3};margin:0 20px;"></div>`;
   return `
-  <div style="display:flex;flex-direction:column;width:${W}px;height:${H}px;background:${C.bg};padding:80px;position:relative;font-family:Inter;">
+  <div style="display:flex;flex-direction:column;width:${W}px;height:${H}px;background:${C.bg};padding:78px 80px;position:relative;font-family:Inter;">
     ${blobs}
     <div style="display:flex;align-items:center;">
       <div style="display:flex;color:${C.accent};font-size:28px;font-weight:600;">ibrahimaher.com</div>
@@ -80,10 +90,11 @@ function postCard({ title, category, readTime }) {
       <div style="display:flex;color:${C.ink3};font-size:26px;font-weight:600;letter-spacing:1.5px;text-transform:uppercase;">${esc(category)}</div>
     </div>
     <div style="display:flex;flex-direction:column;margin-top:auto;">
-      <div style="display:flex;font-family:Sora;font-weight:700;font-size:${size}px;line-height:1.12;letter-spacing:-1.5px;color:${C.ink};max-width:1040px;">${esc(title)}</div>
-      <div style="display:flex;align-items:center;margin-top:44px;">
-        <div style="display:flex;color:${C.ink2};font-size:30px;">Ibrahim Maher Al-Bander</div>
-        ${readTime ? dot + `<div style="display:flex;color:${C.ink3};font-size:30px;">${esc(readTime)}</div>` : ''}
+      <div style="display:flex;font-family:Sora;font-weight:700;font-size:${size}px;line-height:1.1;letter-spacing:-1.5px;color:${C.ink};max-width:1050px;">${esc(title)}</div>
+      ${ex ? `<div style="display:flex;margin-top:26px;color:${C.ink2};font-size:31px;line-height:1.4;max-width:980px;">${esc(ex)}</div>` : ''}
+      <div style="display:flex;align-items:center;margin-top:40px;">
+        <div style="display:flex;color:${C.ink2};font-size:29px;">Ibrahim Maher Al-Bander</div>
+        ${readTime ? dot + `<div style="display:flex;color:${C.ink3};font-size:29px;">${esc(readTime)}</div>` : ''}
       </div>
     </div>
   </div>`;
@@ -103,7 +114,7 @@ async function toPng(markup) {
 function readPublishedPosts() {
   try {
     const raw = execSync(
-      `npx wrangler d1 execute ibrahimaher-content --remote --json --command "SELECT slug, title, category, read_time FROM posts WHERE status='published'"`,
+      `npx wrangler d1 execute ibrahimaher-content --remote --json --command "SELECT slug, title, category, read_time, excerpt FROM posts WHERE status='published'"`,
       { encoding: 'utf8', maxBuffer: 16 * 1024 * 1024 }
     );
     const start = raw.indexOf('[');
@@ -122,7 +133,7 @@ async function main() {
   for (const p of posts) {
     writeFileSync(
       join(OUT_DIR, `${p.slug}.png`),
-      await toPng(postCard({ title: p.title, category: p.category, readTime: p.read_time }))
+      await toPng(postCard({ title: p.title, category: p.category, readTime: p.read_time, excerpt: p.excerpt }))
     );
   }
   console.log(`[og] generated default.png + ${posts.length} post cards -> public/assets/og/`);
