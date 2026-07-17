@@ -11,6 +11,7 @@ import {
   setting,
 } from '../../lib/db';
 import { renderMarkdown, markdownToText, readingTime } from '../../lib/markdown';
+import { makeAbs } from '../../lib/url';
 
 const { slug } = Astro.params;
 
@@ -35,6 +36,17 @@ const metaTitle = post.seo_title || `${post.title} | ${authorName}`;
 const metaDesc = post.seo_description || post.excerpt || markdownToText(post.body_md, 160);
 const canonical = post.canonical_url || `/blog/${post.slug}`;
 const readTime = post.read_time || readingTime(post.body_md);
+
+/*
+ * `canonical_url` and `og_image` are stored ABSOLUTE in D1, while the fallbacks
+ * two lines up are relative — so the JSON-LD below cannot concatenate siteUrl
+ * onto either. It used to, and every post shipped
+ * "https://ibrahimaher.comhttps://ibrahimaher.com/blog/...". The <head> tags were
+ * never affected because Base.astro resolves through this same helper.
+ */
+const abs = makeAbs(siteUrl);
+const canonicalAbs = abs(canonical);
+const imageSrc = post.og_image || post.hero_image;
 
 const published = post.created_at || `${post.post_date}T00:00:00Z`;
 const modified = post.updated_at || published;
@@ -74,10 +86,8 @@ const jsonLd = [
       url: author?.profile_url || `${siteUrl}/about`,
     },
     publisher: { '@type': 'Person', name: authorName, url: siteUrl },
-    mainEntityOfPage: { '@type': 'WebPage', '@id': `${siteUrl}${canonical}` },
-    ...(post.og_image || post.hero_image
-      ? { image: `${siteUrl}${post.og_image || post.hero_image}` }
-      : {}),
+    mainEntityOfPage: { '@type': 'WebPage', '@id': canonicalAbs },
+    ...(imageSrc ? { image: abs(imageSrc) } : {}),
   },
   {
     '@context': 'https://schema.org',
@@ -85,7 +95,7 @@ const jsonLd = [
     itemListElement: [
       { '@type': 'ListItem', position: 1, name: 'Home', item: `${siteUrl}/` },
       { '@type': 'ListItem', position: 2, name: 'Writing', item: `${siteUrl}/blog/` },
-      { '@type': 'ListItem', position: 3, name: post.title, item: `${siteUrl}${canonical}` },
+      { '@type': 'ListItem', position: 3, name: post.title, item: canonicalAbs },
     ],
   },
 ];

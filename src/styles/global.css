@@ -119,8 +119,19 @@ html {
   }
 }
 
+/*
+  --accent-ink, not --accent: a focus indicator is a non-text UI component, and
+  SC 1.4.11 wants 3:1 against the adjacent background. --accent (#d97757) measures
+  2.94:1 on --paper — it fails, narrowly, and only in the light theme (dark reaches
+  7.24:1). --accent-ink is already this site's "accent against paper" role and is
+  tuned per theme: 5.62:1 light, 9.42:1 dark. No new token was needed — the values
+  proposed for one were byte-identical to --accent-ink.
+
+  :where() stays. Its zero specificity is deliberate, so a component can relocate
+  the ring rather than fight it (see SocialIcon.astro). :is() would break that.
+*/
 :where(button, a, input, textarea, select):focus-visible {
-  outline: 2px solid var(--accent);
+  outline: 2px solid var(--accent-ink);
   outline-offset: 3px;
   border-radius: 2px;
 }

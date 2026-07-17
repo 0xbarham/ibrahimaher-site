@@ -141,7 +141,16 @@
   --surface: #ffffff;
   --ink: #16130f;          /* warm near-black — ink, not #000 */
   --ink-2: #4a443c;        /* secondary prose */
-  --ink-3: #837a6e;        /* marginalia, captions */
+  /*
+    Marginalia, captions. #837a6e failed WCAG AA as body text — 3.98:1 on --paper,
+    3.65:1 on --paper-2 — and it carries real prose, not decoration: .job__meta
+    (every employer and date), .field__label (every form label on /contact),
+    .post__excerpt, .hero__tagline. None reach the large-text exemption.
+    #6b6359 measures 5.57 / 5.11 / 5.91 on --paper / --paper-2 / --surface.
+    Light only: the dark ramp (#8b8276, 5.02:1) already passed — which is exactly
+    why this went unnoticed, since checking in dark mode shows a false pass.
+  */
+  --ink-3: #6b6359;
   --rule-color: rgba(22, 19, 15, 0.14);
   --shadow: 0 1px 2px rgba(22, 19, 15, 0.04), 0 8px 24px rgba(22, 19, 15, 0.06);
 }

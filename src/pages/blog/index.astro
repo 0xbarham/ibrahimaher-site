@@ -45,11 +45,17 @@ const rows = posts.map((post) => ({
 }));
 
 const metaTitle = `Writing | ${authorName}`;
-const metaDesc = setting(
-  settings,
-  'default_seo_description',
-  'Notes on AI automation, n8n workflows, social media marketing, and AI-assisted software development.'
-);
+/*
+ * Hardcoded rather than read from settings — the same pattern as about.astro and
+ * contact.astro. `default_seo_description` is SEEDED (0002_cms.sql), so the
+ * fallback string that used to sit here was dead code, and /blog/ shipped the
+ * HOMEPAGE's description byte-for-byte across meta, og:, twitter: and
+ * Blog.description — the only duplicate description in the sitemap. A
+ * `blog_seo_description` settings row was considered and rejected: a migration
+ * plus an admin surface for a string that never changes.
+ */
+const metaDesc =
+  'AI automation, n8n workflows, social media marketing, and what it actually takes to build and ship software with AI tools instead of a CS degree.';
 
 const jsonLd = [
   {

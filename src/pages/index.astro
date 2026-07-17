@@ -3,6 +3,7 @@ export const prerender = false;
 
 import Base from '../layouts/Base.astro';
 import SocialIcon, { type SocialName } from '../components/SocialIcon.astro';
+import { makeAbs } from '../lib/url';
 import {
   getJobs,
   getProjects,
@@ -241,12 +242,17 @@ const jsonLd: Record<string, unknown>[] = [
     name: siteName,
     alternateName: 'Ibrahim Al-Bander',
     url: siteUrl,
-    image: `${siteUrl}${ogImage}`,
+    // Renders correctly today only because `default_og_image` happens to be
+    // relative; an admin pasting an absolute URL would double the origin exactly
+    // as blog/[slug].astro did. See lib/url.ts.
+    image: makeAbs(siteUrl)(ogImage),
     jobTitle: 'Social Media Marketing Specialist & AI Automation Developer',
     worksFor: { '@type': 'Organization', name: 'Help Tech Co. Ltd.' },
     address: { '@type': 'PostalAddress', addressLocality: 'Erbil', addressCountry: 'IQ' },
     email: `mailto:${setting(settings, 'contact_email', 'me@ibrahimaher.com')}`,
-    telephone: '+964771962 0471',
+    // E.164, matching the tel: href below — the stray space was a typo, not a
+    // format choice, and schema.org consumers expect the unpunctuated form.
+    telephone: '+9647719620471',
     sameAs: [
       'https://www.linkedin.com/in/ibrahimaher',
       'https://www.facebook.com/ibmabr',
@@ -310,7 +316,13 @@ if (featured?.external_url) {
     description:
       'B2B e-commerce website for network infrastructure equipment in Iraq: Cat.6 and Cat.6A structured cabling, fiber optic patch cords, server racks and cabinets, and HDMI 2.1 cables, built on Odoo with Claude Code.',
     creator: { '@type': 'Person', name: siteName, url: siteUrl },
-    about: [
+    /*
+     * `keywords`, not `about`: schema.org gives `about` the range Thing, so
+     * plain strings are out of range and this was the site's only outright range
+     * violation. `keywords` takes Text (and is what these are). `knowsAbout`
+     * above legitimately keeps the same string style — its range is Text|URL|Thing.
+     */
+    keywords: [
       'Network cabling Iraq',
       'Cat6 cable',
       'Cat6A cable',
@@ -337,7 +349,10 @@ if (featured?.external_url) {
       <p class="eyebrow" style="--i:0">Hello, I'm</p>
 
       <h1 class="hero__name" id="hero-h" style="--i:1">
-        Ibrahim Maher<br /><span class="hero__last">Al-Bander</span>
+        {/* The space before <br> is load-bearing: without it textContent reads
+            "Ibrahim MaherAl-Bander" and stops matching the JSON-LD `name` and the
+            <title>. It collapses at the forced break, so nothing moves. */}
+        Ibrahim Maher <br /><span class="hero__last">Al-Bander</span>
       </h1>
 
       <p class="hero__role" style="--i:2">{decode(siteTagline)}</p>

@@ -29,7 +29,9 @@ const jsonLd = [
       '@type': 'Person',
       name: 'Ibrahim Maher Al-Bander',
       email: 'mailto:me@ibrahimaher.com',
-      telephone: '+964771962 0471',
+      // E.164, matching the tel: href below. Same typo as index.astro — those two
+      // schema literals were the only strings deviating from the repo's own format.
+      telephone: '+9647719620471',
       url: siteUrl,
     },
   },
