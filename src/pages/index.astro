@@ -197,6 +197,18 @@ const faqs = [
     q: 'What is DAD LINK and did he really build it?',
     a: '<a href="https://www.dad-link.com" target="_blank" rel="noopener">DAD LINK</a> is a live B2B e-commerce store for network cabling equipment in Iraq that he designed and shipped on Odoo with Claude Code doing most of the build work. See the <a href="#projects">Projects</a> section for details.',
   },
+  {
+    q: 'How do I hire an n8n developer in Erbil or Iraq?',
+    a: 'You can hire me directly through this site. I scope the workflow you need, build and document it in n8n, and hand it over ready to run. <a href="/n8n-developer">See what I build and how to start</a>.',
+  },
+  {
+    q: 'Do you work with clients outside Iraq?',
+    a: 'Yes. n8n work is delivered remotely, so I build and maintain workflows for clients anywhere in the world, alongside in-person work for businesses in Erbil and across the Kurdistan Region.',
+  },
+  {
+    q: 'What can you automate with n8n?',
+    a: 'AI lead scoring, invoice and document processing, fraud screening, approval pipelines, and automated reporting, wiring tools like Gmail, Sheets, Telegram and GoHighLevel into AI models. If a process is repetitive and rule-based, it can usually be automated.',
+  },
 ];
 
 /* JSON-LD FAQ answers are the longer, self-contained phrasings from the old
@@ -219,6 +231,18 @@ const faqLd = [
     q: 'What is DAD LINK and did Ibrahim Al-Bander really build it?',
     a: 'DAD LINK (dad-link.com) is a live B2B e-commerce store for network cabling equipment in Iraq that Ibrahim designed and shipped on Odoo with Claude Code doing most of the build work, including catalog structure, category pages, and on-page SEO.',
   },
+  {
+    q: 'How do I hire an n8n developer in Erbil or Iraq?',
+    a: 'You can hire Ibrahim Al-Bander directly through ibrahimaher.com. He is an n8n and AI automation developer based in Erbil, Iraq, who scopes the workflow you need, builds and documents it in n8n, and hands it over ready to run. Projects start with a short conversation about the process you want automated.',
+  },
+  {
+    q: 'Do you work with clients outside Iraq?',
+    a: 'Yes. n8n automation work is delivered remotely, so Ibrahim builds and maintains workflows for clients anywhere in the world, alongside in-person work for businesses in Erbil and across the Kurdistan Region and Iraq.',
+  },
+  {
+    q: 'What can you automate with n8n?',
+    a: 'Common builds include AI lead scoring and auto-response, invoice and document processing, fraud screening, approval pipelines, automated reporting, and connecting tools like Gmail, Google Sheets, Telegram, Calendar, and GoHighLevel to AI models such as OpenAI, Claude, and Gemini. If a business process is repetitive and rule-based, it can usually be automated.',
+  },
 ];
 
 const metaTitle = setting(
@@ -234,19 +258,29 @@ const metaDesc = setting(
 const metaKeywords =
   'Ibrahim Maher Al-Bander, social media marketer Erbil, n8n automation developer, AI automation Iraq, AI agent developer, prompt engineering, context engineering, harness engineering, loop engineering, Claude Code developer, DAD LINK, accounts officer Erbil, social media specialist Iraq';
 
+const personId = `${siteUrl}/#ibrahim`;
+
 const jsonLd: Record<string, unknown>[] = [
   {
     '@context': 'https://schema.org',
     '@type': 'Person',
+    '@id': personId,
     name: siteName,
     alternateName: 'Ibrahim Al-Bander',
     url: siteUrl,
     image: `${siteUrl}${ogImage}`,
-    jobTitle: 'Social Media Marketing Specialist & AI Automation Developer',
+    jobTitle: 'n8n Automation Developer & Social Media Marketing Specialist',
+    description:
+      'Freelance n8n and AI automation developer based in Erbil, Iraq, building production workflows, AI agents, and business automations for clients in Iraq and worldwide.',
     worksFor: { '@type': 'Organization', name: 'Help Tech Co. Ltd.' },
-    address: { '@type': 'PostalAddress', addressLocality: 'Erbil', addressCountry: 'IQ' },
+    address: {
+      '@type': 'PostalAddress',
+      addressLocality: 'Erbil',
+      addressRegion: 'Kurdistan Region',
+      addressCountry: 'IQ',
+    },
     email: `mailto:${setting(settings, 'contact_email', 'me@ibrahimaher.com')}`,
-    telephone: '+964771962 0471',
+    telephone: '+9647719620471',
     sameAs: [
       'https://www.linkedin.com/in/ibrahimaher',
       'https://www.facebook.com/ibmabr',
@@ -255,17 +289,71 @@ const jsonLd: Record<string, unknown>[] = [
     ],
     alumniOf: { '@type': 'CollegeOrUniversity', name: 'Northern Technical University' },
     knowsAbout: [
-      'Social Media Marketing',
+      'n8n',
       'n8n Automation',
+      'AI Automation',
       'AI Workflow Development',
+      'AI Agent Development',
+      'Workflow Automation',
+      'Business Process Automation',
       'Prompt Engineering',
       'Context Engineering',
       'AI Agent Harness Design',
       'Loop Engineering',
-      'Bookkeeping',
+      'Social Media Marketing',
       'Paid Advertising',
+      'Bookkeeping',
       'Inventory Management',
     ],
+  },
+  {
+    '@context': 'https://schema.org',
+    '@type': 'ProfessionalService',
+    '@id': `${siteUrl}/#service`,
+    name: 'Ibrahim Al-Bander — n8n & AI Automation Development',
+    url: `${siteUrl}/n8n-developer`,
+    image: `${siteUrl}${ogImage}`,
+    description:
+      'Freelance n8n and AI automation development in Erbil, Iraq. Production n8n workflows, AI agents, invoice and lead automation, and business process automation for clients across Iraq, the Kurdistan Region, and remotely worldwide.',
+    provider: { '@id': personId },
+    founder: { '@id': personId },
+    areaServed: [
+      { '@type': 'City', name: 'Erbil' },
+      { '@type': 'AdministrativeArea', name: 'Kurdistan Region' },
+      { '@type': 'Country', name: 'Iraq' },
+      'Worldwide (remote)',
+    ],
+    address: {
+      '@type': 'PostalAddress',
+      addressLocality: 'Erbil',
+      addressRegion: 'Kurdistan Region',
+      addressCountry: 'IQ',
+    },
+    geo: { '@type': 'GeoCoordinates', latitude: 36.1901, longitude: 44.0091 },
+    telephone: '+9647719620471',
+    email: `mailto:${setting(settings, 'contact_email', 'me@ibrahimaher.com')}`,
+    priceRange: '$$',
+    makesOffer: {
+      '@type': 'OfferCatalog',
+      name: 'n8n & AI automation services',
+      itemListElement: [
+        { '@type': 'Offer', itemOffered: { '@type': 'Service', name: 'n8n workflow automation', serviceType: 'n8n workflow automation' } },
+        { '@type': 'Offer', itemOffered: { '@type': 'Service', name: 'AI agent & chatbot development', serviceType: 'AI agent development' } },
+        { '@type': 'Offer', itemOffered: { '@type': 'Service', name: 'AI invoice & lead automation', serviceType: 'AI document and lead automation' } },
+        { '@type': 'Offer', itemOffered: { '@type': 'Service', name: 'Business process automation', serviceType: 'Business process automation' } },
+        { '@type': 'Offer', itemOffered: { '@type': 'Service', name: 'Integrations & custom n8n function nodes', serviceType: 'API integration' } },
+      ],
+    },
+  },
+  {
+    '@context': 'https://schema.org',
+    '@type': 'WebSite',
+    '@id': `${siteUrl}/#website`,
+    url: siteUrl,
+    name: siteName,
+    description: 'n8n and AI automation developer in Erbil, Iraq.',
+    inLanguage: 'en',
+    publisher: { '@id': personId },
   },
   {
     '@context': 'https://schema.org',
@@ -347,9 +435,9 @@ if (featured?.external_url) {
       </p>
 
       <div class="hero__actions" style="--i:4">
-        <a class="btn" href="/contact">Get in touch</a>
-        <a class="btn btn-ghost" href="#experience">
-          See my work <span aria-hidden="true">&rarr;</span>
+        <a class="btn" href="/n8n-developer">Hire an n8n developer</a>
+        <a class="btn btn-ghost" href="/contact">
+          Get in touch <span aria-hidden="true">&rarr;</span>
         </a>
         <a class="btn btn-ghost" href="/about">
           More about me <span aria-hidden="true">&rarr;</span>
