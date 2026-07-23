@@ -1,0 +1,433 @@
+---
+export const prerender = false;
+
+import Base from '../layouts/Base.astro';
+import '../styles/landing.css';
+
+/*
+  Reconciliation page. The live apex already serves /n8n-developer (captured in
+  docs/live-snapshot/n8n-developer.html); it was not committed to source, and it
+  rendered half-unstyled because it reused class names scoped to index.astro. This
+  file restores it AND fixes the styling by pulling the shared landing.css and
+  wrapping the content in `.lp`. Head/meta/JSON-LD are ported verbatim from the
+  snapshot so the deploy diff stays clean.
+*/
+
+const title = 'Hire an n8n Developer in Erbil, Iraq | Ibrahim Al-Bander';
+const description =
+  'Hire an n8n & AI automation developer in Erbil, Iraq. Production n8n workflows, AI agents, and business automations for clients in Iraq and worldwide.';
+const keywords =
+  'hire n8n developer, n8n developer Iraq, n8n developer Erbil, automation developer Iraq, n8n automation services Erbil, n8n consultant Iraq, n8n expert Kurdistan, AI automation developer Iraq';
+
+// Ported verbatim from the three <script type="application/ld+json"> blocks in the
+// snapshot. Keeps @id #service and provider Person @id #ibrahim exactly. The
+// makesOffer→OfferCatalog range quirk is intentionally preserved for fidelity and
+// is fixed site-wide in the Phase-1 JSON-LD consolidation, not here.
+const jsonLd = [
+  {
+    '@context': 'https://schema.org',
+    '@type': 'ProfessionalService',
+    '@id': 'https://ibrahimaher.com/#service',
+    name: 'Ibrahim Al-Bander — n8n & AI Automation Development',
+    url: 'https://ibrahimaher.com/n8n-developer',
+    image: 'https://ibrahimaher.com/assets/og-image.png',
+    description:
+      'Freelance n8n and AI automation development in Erbil, Iraq. Production n8n workflows, AI agents, invoice and lead automation, and business process automation for clients across Iraq, the Kurdistan Region, and remotely worldwide.',
+    provider: {
+      '@type': 'Person',
+      '@id': 'https://ibrahimaher.com/#ibrahim',
+      name: 'Ibrahim Maher Al-Bander',
+      url: 'https://ibrahimaher.com',
+    },
+    areaServed: [
+      { '@type': 'City', name: 'Erbil' },
+      { '@type': 'AdministrativeArea', name: 'Kurdistan Region' },
+      { '@type': 'Country', name: 'Iraq' },
+      'Worldwide (remote)',
+    ],
+    address: {
+      '@type': 'PostalAddress',
+      addressLocality: 'Erbil',
+      addressRegion: 'Kurdistan Region',
+      addressCountry: 'IQ',
+    },
+    geo: { '@type': 'GeoCoordinates', latitude: 36.1901, longitude: 44.0091 },
+    telephone: '+9647719620471',
+    email: 'mailto:me@ibrahimaher.com',
+    priceRange: '$$',
+    makesOffer: {
+      '@type': 'OfferCatalog',
+      name: 'n8n & AI automation services',
+      itemListElement: [
+        {
+          '@type': 'Offer',
+          itemOffered: {
+            '@type': 'Service',
+            name: 'n8n workflow automation',
+            serviceType: 'n8n workflow automation',
+          },
+        },
+        {
+          '@type': 'Offer',
+          itemOffered: {
+            '@type': 'Service',
+            name: 'AI agent & chatbot development',
+            serviceType: 'AI agent development',
+          },
+        },
+        {
+          '@type': 'Offer',
+          itemOffered: {
+            '@type': 'Service',
+            name: 'AI invoice & lead automation',
+            serviceType: 'AI document and lead automation',
+          },
+        },
+        {
+          '@type': 'Offer',
+          itemOffered: {
+            '@type': 'Service',
+            name: 'Business process automation',
+            serviceType: 'Business process automation',
+          },
+        },
+        {
+          '@type': 'Offer',
+          itemOffered: {
+            '@type': 'Service',
+            name: 'Integrations & custom n8n function nodes',
+            serviceType: 'API integration',
+          },
+        },
+      ],
+    },
+  },
+  {
+    '@context': 'https://schema.org',
+    '@type': 'BreadcrumbList',
+    itemListElement: [
+      { '@type': 'ListItem', position: 1, name: 'Home', item: 'https://ibrahimaher.com/' },
+      {
+        '@type': 'ListItem',
+        position: 2,
+        name: 'Hire an n8n developer',
+        item: 'https://ibrahimaher.com/n8n-developer',
+      },
+    ],
+  },
+  {
+    '@context': 'https://schema.org',
+    '@type': 'FAQPage',
+    mainEntity: [
+      {
+        '@type': 'Question',
+        name: 'How do I hire an n8n developer in Erbil or Iraq?',
+        acceptedAnswer: {
+          '@type': 'Answer',
+          text: 'You can hire Ibrahim Al-Bander directly through ibrahimaher.com. Send a short description of the process you want automated. He then scopes the workflow, gives you a fixed quote before any work starts, builds and tests it in n8n, and hands it over documented and ready to run. He works in person around Erbil and the Kurdistan Region, and remotely with clients across Iraq and worldwide.',
+        },
+      },
+      {
+        '@type': 'Question',
+        name: 'Do you work remotely with clients outside Iraq?',
+        acceptedAnswer: {
+          '@type': 'Answer',
+          text: 'Yes. n8n automation is delivered remotely, so Ibrahim builds and maintains workflows for clients anywhere in the world, alongside in-person work for businesses in Erbil and across the Kurdistan Region and Iraq.',
+        },
+      },
+      {
+        '@type': 'Question',
+        name: 'Which tools and AI models do you work with?',
+        acceptedAnswer: {
+          '@type': 'Answer',
+          text: 'n8n as the automation platform, connected to tools like Gmail, Google Sheets, Google Calendar, Telegram, and GoHighLevel, and to AI models including OpenAI, Claude, and Gemini. When the built-in n8n nodes are not enough, Ibrahim writes custom JavaScript function nodes.',
+        },
+      },
+      {
+        '@type': 'Question',
+        name: 'How much does an n8n automation cost?',
+        acceptedAnswer: {
+          '@type': 'Answer',
+          text: 'n8n projects are usually priced per workflow or per project rather than hourly. Freelance n8n developers globally charge roughly $40 to $100+ per hour, and a focused single-workflow build is typically a few hundred dollars depending on the number of steps, integrations, and AI logic. You get a fixed quote before any work begins.',
+        },
+      },
+      {
+        '@type': 'Question',
+        name: 'Can you fix or take over an existing n8n workflow?',
+        acceptedAnswer: {
+          '@type': 'Answer',
+          text: 'Yes. Ibrahim can audit, debug, extend, or take ownership of an existing n8n workflow, add proper schema validation and logging so it stops failing silently, and document it so your team is not stuck if he is not around.',
+        },
+      },
+    ],
+  },
+];
+---
+
+<Base title={title} description={description} keywords={keywords} ogType="website" jsonLd={jsonLd}>
+  <div class="shell lp">
+    <section class="section hero stagger" aria-labelledby="svc-h">
+      <p class="eyebrow" style="--i:0">Work with me</p>
+      <h1 class="hero__name" id="svc-h" style="--i:1">
+        n8n &amp; AI Automation<br /><span class="hero__last">Developer in Erbil, Iraq</span>
+      </h1>
+      <p class="hero__role" style="--i:2">
+        Production workflows, AI agents, and business automation
+      </p>
+      <p class="hero__tagline muted" style="--i:3">
+        For businesses in Erbil, the Kurdistan Region, and across Iraq &middot; and remote clients
+        worldwide
+      </p>
+      <div class="hero__actions" style="--i:4">
+        <a class="btn" href="/contact">Get a fixed quote</a>
+        <a class="btn btn-ghost" href="/#projects">See the work <span aria-hidden="true">&rarr;</span></a>
+      </div>
+      <p class="hero__lead" style="--i:5">
+        I'm Ibrahim Al-Bander, an n8n and AI automation developer based in Erbil, Iraq. I build
+        production automation workflows &mdash; AI lead scoring, invoice and document processing,
+        fraud screening, approval pipelines, and automated reporting &mdash; that run unattended and
+        do not break quietly. I work in person with businesses across Erbil and the Kurdistan Region,
+        and remotely with clients anywhere in the world.
+      </p>
+    </section>
+
+    <section class="section" aria-labelledby="what-h">
+      <div class="rail">
+        <p class="eyebrow">The short version</p>
+        <div>
+          <h2 class="section-title" id="what-h">What does an n8n developer do?</h2>
+          <p class="lede">
+            An n8n developer designs, builds, and maintains automated workflows in n8n, connecting
+            your apps, data, and AI models so repetitive work happens on its own. In practice that
+            means wiring tools like Gmail, Google Sheets, Telegram, Calendar, and GoHighLevel into
+            models such as OpenAI, Claude, and Gemini, then adding the validation and logging that
+            make an automation safe to trust in production. Done properly, it removes hours of manual
+            work every week without adding a system your team has to babysit.
+          </p>
+        </div>
+      </div>
+    </section>
+
+    <section class="section" aria-labelledby="build-h">
+      <div class="rail">
+        <p class="eyebrow">Services</p>
+        <div>
+          <h2 class="section-title" id="build-h">What I build with n8n</h2>
+          <p class="lede">
+            Focused, production-grade automations, scoped to a real process rather than a shiny demo.
+          </p>
+          <ul class="skills">
+            <li class="skill reveal">
+              <h3 class="skill__title">n8n workflow automation</h3>
+              <p class="skill__sub muted">The core of what I do</p>
+              <ul class="tags">
+                <li class="tag">Multi-step workflows</li>
+                <li class="tag">Webhooks &amp; APIs</li>
+                <li class="tag">Error handling</li>
+                <li class="tag">Schema validation</li>
+              </ul>
+            </li>
+            <li class="skill reveal">
+              <h3 class="skill__title">AI agents &amp; chatbots</h3>
+              <p class="skill__sub muted">Models that read, judge, and reply</p>
+              <ul class="tags">
+                <li class="tag">OpenAI / Claude / Gemini</li>
+                <li class="tag">Lead scoring</li>
+                <li class="tag">Document extraction</li>
+                <li class="tag">Auto-response</li>
+              </ul>
+            </li>
+            <li class="skill reveal">
+              <h3 class="skill__title">AI invoice &amp; lead automation</h3>
+              <p class="skill__sub muted">Finance and sales, on autopilot</p>
+              <ul class="tags">
+                <li class="tag">Invoice processing</li>
+                <li class="tag">Fraud screening</li>
+                <li class="tag">Approval pipelines</li>
+                <li class="tag">CRM sync</li>
+              </ul>
+            </li>
+            <li class="skill reveal">
+              <h3 class="skill__title">Business process automation</h3>
+              <p class="skill__sub muted">Removing the boring, repetitive work</p>
+              <ul class="tags">
+                <li class="tag">Automated reporting</li>
+                <li class="tag">Data sync</li>
+                <li class="tag">Notifications</li>
+                <li class="tag">Custom function nodes</li>
+              </ul>
+            </li>
+          </ul>
+        </div>
+      </div>
+    </section>
+
+    <section class="section" aria-labelledby="cost-h">
+      <div class="rail">
+        <p class="eyebrow">Pricing</p>
+        <div>
+          <h2 class="section-title" id="cost-h">How much does an n8n developer cost?</h2>
+          <p class="lede">
+            n8n automation is usually priced per workflow or per project rather than by the hour.
+            Globally, freelance n8n developers charge roughly $40 to $100+ per hour, and a focused
+            single-workflow build is typically a few hundred dollars, depending on the number of
+            steps, integrations, and AI logic involved. Tell me the process you want automated and I
+            will give you a fixed quote before any work starts, so there are no surprises.
+          </p>
+          <div class="hero__actions">
+            <a class="btn" href="/contact">Tell me what to automate</a>
+            <a class="btn btn-ghost" href="/blog/n8n-vs-zapier-vs-make"
+              >n8n vs Zapier vs Make <span aria-hidden="true">&rarr;</span></a
+            >
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section class="section" aria-labelledby="who-h">
+      <div class="rail">
+        <p class="eyebrow">Who I work with</p>
+        <div>
+          <h2 class="section-title" id="who-h">Local in Erbil, remote worldwide</h2>
+          <p class="lede">
+            I work with small and mid-sized businesses, agencies, and founders: in person around
+            Erbil and the Kurdistan Region, and remotely across Iraq and worldwide. Most clients come
+            to me with a specific, painful, repetitive process: chasing invoice approvals, scoring
+            inbound leads, copying data between tools, or writing the same report every week. That is
+            exactly the kind of work n8n is built to remove.
+          </p>
+        </div>
+      </div>
+    </section>
+
+    <section class="section" aria-labelledby="how-h">
+      <div class="rail">
+        <p class="eyebrow">How it works</p>
+        <div>
+          <h2 class="section-title" id="how-h">From process to production</h2>
+          <ol class="disciplines">
+            <li class="discipline reveal">
+              <span class="discipline__num" aria-hidden="true">01</span>
+              <div class="discipline__main">
+                <h3 class="discipline__term">Scope the process</h3>
+                <p class="discipline__def">
+                  We start with the actual, repetitive task you want gone. I map the steps, the tools
+                  involved, and where a human decision has to stay in the loop, then quote a fixed
+                  price.
+                </p>
+              </div>
+            </li>
+            <li class="discipline reveal">
+              <span class="discipline__num" aria-hidden="true">02</span>
+              <div class="discipline__main">
+                <h3 class="discipline__term">Build &amp; test in n8n</h3>
+                <p class="discipline__def">
+                  I build the workflow in n8n, wiring your apps and the right AI model, and test it
+                  against real examples until it behaves correctly on the messy edge cases, not just
+                  the happy path.
+                </p>
+              </div>
+            </li>
+            <li class="discipline reveal">
+              <span class="discipline__num" aria-hidden="true">03</span>
+              <div class="discipline__main">
+                <h3 class="discipline__term">Add the guardrails</h3>
+                <p class="discipline__def">
+                  Schema validation, logging, and alerts so the automation fails loudly instead of
+                  silently, plus a human approval step wherever money or risk is involved.
+                </p>
+              </div>
+            </li>
+            <li class="discipline reveal">
+              <span class="discipline__num" aria-hidden="true">04</span>
+              <div class="discipline__main">
+                <h3 class="discipline__term">Hand over, documented</h3>
+                <p class="discipline__def">
+                  You get the workflow, a plain-language explanation of how it runs, and documentation
+                  so your team is never stuck if I am not around.
+                </p>
+              </div>
+            </li>
+          </ol>
+        </div>
+      </div>
+    </section>
+
+    <section class="section" aria-labelledby="proof-h">
+      <div class="rail">
+        <p class="eyebrow">Proof</p>
+        <div>
+          <h2 class="section-title" id="proof-h">Real builds, not slideware</h2>
+          <p class="lede">
+            <a href="/#projects">See the Projects section</a> for the Invoice Fraud Firewall, AI Lead
+            Intelligence, and Multi-Stage Invoice Approval workflows, plus
+            <a href="https://www.dad-link.com" target="_blank" rel="noopener">DAD LINK</a>, a live
+            B2B e-commerce site for network infrastructure equipment in Iraq that I designed and
+            shipped. For the thinking behind the work, read
+            <a href="/blog/ai-automation-beyond-chatbots"
+              >what AI automation actually means in a small business</a
+            > and <a href="/blog/n8n-vs-zapier-vs-make">n8n vs Zapier vs Make</a>.
+          </p>
+        </div>
+      </div>
+    </section>
+
+    <section class="section" aria-labelledby="svc-faq-h">
+      <div class="rail">
+        <p class="eyebrow">Quick answers</p>
+        <div>
+          <h2 class="section-title" id="svc-faq-h">Hiring an n8n developer: FAQ</h2>
+          <dl class="faq">
+            <div class="faq__item reveal">
+              <dt class="faq__q">How do I hire an n8n developer in Erbil or Iraq?</dt>
+              <dd class="faq__a">
+                Hire me directly through this site. Send a short description of the process you want
+                automated. I scope the workflow, give you a fixed quote before any work starts, build
+                and test it in n8n, and hand it over documented and ready to run.
+                <a href="/contact">Get in touch</a>.
+              </dd>
+            </div>
+            <div class="faq__item reveal">
+              <dt class="faq__q">Do you work remotely with clients outside Iraq?</dt>
+              <dd class="faq__a">
+                Yes. n8n automation is delivered remotely, so I build and maintain workflows for
+                clients anywhere in the world, alongside in-person work for businesses in Erbil and
+                across the Kurdistan Region.
+              </dd>
+            </div>
+            <div class="faq__item reveal">
+              <dt class="faq__q">Which tools and AI models do you work with?</dt>
+              <dd class="faq__a">
+                n8n connected to Gmail, Google Sheets, Calendar, Telegram, and GoHighLevel, and to AI
+                models including OpenAI, Claude, and Gemini. When the built-in nodes are not enough, I
+                write custom JavaScript function nodes.
+              </dd>
+            </div>
+            <div class="faq__item reveal">
+              <dt class="faq__q">Can you fix or take over an existing workflow?</dt>
+              <dd class="faq__a">
+                Yes. I can audit, debug, extend, or take ownership of an existing n8n workflow, add
+                proper validation and logging so it stops failing silently, and document it for your
+                team.
+              </dd>
+            </div>
+          </dl>
+        </div>
+      </div>
+    </section>
+
+    <section class="section" aria-labelledby="svc-contact-h">
+      <div class="rail">
+        <p class="eyebrow">Get in touch</p>
+        <div>
+          <h2 class="section-title" id="svc-contact-h">Let's automate something</h2>
+          <p class="lede">
+            Tell me the process that is eating your team's time. I will tell you whether n8n can
+            remove it, and what it would cost.
+          </p>
+          <a class="btn" href="/contact">Go to contact page <span aria-hidden="true">&rarr;</span></a>
+        </div>
+      </div>
+    </section>
+  </div>
+</Base>

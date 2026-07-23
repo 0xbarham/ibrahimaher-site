@@ -1,0 +1,394 @@
+---
+export const prerender = false;
+
+import Base from '../layouts/Base.astro';
+import '../styles/landing.css';
+
+/*
+  Service page targeting "AI automation developer" in Erbil / Iraq / Kurdistan.
+  Deliberately differentiated from /n8n-developer: this page leads on the AI/LLM
+  layer (agents, document & invoice AI, decisioning, the four-layers method), with
+  n8n named as the delivery tool. Distinct title/description/H1/@id/FAQ so the two
+  pages do not cannibalise each other. Shares the one Person entity (@id #ibrahim).
+*/
+
+const title = 'AI Automation Developer in Erbil, Iraq | Ibrahim Al-Bander';
+const description =
+  'Hire an AI automation developer in Erbil, Iraq. AI agents, LLM automations, and document and invoice AI for clients across the Kurdistan Region, Iraq, and worldwide.';
+const keywords =
+  'AI automation developer Erbil, AI automation developer Iraq, AI automation developer Kurdistan, hire AI automation developer, AI agent developer Iraq, LLM automation Erbil, AI developer Kurdistan Region, AI workflow automation Iraq';
+
+// FAQ defined once; the visible <dl> and the FAQPage JSON-LD below are rendered
+// from the same text so they can never drift (a Google policy requirement).
+const faqs = [
+  {
+    q: 'What does an AI automation developer actually do?',
+    a: 'An AI automation developer builds systems where language models do real work inside a business — reading documents, scoring leads, drafting replies, and making routine decisions — wired into your existing tools and wrapped in validation so they run unattended. I design the automation, connect it to models like OpenAI, Claude, and Gemini, and add the guardrails that keep it reliable in production.',
+  },
+  {
+    q: 'Which AI models and tools do you build with?',
+    a: 'OpenAI, Claude, and Gemini as the reasoning models, orchestrated in n8n and connected to the tools a business already runs — Gmail, Google Sheets and Calendar, Telegram, and GoHighLevel. When a task needs logic the standard nodes cannot express, I write custom JavaScript function nodes.',
+  },
+  {
+    q: 'How do you keep an AI automation from making expensive mistakes?',
+    a: 'Schema validation on every model output, logging and alerts so it fails loudly instead of silently, and a human approval step wherever money or real risk is involved. AI proposes; a person confirms the decisions that matter. That is the difference between a demo and something you can trust with invoices and leads.',
+  },
+  {
+    q: 'Do you only work on n8n, or custom builds too?',
+    a: 'n8n is my backbone because it is fast, self-hostable, and transparent, but the work is AI automation, not one tool. I build custom function nodes and, where a workflow platform is the wrong fit, standalone scripts and small apps. The goal is the outcome, not loyalty to a single platform.',
+  },
+  {
+    q: 'Do you work with clients outside Iraq?',
+    a: 'Yes. AI automation is delivered remotely, so I build and maintain systems for clients anywhere in the world, alongside in-person work for businesses in Erbil and across the Kurdistan Region and Iraq.',
+  },
+];
+
+const jsonLd = [
+  {
+    '@context': 'https://schema.org',
+    '@type': 'ProfessionalService',
+    '@id': 'https://ibrahimaher.com/#ai-automation-service',
+    name: 'Ibrahim Al-Bander — AI Automation Development',
+    url: 'https://ibrahimaher.com/ai-automation-developer',
+    image: 'https://ibrahimaher.com/assets/og/default.png',
+    description:
+      'AI automation development in Erbil, Iraq: AI agents, LLM-powered workflows, document and invoice AI, lead scoring, and intelligent process automation for clients across Erbil, the Kurdistan Region, Iraq, and remotely worldwide.',
+    provider: {
+      '@type': 'Person',
+      '@id': 'https://ibrahimaher.com/#ibrahim',
+      name: 'Ibrahim Maher Al-Bander',
+      url: 'https://ibrahimaher.com',
+    },
+    areaServed: [
+      { '@type': 'City', name: 'Erbil' },
+      { '@type': 'AdministrativeArea', name: 'Kurdistan Region' },
+      { '@type': 'Country', name: 'Iraq' },
+      'Worldwide (remote)',
+    ],
+    address: {
+      '@type': 'PostalAddress',
+      addressLocality: 'Erbil',
+      addressRegion: 'Kurdistan Region',
+      addressCountry: 'IQ',
+    },
+    geo: { '@type': 'GeoCoordinates', latitude: 36.1901, longitude: 44.0091 },
+    telephone: '+9647719620471',
+    email: 'mailto:me@ibrahimaher.com',
+    priceRange: '$$',
+    knowsLanguage: ['en', 'ar', 'ckb'],
+    hasOfferCatalog: {
+      '@type': 'OfferCatalog',
+      name: 'AI automation services',
+      itemListElement: [
+        {
+          '@type': 'Offer',
+          itemOffered: {
+            '@type': 'Service',
+            name: 'AI agents & assistants',
+            serviceType: 'AI agent development',
+          },
+        },
+        {
+          '@type': 'Offer',
+          itemOffered: {
+            '@type': 'Service',
+            name: 'AI document & invoice processing',
+            serviceType: 'AI document automation',
+          },
+        },
+        {
+          '@type': 'Offer',
+          itemOffered: {
+            '@type': 'Service',
+            name: 'AI lead scoring & routing',
+            serviceType: 'AI lead automation',
+          },
+        },
+        {
+          '@type': 'Offer',
+          itemOffered: {
+            '@type': 'Service',
+            name: 'AI-driven reporting & decisioning',
+            serviceType: 'Business process automation',
+          },
+        },
+      ],
+    },
+  },
+  {
+    '@context': 'https://schema.org',
+    '@type': 'BreadcrumbList',
+    itemListElement: [
+      { '@type': 'ListItem', position: 1, name: 'Home', item: 'https://ibrahimaher.com/' },
+      {
+        '@type': 'ListItem',
+        position: 2,
+        name: 'Hire an AI automation developer',
+        item: 'https://ibrahimaher.com/ai-automation-developer',
+      },
+    ],
+  },
+  {
+    '@context': 'https://schema.org',
+    '@type': 'FAQPage',
+    mainEntity: faqs.map((f) => ({
+      '@type': 'Question',
+      name: f.q,
+      acceptedAnswer: { '@type': 'Answer', text: f.a },
+    })),
+  },
+];
+---
+
+<Base title={title} description={description} keywords={keywords} ogType="website" jsonLd={jsonLd}>
+  <div class="shell lp">
+    <section class="section hero stagger" aria-labelledby="svc-h">
+      <p class="eyebrow" style="--i:0">Work with me</p>
+      <h1 class="hero__name" id="svc-h" style="--i:1">
+        AI Automation<br /><span class="hero__last">Developer in Erbil, Iraq</span>
+      </h1>
+      <p class="hero__role" style="--i:2">AI agents, LLM automations, and intelligent process automation</p>
+      <p class="hero__tagline muted" style="--i:3">
+        For businesses in Erbil, the Kurdistan Region, and across Iraq &middot; and remote clients
+        worldwide
+      </p>
+      <div class="hero__actions" style="--i:4">
+        <a class="btn" href="/contact">Get a fixed quote</a>
+        <a class="btn btn-ghost" href="/#projects">See the work <span aria-hidden="true">&rarr;</span></a>
+      </div>
+      <p class="hero__lead" style="--i:5">
+        I'm Ibrahim Al-Bander, an AI automation developer in Erbil, Iraq. I put language models to
+        work inside real businesses &mdash; reading invoices and documents, scoring inbound leads,
+        screening for fraud, and making routine decisions &mdash; using OpenAI, Claude, and Gemini,
+        orchestrated in n8n and wrapped in the validation that makes AI safe to trust in production.
+        I work in person across Erbil and the Kurdistan Region, and remotely worldwide.
+      </p>
+    </section>
+
+    <section class="section" aria-labelledby="what-h">
+      <div class="rail">
+        <p class="eyebrow">The short version</p>
+        <div>
+          <h2 class="section-title" id="what-h">What is an AI automation developer?</h2>
+          <p class="lede">
+            An AI automation developer builds systems where AI models do real work inside a business:
+            reading documents, judging leads, drafting replies, and handling routine decisions,
+            connected to the tools you already use. Unlike a plain chatbot, these run unattended and
+            in the background &mdash; with validation, logging, and a human approval step wherever the
+            decision actually matters. The result is hours of manual work removed every week, safely.
+          </p>
+        </div>
+      </div>
+    </section>
+
+    <section class="section" aria-labelledby="build-h">
+      <div class="rail">
+        <p class="eyebrow">Services</p>
+        <div>
+          <h2 class="section-title" id="build-h">What I build with AI</h2>
+          <p class="lede">
+            Production AI automation scoped to a real, painful process &mdash; not a demo that
+            impresses once and breaks in week two.
+          </p>
+          <ul class="skills">
+            <li class="skill reveal">
+              <h3 class="skill__title">AI agents &amp; assistants</h3>
+              <p class="skill__sub muted">Models that read, judge, and act</p>
+              <ul class="tags">
+                <li class="tag">OpenAI / Claude / Gemini</li>
+                <li class="tag">Tool use &amp; function calling</li>
+                <li class="tag">Auto-response</li>
+                <li class="tag">Internal copilots</li>
+              </ul>
+            </li>
+            <li class="skill reveal">
+              <h3 class="skill__title">AI document &amp; invoice processing</h3>
+              <p class="skill__sub muted">Turning paperwork into structured data</p>
+              <ul class="tags">
+                <li class="tag">Invoice extraction</li>
+                <li class="tag">Fraud screening</li>
+                <li class="tag">Schema validation</li>
+                <li class="tag">Approval pipelines</li>
+              </ul>
+            </li>
+            <li class="skill reveal">
+              <h3 class="skill__title">AI lead scoring &amp; routing</h3>
+              <p class="skill__sub muted">Sales work the model can qualify</p>
+              <ul class="tags">
+                <li class="tag">Lead intelligence</li>
+                <li class="tag">Enrichment</li>
+                <li class="tag">CRM sync</li>
+                <li class="tag">GoHighLevel</li>
+              </ul>
+            </li>
+            <li class="skill reveal">
+              <h3 class="skill__title">AI reporting &amp; decisioning</h3>
+              <p class="skill__sub muted">The routine judgement calls, automated</p>
+              <ul class="tags">
+                <li class="tag">Automated reporting</li>
+                <li class="tag">Data sync</li>
+                <li class="tag">Human-in-the-loop</li>
+                <li class="tag">Custom function nodes</li>
+              </ul>
+            </li>
+          </ul>
+        </div>
+      </div>
+    </section>
+
+    <section class="section" aria-labelledby="method-h">
+      <div class="rail">
+        <p class="eyebrow">How I work</p>
+        <div>
+          <h2 class="section-title" id="method-h">Four layers of working with AI</h2>
+          <p class="lede">
+            Reliable AI automation is more than a clever prompt. I build across four layers &mdash;
+            it is the method behind everything here. Read the full write-up on
+            <a class="link" href="/blog/four-layers-of-working-with-ai"
+              >prompt, context, harness, and loop engineering</a
+            >.
+          </p>
+          <ol class="disciplines">
+            <li class="discipline reveal">
+              <span class="discipline__num" aria-hidden="true">01</span>
+              <div class="discipline__main">
+                <h3 class="discipline__term">Prompt engineering</h3>
+                <p class="discipline__def">
+                  Designing the instructions so the model does the right thing consistently, not just
+                  once in a lucky demo.
+                </p>
+              </div>
+            </li>
+            <li class="discipline reveal">
+              <span class="discipline__num" aria-hidden="true">02</span>
+              <div class="discipline__main">
+                <h3 class="discipline__term">Context engineering</h3>
+                <p class="discipline__def">
+                  Getting the right information &mdash; your data, records, and history &mdash; in
+                  front of the model at the right moment, and nothing that would distract it.
+                </p>
+              </div>
+            </li>
+            <li class="discipline reveal">
+              <span class="discipline__num" aria-hidden="true">03</span>
+              <div class="discipline__main">
+                <h3 class="discipline__term">Harness engineering</h3>
+                <p class="discipline__def">
+                  The tools, guardrails, and output validation around the model, so it fails loudly,
+                  stays in its lane, and hands off to a human where it should.
+                </p>
+              </div>
+            </li>
+            <li class="discipline reveal">
+              <span class="discipline__num" aria-hidden="true">04</span>
+              <div class="discipline__main">
+                <h3 class="discipline__term">Loop engineering</h3>
+                <p class="discipline__def">
+                  Letting an agent run over multiple steps with self-correction and checks, for the
+                  work that genuinely needs more than a single pass.
+                </p>
+              </div>
+            </li>
+          </ol>
+        </div>
+      </div>
+    </section>
+
+    <section class="section" aria-labelledby="cost-h">
+      <div class="rail">
+        <p class="eyebrow">Pricing</p>
+        <div>
+          <h2 class="section-title" id="cost-h">How much does an AI automation developer cost?</h2>
+          <p class="lede">
+            AI automation is priced per project or per workflow, not by the hour. Freelance
+            automation developers globally charge roughly $40 to $100+ per hour, and a focused,
+            single-process build is typically a few hundred dollars, depending on the integrations,
+            the volume, and how much AI logic and review it needs. Tell me the process and I will
+            give you a fixed quote before any work starts.
+          </p>
+          <div class="hero__actions">
+            <a class="btn" href="/contact">Tell me what to automate</a>
+            <a class="btn btn-ghost" href="/n8n-developer"
+              >Hire me as an n8n developer <span aria-hidden="true">&rarr;</span></a
+            >
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section class="section" aria-labelledby="who-h">
+      <div class="rail">
+        <p class="eyebrow">Who I work with</p>
+        <div>
+          <h2 class="section-title" id="who-h">Local in Erbil, remote worldwide</h2>
+          <p class="lede">
+            Small and mid-sized businesses, agencies, and founders: in person around Erbil and the
+            Kurdistan Region, and remotely across Iraq and worldwide. I also run the marketing, the
+            books, and the inventory at a real company &mdash; so I automate the finance, approval,
+            and lead work as someone who has done it by hand, not from a template.
+          </p>
+        </div>
+      </div>
+    </section>
+
+    <section class="section" aria-labelledby="proof-h">
+      <div class="rail">
+        <p class="eyebrow">Proof</p>
+        <div>
+          <h2 class="section-title" id="proof-h">Real builds, not slideware</h2>
+          <p class="lede">
+            <a href="/#projects">See the Projects section</a> for the Invoice Fraud Firewall (n8n +
+            Gemini), AI Lead Intelligence, and Multi-Stage Invoice Approval workflows, plus
+            <a href="https://www.dad-link.com" target="_blank" rel="noopener">DAD LINK</a>, a live
+            B2B e-commerce site I designed and shipped. For the case study, read
+            <a href="/blog/invoice-fraud-firewall-case-study"
+              >building an invoice fraud firewall with n8n and Gemini</a
+            >, and for the bigger picture,
+            <a href="/blog/ai-automation-beyond-chatbots"
+              >what AI automation actually means in a small business</a
+            >.
+          </p>
+        </div>
+      </div>
+    </section>
+
+    <section class="section" aria-labelledby="svc-faq-h">
+      <div class="rail">
+        <p class="eyebrow">Quick answers</p>
+        <div>
+          <h2 class="section-title" id="svc-faq-h">Hiring an AI automation developer: FAQ</h2>
+          <dl class="faq">
+            {
+              faqs.map((f) => (
+                <div class="faq__item reveal">
+                  <dt class="faq__q">{f.q}</dt>
+                  <dd class="faq__a">{f.a}</dd>
+                </div>
+              ))
+            }
+          </dl>
+        </div>
+      </div>
+    </section>
+
+    <section class="section" aria-labelledby="svc-contact-h">
+      <div class="rail">
+        <p class="eyebrow">Get in touch</p>
+        <div>
+          <h2 class="section-title" id="svc-contact-h">Let's put AI to work</h2>
+          <p class="lede">
+            Tell me the process that is eating your team's time. I will tell you whether AI can remove
+            it, what it would cost, and where a human still needs to stay in the loop.
+          </p>
+          <a class="btn" href="/contact">Go to contact page <span aria-hidden="true">&rarr;</span></a>
+        </div>
+      </div>
+    </section>
+
+    <nav class="svc-links" aria-label="Related services">
+      <span class="svc-links__label">Also</span>
+      <a class="link" href="/n8n-developer">Hire an n8n developer</a>
+      <a class="link" href="/vibe-coder">Hire a vibe coder</a>
+    </nav>
+  </div>
+</Base>

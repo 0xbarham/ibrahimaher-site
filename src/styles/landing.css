@@ -1,0 +1,222 @@
+/*
+  Landing-page component styles — shared by the service pages
+  (/n8n-developer, /ai-automation-developer, /vibe-coder).
+
+  Why this file exists: the hero / skills / disciplines / faq classes these pages
+  use are NOT in global.css — on the homepage they live inside index.astro's
+  `<style>` block, which Astro scopes to that component. A service page that reused
+  those class names got no styling at all (the live /n8n-developer half-unstyled
+  bug). Rather than duplicate ~120 lines of scoped CSS into three separate pages,
+  the definitions live here once.
+
+  Namespaced under `.lp` deliberately: `.faq`, `.faq__q`, `.faq__a` are also used
+  by contact.astro with its own scoped styles, and index.astro defines its own
+  scoped `.hero*`/`.skill*` etc. Scoping every rule under a `.lp` wrapper class
+  means these rules can only ever match inside a landing page's
+  `<div class="shell lp">` — they cannot leak onto contact, and index's own scoped
+  (higher-specificity) versions always win on the homepage. Values are ported
+  verbatim from index.astro; tokens only, no hardcoded colours.
+*/
+
+/* ---- Hero ---------------------------------------------------------------- */
+.lp .hero {
+  padding-top: clamp(var(--space-l), 7vw, var(--space-2xl));
+}
+
+/* A headline phrase, not the homepage's giant NAME — one step down from --step-6
+   so a full sentence fits without dominating or overflowing narrow screens. */
+.lp .hero__name {
+  font-size: var(--step-5);
+  margin-bottom: var(--space-s);
+}
+
+/* At ~320px a --step-5 two-line headline crowds the measure; step down once more,
+   mirroring index.astro's own --step-6 -> --step-5 phone step-down. */
+@media (max-width: 30rem) {
+  .lp .hero__name {
+    font-size: var(--step-4);
+  }
+}
+
+.lp .hero__last {
+  color: var(--accent-ink);
+}
+
+.lp .hero__role {
+  font-family: var(--font-display);
+  font-size: var(--step-2);
+  font-weight: 500;
+  line-height: var(--leading-snug);
+  letter-spacing: var(--tracking-tight);
+  margin-bottom: var(--space-2xs);
+}
+
+.lp .hero__tagline {
+  font-size: var(--step-0);
+  margin-bottom: var(--space-l);
+}
+
+.lp .hero__actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2xs) var(--space-xs);
+  margin-bottom: var(--space-l);
+}
+
+/* A hanging rule in the margin — marginalia, not a border-box. */
+.lp .hero__lead {
+  max-width: var(--measure);
+  font-size: var(--step-1);
+  line-height: 1.5;
+  color: var(--ink-2);
+  border-left: 2px solid var(--accent);
+  padding-left: var(--space-m);
+  margin-bottom: var(--space-l);
+}
+
+/* ---- Skills / services list --------------------------------------------- */
+.lp .skills {
+  list-style: none;
+  padding: 0;
+  margin: var(--space-l) 0 0;
+}
+
+.lp .skill {
+  padding-block: var(--space-m);
+  border-top: var(--rule) solid var(--rule-color);
+}
+
+.lp .skill:first-child {
+  padding-top: 0;
+  border-top: 0;
+}
+
+.lp .skill__title {
+  font-size: var(--step-1);
+}
+
+.lp .skill__sub {
+  font-size: var(--step--1);
+  margin: var(--space-3xs) 0 0;
+}
+
+/* ---- Disciplines — a numbered definition list --------------------------- */
+.lp .disciplines {
+  list-style: none;
+  padding: 0;
+  margin: var(--space-l) 0 0;
+}
+
+.lp .discipline {
+  display: grid;
+  grid-template-columns: 2.5rem minmax(0, 1fr);
+  gap: var(--space-m);
+  padding-block: var(--space-m);
+  border-top: var(--rule) solid var(--rule-color);
+}
+
+.lp .discipline:first-child {
+  padding-top: 0;
+  border-top: 0;
+}
+
+.lp .discipline__num {
+  font-family: var(--font-mono);
+  font-size: var(--step--1);
+  letter-spacing: var(--tracking-wide);
+  color: var(--accent-ink);
+  padding-top: 0.35em;
+}
+
+/* Second grid cell wrapper; min-width:0 lets long content wrap instead of
+   forcing the column wider than 1fr. */
+.lp .discipline__main {
+  min-width: 0;
+}
+
+.lp .discipline__term {
+  font-size: var(--step-2);
+  margin-bottom: var(--space-2xs);
+  scroll-margin-top: 5rem;
+}
+
+.lp .discipline__def {
+  max-width: var(--measure);
+  color: var(--ink-2);
+  margin-bottom: var(--space-xs);
+}
+
+@media (max-width: 40rem) {
+  .lp .discipline {
+    grid-template-columns: 1fr;
+    gap: var(--space-3xs);
+  }
+
+  .lp .discipline__num {
+    padding-top: 0;
+  }
+}
+
+/* ---- FAQ — a <dl> of question / answer pairs ---------------------------- */
+.lp .faq {
+  margin: var(--space-l) 0 0;
+}
+
+.lp .faq__item {
+  padding-block: var(--space-m);
+  border-top: var(--rule) solid var(--rule-color);
+}
+
+.lp .faq__item:first-child {
+  padding-top: 0;
+  border-top: 0;
+}
+
+.lp .faq__q {
+  font-family: var(--font-display);
+  font-size: var(--step-1);
+  font-weight: 600;
+  line-height: var(--leading-snug);
+  letter-spacing: var(--tracking-tight);
+  margin-bottom: var(--space-2xs);
+}
+
+.lp .faq__a {
+  max-width: var(--measure);
+  margin: 0;
+  color: var(--ink-2);
+}
+
+.lp .faq__a a {
+  color: var(--accent-ink);
+  text-decoration: underline;
+  text-underline-offset: 0.18em;
+  text-decoration-thickness: 1px;
+  text-decoration-color: color-mix(in oklab, var(--accent) 45%, transparent);
+  transition: text-decoration-color var(--dur-fast) var(--ease-out);
+}
+
+@media (hover: hover) {
+  .lp .faq__a a:hover {
+    text-decoration-color: var(--accent);
+  }
+}
+
+/* ---- Cross-links between the service pages (small "also" row) ------------ */
+.lp .svc-links {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2xs) var(--space-m);
+  align-items: baseline;
+  margin: var(--space-l) 0 0;
+  padding-top: var(--space-m);
+  border-top: var(--rule) solid var(--rule-color);
+  font-family: var(--font-mono);
+  font-size: var(--step--1);
+}
+
+.lp .svc-links__label {
+  color: var(--ink-3);
+  letter-spacing: var(--tracking-wide);
+  text-transform: uppercase;
+}

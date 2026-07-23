@@ -40,6 +40,12 @@ export const GET: APIRoute = async () => {
 
   const entries: Entry[] = [
     { loc: `${base}/`, lastmod: newest || undefined, changefreq: 'monthly', priority: '1.0' },
+    // Static service landing pages. These are file-based routes (not in D1), so they
+    // must be listed explicitly — the live sitemap already carried /n8n-developer, and
+    // omitting them here would silently drop the money pages from the sitemap on deploy.
+    { loc: `${base}/n8n-developer`, changefreq: 'monthly', priority: '0.9' },
+    { loc: `${base}/ai-automation-developer`, changefreq: 'monthly', priority: '0.9' },
+    { loc: `${base}/vibe-coder`, changefreq: 'monthly', priority: '0.9' },
     { loc: `${base}/about`, changefreq: 'yearly', priority: '0.8' },
     { loc: `${base}/contact`, changefreq: 'yearly', priority: '0.7' },
     { loc: `${base}/blog/`, lastmod: newest || undefined, changefreq: 'weekly', priority: '0.9' },
