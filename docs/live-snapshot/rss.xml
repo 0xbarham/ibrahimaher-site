@@ -1,0 +1,108 @@
+﻿<?xml version="1.0" encoding="UTF-8"?>
+<rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom">
+  <channel>
+    <title>Ibrahim Maher Al-Bander — Writing</title>
+    <link>https://ibrahimaher.com/blog/</link>
+    <description>n8n &amp; AI automation developer in Erbil, Iraq. I build production n8n workflows, AI agents, and business automations for clients in Iraq and worldwide.</description>
+    <language>en</language>
+    <managingEditor>me@ibrahimaher.com (Ibrahim Maher Al-Bander)</managingEditor>
+    <lastBuildDate>Tue, 21 Jul 2026 00:00:00 GMT</lastBuildDate>
+    <atom:link href="https://ibrahimaher.com/rss.xml" rel="self" type="application/rss+xml" />
+    <item>
+      <title>How to Automate Invoice Processing with n8n and AI</title>
+      <link>https://ibrahimaher.com/blog/automate-invoices-with-n8n-and-ai</link>
+      <guid isPermaLink="true">https://ibrahimaher.com/blog/automate-invoices-with-n8n-and-ai</guid>
+      <description>A practical walkthrough: capture the invoice, extract the fields with AI, validate, route by amount, log it, and keep a human in the loop before money moves.</description>
+      <pubDate>Tue, 21 Jul 2026 00:00:00 GMT</pubDate>
+      <category>Automation</category>
+    </item>
+    <item>
+      <title>How Much Does an n8n Developer Cost? (2026 Guide)</title>
+      <link>https://ibrahimaher.com/blog/how-much-does-an-n8n-developer-cost</link>
+      <guid isPermaLink="true">https://ibrahimaher.com/blog/how-much-does-an-n8n-developer-cost</guid>
+      <description>What it actually costs to hire an n8n developer: real market ranges, hourly vs per-project pricing, and what makes an automation cost more or less.</description>
+      <pubDate>Mon, 20 Jul 2026 00:00:00 GMT</pubDate>
+      <category>Automation</category>
+    </item>
+    <item>
+      <title>What AI Automation Actually Means in a Small Business (Not Just Chatbots)</title>
+      <link>https://ibrahimaher.com/blog/ai-automation-beyond-chatbots</link>
+      <guid isPermaLink="true">https://ibrahimaher.com/blog/ai-automation-beyond-chatbots</guid>
+      <description>Automation is not a chatbot bolted onto your website. It is invoice routing, lead scoring, and reporting that runs unattended and does not break quietly.</description>
+      <pubDate>Tue, 14 Jul 2026 00:00:00 GMT</pubDate>
+      <category>Automation</category>
+    </item>
+    <item>
+      <title>How I Grew a Small Business Facebook Page by 500% Without an Agency</title>
+      <link>https://ibrahimaher.com/blog/growing-a-facebook-page-500-percent</link>
+      <guid isPermaLink="true">https://ibrahimaher.com/blog/growing-a-facebook-page-500-percent</guid>
+      <description>No agency retainer, no ad budget to start. Just consistent content, an audience data tool I built myself, and paying attention to what actually worked.</description>
+      <pubDate>Tue, 14 Jul 2026 00:00:00 GMT</pubDate>
+      <category>Social Media</category>
+    </item>
+    <item>
+      <title>n8n vs Zapier vs Make: What I Learned Building Production Workflows</title>
+      <link>https://ibrahimaher.com/blog/n8n-vs-zapier-vs-make</link>
+      <guid isPermaLink="true">https://ibrahimaher.com/blog/n8n-vs-zapier-vs-make</guid>
+      <description>I have shipped real client automations on n8n. Here is where it genuinely wins over Zapier and Make, and where it does not.</description>
+      <pubDate>Tue, 14 Jul 2026 00:00:00 GMT</pubDate>
+      <category>Technology</category>
+    </item>
+    <item>
+      <title>Prompt, Context, Harness, and Loop Engineering: The Four Layers of Working With AI</title>
+      <link>https://ibrahimaher.com/blog/four-layers-of-working-with-ai</link>
+      <guid isPermaLink="true">https://ibrahimaher.com/blog/four-layers-of-working-with-ai</guid>
+      <description>Most people who say they &quot;know AI&quot; have only touched prompting. Here is what the other three layers actually mean, and why they matter more.</description>
+      <pubDate>Tue, 14 Jul 2026 00:00:00 GMT</pubDate>
+      <category>AI</category>
+    </item>
+    <item>
+      <title>Why I Set Up QuickBooks AP/AR From Scratch With No Accounting Background</title>
+      <link>https://ibrahimaher.com/blog/quickbooks-ap-ar-from-scratch</link>
+      <guid isPermaLink="true">https://ibrahimaher.com/blog/quickbooks-ap-ar-from-scratch</guid>
+      <description>Nobody trained me to do this. Here is how I built a company&apos;s entire bookkeeping system under deadline anyway, and what it taught me about learning fast.</description>
+      <pubDate>Tue, 14 Jul 2026 00:00:00 GMT</pubDate>
+      <category>Career</category>
+    </item>
+    <item>
+      <title>Building an Invoice Fraud Firewall With n8n and Gemini: A Case Study</title>
+      <link>https://ibrahimaher.com/blog/invoice-fraud-firewall-case-study</link>
+      <guid isPermaLink="true">https://ibrahimaher.com/blog/invoice-fraud-firewall-case-study</guid>
+      <description>A walkthrough of the automation that screens payment emails for vendor mismatches and IBAN fraud before money ever moves.</description>
+      <pubDate>Tue, 14 Jul 2026 00:00:00 GMT</pubDate>
+      <category>Automation</category>
+    </item>
+    <item>
+      <title>The Hidden Meta Ads Targeting Data Most Small-Business Marketers Never See</title>
+      <link>https://ibrahimaher.com/blog/hidden-meta-ads-targeting-data</link>
+      <guid isPermaLink="true">https://ibrahimaher.com/blog/hidden-meta-ads-targeting-data</guid>
+      <description>Ads Manager does not show you everything. Here is the audience data I had to go build a tool to surface myself.</description>
+      <pubDate>Tue, 14 Jul 2026 00:00:00 GMT</pubDate>
+      <category>Social Media</category>
+    </item>
+    <item>
+      <title>AI-Assisted Development: How I Built and Shipped Real Software Without a CS Degree</title>
+      <link>https://ibrahimaher.com/blog/ai-assisted-development-no-cs-degree</link>
+      <guid isPermaLink="true">https://ibrahimaher.com/blog/ai-assisted-development-no-cs-degree</guid>
+      <description>DAD LINK is a live e-commerce store, not a demo. Here is what it actually takes to ship something real with Claude Code instead of a computer science degree.</description>
+      <pubDate>Tue, 14 Jul 2026 00:00:00 GMT</pubDate>
+      <category>Technology</category>
+    </item>
+    <item>
+      <title>Human-in-the-Loop: Why the Best AI Automations Still Need a Person in the Approval Chain</title>
+      <link>https://ibrahimaher.com/blog/human-in-the-loop-ai-automation</link>
+      <guid isPermaLink="true">https://ibrahimaher.com/blog/human-in-the-loop-ai-automation</guid>
+      <description>Full autonomy is not always the goal. Why I build approval gates into automations that handle money or client-facing decisions.</description>
+      <pubDate>Tue, 14 Jul 2026 00:00:00 GMT</pubDate>
+      <category>AI</category>
+    </item>
+    <item>
+      <title>From a Traffic-Sign Recognition Capstone to Production AI Agents: My Path Into Automation</title>
+      <link>https://ibrahimaher.com/blog/traffic-sign-recognition-to-ai-agents</link>
+      <guid isPermaLink="true">https://ibrahimaher.com/blog/traffic-sign-recognition-to-ai-agents</guid>
+      <description>My university capstone was a CNN that read road signs. Here is the line from that project to the automations I build for clients today.</description>
+      <pubDate>Tue, 14 Jul 2026 00:00:00 GMT</pubDate>
+      <category>Technology</category>
+    </item>
+  </channel>
+</rss>
