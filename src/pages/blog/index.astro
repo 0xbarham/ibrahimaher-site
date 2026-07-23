@@ -45,10 +45,13 @@ const rows = posts.map((post) => ({
 }));
 
 const metaTitle = `Writing | ${authorName}`;
+// Deliberately its own key, NOT `default_seo_description`: the homepage reads
+// that one, so sharing it rendered a byte-identical <meta name="description">
+// on / and /blog/ — a duplicate-description hit in every on-page SEO audit.
 const metaDesc = setting(
   settings,
-  'default_seo_description',
-  'Notes on AI automation, n8n workflows, social media marketing, and AI-assisted software development.'
+  'blog_seo_description',
+  'Notes on n8n workflows, AI automation, social media marketing, and shipping software with AI tools, written from doing the work in Erbil, Iraq.'
 );
 
 const jsonLd = [
