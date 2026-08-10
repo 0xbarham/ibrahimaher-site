@@ -288,6 +288,38 @@ const year = new Date().getUTCFullYear();
     <link rel="preload" href="/assets/fonts/newsreader-var-latin.woff2" as="font" type="font/woff2" crossorigin />
     <link rel="preload" href="/assets/fonts/sofia-sans-var-latin.woff2" as="font" type="font/woff2" crossorigin />
 
+    {/*
+      The Arabic faces are preloaded ONLY here, on Arabic pages. Their @font-face
+      rules live in the site-wide stylesheet, but a declared face is not fetched
+      until something uses it, so English pages still download exactly the two
+      latin files above and their LCP is unchanged.
+
+      Both are preloaded rather than just the body face, because on these pages
+      the hero h1 is the LCP element and it is set in Kufi. Preloading only Plex
+      would leave the largest text on the page swapping after paint, which is
+      both the slower LCP and the more visible reflow.
+    */}
+    {
+      lang === 'ar' && (
+        <>
+          <link
+            rel="preload"
+            href="/assets/fonts/ibm-plex-sans-arabic-400.woff2"
+            as="font"
+            type="font/woff2"
+            crossorigin
+          />
+          <link
+            rel="preload"
+            href="/assets/fonts/noto-kufi-arabic-var.woff2"
+            as="font"
+            type="font/woff2"
+            crossorigin
+          />
+        </>
+      )
+    }
+
     {/* Set the theme before first paint so there is no flash of the wrong one. */}
     <script is:inline>
       (function () {
