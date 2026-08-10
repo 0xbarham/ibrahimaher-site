@@ -924,6 +924,17 @@ p {
   white-space: nowrap;
 }
 
+/* Arabic sets wider than latin at the same point size, and Kufi wider still, so
+   the hero's role line reached four lines on a 390px phone where the English
+   equivalent takes two. One step down buys back two of them and still leaves it
+   the second-loudest thing in the hero. Desktop is untouched: there is room
+   there for the full size. */
+@media (max-width: 30rem) {
+  [dir='rtl'] .lp .hero__role {
+    font-size: var(--step-1);
+  }
+}
+
 /* The Arabic homepage leads with the offer, not the person, so the name sits in
    the eyebrow slot above the h1 rather than being the h1 as it is in English.
    At the shared .eyebrow size (14px, uppercase-styled, --ink-3) it read as a
