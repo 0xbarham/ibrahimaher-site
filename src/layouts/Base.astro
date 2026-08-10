@@ -637,13 +637,22 @@ const year = new Date().getUTCFullYear();
         align-items: flex-start;
         gap: 0.28rem;
         text-decoration: none;
-        font-family: var(--font-display);
+        /* Sora explicitly, NOT var(--font-display). The mark used to inherit the
+           display token back when that token WAS Sora; the redesign repointed it
+           at Newsreader and quietly turned the logo into a serif. Naming the face
+           here decouples the monogram from a token that describes body headings,
+           which is what it should have been all along. Covers both languages: the
+           header is shared, and the mark stays LTR on RTL pages. */
+        font-family: 'Sora', ui-sans-serif, system-ui, sans-serif;
       }
 
       .wordmark__mark {
         display: inline-flex;
         align-items: baseline;
-        font-weight: 800;
+        /* 700, matching the one weight the subset ships. It was 800, which the
+           browser could only reach by synthesising a fake bold: smeared stems and
+           blunted counters, at exactly the size where the mark is judged. */
+        font-weight: 700;
         font-size: 1.32rem;
         line-height: 1;
         letter-spacing: -0.07em;

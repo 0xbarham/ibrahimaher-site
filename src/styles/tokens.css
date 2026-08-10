@@ -32,6 +32,29 @@
    font-optical-sizing in global.css. No Google Fonts CDN: nobody at this
    tier still leaks a third-party request in the critical path. */
 
+/*
+  Sora, kept for one purpose: the IMB monogram in the header.
+
+  Sora was --font-display before the editorial redesign, and the wordmark simply
+  inherited it. Swapping that token to Newsreader turned the monogram into a
+  serif, which is the wrong shape for a three-letter lockup: the letterforms are
+  the mark, and a text serif has none of the geometry that made it read as a
+  logo. The rest of the redesign is unaffected, because this face is bound to
+  .wordmark alone and nothing else may use it.
+
+  Subsetted to exactly I, M and B, which is the entire visible content of the
+  mark, so the file is 0.68 KB. Small enough not to warrant a preload and small
+  enough that the swap is imperceptible.
+*/
+@font-face {
+  font-family: 'Sora';
+  font-style: normal;
+  font-weight: 700;
+  font-display: swap;
+  src: url('/assets/fonts/sora-wordmark.woff2') format('woff2');
+  unicode-range: U+0042, U+0049, U+004D;
+}
+
 @font-face {
   font-family: 'Newsreader';
   font-style: normal;
