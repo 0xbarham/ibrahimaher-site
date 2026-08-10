@@ -864,12 +864,14 @@ p {
 }
 
 :root {
-  --font-arabic:
-    'IBM Plex Sans Arabic', 'Noto Sans Arabic', 'Segoe UI', 'Geeza Pro', 'Droid Arabic Naskh',
-    Tahoma, sans-serif;
-  --font-arabic-display:
-    'Noto Kufi Arabic', 'IBM Plex Sans Arabic', 'Noto Sans Arabic', 'Segoe UI', 'Geeza Pro', Tahoma,
-    sans-serif;
+  /* The zero-byte tail: Arabic UI faces that ship with Windows, macOS/iOS and
+     Android respectively. It is the fallback behind both webfonts, and it is
+     also usable on its own wherever a webfont download would not be worth its
+     bytes — see .lang-switch below. */
+  --font-arabic-system:
+    'Noto Sans Arabic', 'Segoe UI', 'Geeza Pro', 'Droid Arabic Naskh', Tahoma, sans-serif;
+  --font-arabic: 'IBM Plex Sans Arabic', var(--font-arabic-system);
+  --font-arabic-display: 'Noto Kufi Arabic', 'IBM Plex Sans Arabic', var(--font-arabic-system);
 }
 
 /* `body` sets font-family directly, so it wins over anything inherited from
@@ -953,13 +955,16 @@ p {
   so each label renders in a face that actually has its glyphs: "العربية" on the
   English pages, "English" on the Arabic ones.
 
-  This does mean an English page lazily fetches the Arabic body face for a
-  seven-character label. It is not preloaded and font-display is swap, so it
-  neither blocks render nor affects LCP, but it is a real request. Dropping the
-  first family from this stack reverts to the zero-byte system fallback.
+  The Arabic label deliberately uses the SYSTEM stack, not the webfont. It is
+  seven characters of chrome on a page that is otherwise entirely English, and
+  pulling a 41.8 KB face across for it would be the only Arabic byte an English
+  reader ever downloads. The system faces named there are real Arabic UI faces
+  on every platform that matters, so the label still renders properly designed —
+  it just costs nothing. Swap this to var(--font-arabic) if the switcher should
+  match the Arabic pages exactly and the bytes stop mattering.
 */
 .lang-switch[lang='ar'] {
-  font-family: var(--font-arabic);
+  font-family: var(--font-arabic-system);
 }
 
 .lang-switch[lang='en'] {
