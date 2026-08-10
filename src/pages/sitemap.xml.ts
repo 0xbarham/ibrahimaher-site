@@ -52,7 +52,14 @@ function alternatesFor(base: string, path: string): string {
 }
 
 export const GET: APIRoute = async () => {
-  const [posts, settings] = await Promise.all([getPublishedPosts(), getSettings()]);
+  // Two calls, not one. getPublishedPosts defaults to English, which is exactly
+  // what keeps every other caller unchanged; the sitemap is the one place that
+  // wants both languages, so it asks for the second explicitly.
+  const [posts, arPosts, settings] = await Promise.all([
+    getPublishedPosts(),
+    getPublishedPosts(undefined, 'ar'),
+    getSettings(),
+  ]);
   const base = setting(settings, 'site_url', 'https://ibrahimaher.com').replace(/\/$/, '');
 
   // Newest post date doubles as the homepage/index lastmod.
@@ -84,6 +91,18 @@ export const GET: APIRoute = async () => {
     ...posts
       // A post flagged noindex must never appear in the sitemap — telling Google
       // "index this" and "don't index this" at once is a real Semrush finding.
+      .filter((p) => p.noindex !== 1)
+      .map((p) => ({
+        loc: `${base}/blog/${p.slug}`,
+        lastmod: (p.updated_at || `${p.post_date}T00:00:00Z`).slice(0, 10),
+        changefreq: 'yearly',
+        priority: '0.8',
+      })),
+    // Arabic posts share the /blog/ path: the route renders each post in the
+    // language its row declares, so the URL segment is English while the
+    // document is Arabic. They are listed separately here only because they come
+    // from a separate query, not because they live anywhere else.
+    ...arPosts
       .filter((p) => p.noindex !== 1)
       .map((p) => ({
         loc: `${base}/blog/${p.slug}`,

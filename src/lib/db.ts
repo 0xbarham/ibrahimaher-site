@@ -20,6 +20,8 @@ export interface Post {
   id: number;
   sort_order: number;
   slug: string;
+  /** 'en' | 'ar'. Drives the lang/dir the post renders in, not its URL. */
+  lang: string;
   title: string;
   category: string;
   excerpt: string;
@@ -194,14 +196,28 @@ export const PUBLISHED_PREDICATE = `(
       AND publish_at <= strftime('%Y-%m-%dT%H:%M:%SZ', 'now'))
 )`;
 
-/** Public listing: drafts must never leak to the live site. */
-export const getPublishedPosts = (limit?: number) =>
+/**
+ * Public listing: drafts must never leak to the live site.
+ *
+ * `lang` defaults to 'en', which is what makes the Arabic blog additive rather
+ * than a migration. Every existing caller — the English index, the homepage's
+ * "From the blog", the RSS feed, the sitemap — asked for "the posts" back when
+ * there was only one language, and still gets exactly the set it got before. An
+ * Arabic post cannot leak into an English listing by omission: a caller has to
+ * ask for it by name.
+ */
+export const getPublishedPosts = (limit?: number, lang: string = 'en') =>
   all<Post>(
-    `SELECT * FROM posts WHERE ${PUBLISHED_PREDICATE}
+    `SELECT * FROM posts WHERE ${PUBLISHED_PREDICATE} AND lang = ?
      ORDER BY post_date DESC, sort_order ASC${limit ? ' LIMIT ?' : ''}`,
-    ...(limit ? [limit] : [])
+    ...(limit ? [lang, limit] : [lang])
   );
 
+/**
+ * No lang parameter on purpose: `slug` is UNIQUE across the whole table, so it
+ * already identifies exactly one post. The route renders it in whatever language
+ * the row declares, rather than the language of the URL it was reached through.
+ */
 export const getPostBySlug = (slug: string) =>
   first<Post>(`SELECT * FROM posts WHERE slug = ? AND ${PUBLISHED_PREDICATE}`, slug);
 

@@ -109,7 +109,9 @@ const jsonLd = [
     articleSection: post.category,
     keywords: post.seo_keywords || tags.join(', '),
     wordCount,
-    inLanguage: 'en',
+    // From the row, not a literal: this route now serves Arabic posts too, and
+    // schema that calls an Arabic article English is worse than omitting it.
+    inLanguage: post.lang === 'ar' ? 'ar-IQ' : 'en',
     author: {
       '@type': 'Person',
       name: authorName,
@@ -131,11 +133,19 @@ const jsonLd = [
 ];
 ---
 
+{/*
+  The post carries its own language, so an Arabic post renders with lang="ar",
+  dir="rtl" and the Arabic chrome even though it is served from /blog/. The URL
+  segment is English; the document is not, and it is the lang attribute and the
+  body copy that search engines read. Splitting this into a parallel
+  /ar/blog/[slug] would have meant duplicating 456 lines to change one attribute.
+*/}
 <Base
   title={metaTitle}
   description={metaDesc}
   canonical={canonical}
   keywords={post.seo_keywords}
+  lang={post.lang === 'ar' ? 'ar' : 'en'}
   ogType="article"
   articlePublishedTime={published}
   articleModifiedTime={modified}
