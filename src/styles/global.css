@@ -915,6 +915,27 @@ p {
   letter-spacing: 0.02em;
 }
 
+/* The nav is flex/nowrap by design: every label sits on one line, and the row
+   is exactly one 44px tap target tall. Arabic labels are longer per concept than
+   English ones, so without this a slightly wordy label silently wraps to two
+   lines inside a cramped box instead of failing visibly. Labels are kept short
+   in i18n.ts; this makes that a rule rather than a hope. */
+[dir='rtl'] .nav__link {
+  white-space: nowrap;
+}
+
+/* The Arabic homepage leads with the offer, not the person, so the name sits in
+   the eyebrow slot above the h1 rather than being the h1 as it is in English.
+   At the shared .eyebrow size (14px, uppercase-styled, --ink-3) it read as a
+   label rather than as a byline. This gives it back the weight of a name without
+   promoting it over the headline it introduces. */
+[dir='rtl'] .hero .eyebrow--person {
+  font-size: var(--step-1);
+  letter-spacing: normal;
+  text-transform: none;
+  color: var(--ink-2);
+}
+
 /* Latin-script runs inside Arabic copy — "n8n", "OpenAI", brand names — keep the
    body face. Without this they inherit the Arabic fallback, which renders latin
    noticeably worse than the face chosen for it. */

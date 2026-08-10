@@ -85,10 +85,19 @@ export const CHROME: Record<Lang, Chrome> = {
   },
   ar: {
     nav: [
+      /*
+        Kept SHORT on purpose. The nav is flex with nowrap and no mobile
+        collapse, so at 375px the five labels have to fit on one line each. The
+        first drafts ("أتمتة الذكاء الاصطناعي", "برمجة بالذكاء الاصطناعي") were
+        descriptive but wrapped to two lines inside ~80px boxes, which is the
+        only place the Arabic pages actually broke on a phone. The English nav
+        fits because its labels are one or two short words; Arabic has to earn
+        the same brevity rather than inherit it.
+      */
       { href: '/ar/', label: 'الرئيسية' },
-      { href: '/ar/n8n-developer', label: 'مطوّر n8n' },
-      { href: '/ar/ai-automation-developer', label: 'أتمتة الذكاء الاصطناعي' },
-      { href: '/ar/vibe-coder', label: 'برمجة بالذكاء الاصطناعي' },
+      { href: '/ar/n8n-developer', label: 'الأتمتة' },
+      { href: '/ar/ai-automation-developer', label: 'ذكاء اصطناعي' },
+      { href: '/ar/vibe-coder', label: 'برمجة' },
       { href: '/ar/contact', label: 'تواصل' },
     ],
     skipLink: 'تخطَّ إلى المحتوى',

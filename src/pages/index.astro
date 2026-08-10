@@ -314,16 +314,38 @@ jsonLd.push({
   })),
 });
 
-// The DAD LINK node only exists if the featured row does — no orphan schema
+// The featured node only exists if the featured row does — no orphan schema
 // describing a project the page is not actually showing.
+//
+// Every field now comes from the row. It used to name, describe and tag DAD
+// LINK as literals while taking only the URL from the database, so the moment a
+// different project was featured the structured data would have gone on
+// asserting DAD LINK's identity against the new project's link. Schema that can
+// contradict the page it sits on is worse than no schema at all.
 if (featured?.external_url) {
+  // First paragraph of the body, as plain text: the row's own opening summary.
+  const featuredDescription = (featured.body_html.match(/<p>([\s\S]*?)<\/p>/)?.[1] ?? '')
+    .replace(/<[^>]*>/g, '')
+    .replace(/&middot;/g, '·')
+    .replace(/&amp;/g, '&')
+    .trim();
+
+  let featuredKeywords: string[] = [];
+  try {
+    const parsed: unknown = JSON.parse(featured.tags_json);
+    if (Array.isArray(parsed)) {
+      featuredKeywords = parsed.filter((t): t is string => typeof t === 'string');
+    }
+  } catch {
+    // A malformed tags_json costs the keywords, not the whole node.
+  }
+
   jsonLd.push({
     '@context': 'https://schema.org',
     '@type': 'CreativeWork',
-    name: 'DAD LINK',
+    name: featured.title,
     url: featured.external_url,
-    description:
-      'B2B e-commerce website for network infrastructure equipment in Iraq: Cat.6 and Cat.6A structured cabling, fiber optic patch cords, server racks and cabinets, and HDMI 2.1 cables, built on Odoo with Claude Code.',
+    description: featuredDescription,
     creator: { '@type': 'Person', name: siteName, url: siteUrl },
     /*
      * `keywords`, not `about`: schema.org gives `about` the range Thing, so
@@ -331,15 +353,7 @@ if (featured?.external_url) {
      * violation. `keywords` takes Text (and is what these are). `knowsAbout`
      * above legitimately keeps the same string style — its range is Text|URL|Thing.
      */
-    keywords: [
-      'Network cabling Iraq',
-      'Cat6 cable',
-      'Cat6A cable',
-      'Fiber optic patch cord',
-      'Server rack cabinet',
-      'HDMI 2.1 cable',
-      'Structured cabling',
-    ],
+    keywords: featuredKeywords,
   });
 }
 ---
@@ -519,21 +533,31 @@ if (featured?.external_url) {
                     <img
                       class:list={['logo-mark', { 'logo-light': featured.featured_logo_dark }]}
                       src={asset(featured.featured_logo)}
-                      alt="DAD LINK logo"
+                      alt={`${featured.title.split(':')[0].trim()} logo`}
                       loading="lazy"
                       decoding="async"
-                      width="120"
-                      height="60"
+                      {/*
+                        The INTRINSIC size of the shipped asset, not the rendered
+                        size. CSS pins the width to 120px and leaves height auto,
+                        so these only supply the aspect ratio the browser reserves
+                        before the file arrives. They were 120x60, which is DAD
+                        LINK's 2:1 shape; the current featured logo is 360x340, so
+                        the stale hint would have shifted everything below it by
+                        ~53px on load. Update these whenever the featured logo is
+                        swapped for one of a different shape.
+                      */}
+                      width="360"
+                      height="340"
                     />
                     {featured.featured_logo_dark && (
                       <img
                         class="logo-mark logo-dark"
                         src={asset(featured.featured_logo_dark)}
-                        alt="DAD LINK logo"
+                        alt={`${featured.title.split(':')[0].trim()} logo`}
                         loading="lazy"
                         decoding="async"
-                        width="120"
-                        height="60"
+                        width="360"
+                        height="340"
                       />
                     )}
                   </span>
