@@ -8,6 +8,7 @@
  */
 import type { APIRoute } from 'astro';
 import { getPublishedPosts, getSettings, setting } from '../lib/db';
+import { HREFLANG, altLocalesFor, type Lang } from '../lib/i18n';
 
 export const prerender = false;
 
@@ -26,6 +27,28 @@ interface Entry {
   lastmod?: string;
   changefreq: string;
   priority: string;
+}
+
+/**
+ * The xhtml:link alternates for a URL, as XML.
+ *
+ * Sitemap alternates and the <link rel="alternate"> tags in the page head say
+ * the same thing; Google accepts either. Emitting both is belt-and-braces on the
+ * signal that decides whether an Iraqi searcher gets the Arabic page or the
+ * English one, and they cannot drift because both read TRANSLATED.
+ *
+ * Every entry in a pair — including the page's own URL — must be listed, which
+ * is why this does not filter out the self-reference.
+ */
+function alternatesFor(base: string, path: string): string {
+  const pair = altLocalesFor(path);
+  if (!pair) return '';
+  return (Object.entries(pair) as [Lang, string][])
+    .map(
+      ([code, href]) =>
+        `\n    <xhtml:link rel="alternate" hreflang="${HREFLANG[code]}" href="${xmlEscape(base + href)}"/>`
+    )
+    .join('');
 }
 
 export const GET: APIRoute = async () => {
@@ -49,6 +72,14 @@ export const GET: APIRoute = async () => {
     { loc: `${base}/about`, changefreq: 'yearly', priority: '0.8' },
     { loc: `${base}/contact`, changefreq: 'yearly', priority: '0.7' },
     { loc: `${base}/blog/`, lastmod: newest || undefined, changefreq: 'weekly', priority: '0.9' },
+    // Arabic. Same priorities as their English counterparts: neither language is
+    // the "real" version of the site, and priority is a relative hint within one
+    // sitemap, so demoting Arabic here would be arguing against the hreflang
+    // pairing declared two lines below.
+    { loc: `${base}/ar/`, lastmod: newest || undefined, changefreq: 'monthly', priority: '1.0' },
+    { loc: `${base}/ar/n8n-developer`, changefreq: 'monthly', priority: '0.9' },
+    { loc: `${base}/ar/ai-automation-developer`, changefreq: 'monthly', priority: '0.9' },
+    { loc: `${base}/ar/vibe-coder`, changefreq: 'monthly', priority: '0.9' },
     ...posts
       // A post flagged noindex must never appear in the sitemap — telling Google
       // "index this" and "don't index this" at once is a real Semrush finding.
@@ -62,11 +93,11 @@ export const GET: APIRoute = async () => {
   ];
 
   const body = `<?xml version="1.0" encoding="UTF-8"?>
-<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
+<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9" xmlns:xhtml="http://www.w3.org/1999/xhtml">
 ${entries
   .map(
     (e) => `  <url>
-    <loc>${xmlEscape(e.loc)}</loc>${e.lastmod ? `\n    <lastmod>${e.lastmod}</lastmod>` : ''}
+    <loc>${xmlEscape(e.loc)}</loc>${e.lastmod ? `\n    <lastmod>${e.lastmod}</lastmod>` : ''}${alternatesFor(base, e.loc.slice(base.length) || '/')}
     <changefreq>${e.changefreq}</changefreq>
     <priority>${e.priority}</priority>
   </url>`

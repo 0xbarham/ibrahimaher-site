@@ -1,0 +1,314 @@
+---
+export const prerender = false;
+
+import Base from '../../layouts/Base.astro';
+import '../../styles/landing.css';
+import { altLocalesFor } from '../../lib/i18n';
+import { IRAQ_AREA_SERVED, ARABIC_SERVICE_OFFERS } from '../../lib/schema-geo';
+
+/*
+  Arabic counterpart of /ai-automation-developer, and the page carrying the
+  heaviest commercial intent in this language.
+
+  The Arabic market searches "شات بوت" and "رد تلقائي واتساب" far more than it
+  searches "أتمتة" alone, and the incumbents ranking for those terms sell exactly
+  that. So the chatbot / WhatsApp / Instagram surface gets a section and headings
+  of its own here, where the English page treats it as one bullet among several,
+  because the English audience arrives already asking for automation.
+
+  The prose says روبوت الدردشة (Modern Standard Arabic) while the keywords meta
+  keeps شات بوت. The transliteration is what people type into Google, but it
+  reads as slang on the page, so it earns its place in the metadata and not in
+  the copy.
+*/
+
+const title = 'أتمتة الذكاء الاصطناعي وروبوتات الدردشة في العراق | إبراهيم البندر';
+const description =
+  'أتمتة الذكاء الاصطناعي وروبوتات الدردشة للشركات العراقية: رد تلقائي على واتساب وإنستغرام، ووكلاء ذكاء اصطناعي، وأتمتة الفواتير، في بغداد وأربيل والبصرة والموصل.';
+const keywords =
+  'شات بوت العراق, روبوت دردشة عربي, أتمتة واتساب العراق, رد تلقائي انستغرام, أتمتة الذكاء الاصطناعي بغداد, وكلاء الذكاء الاصطناعي, أتمتة خدمة العملاء, ذكاء اصطناعي للشركات العراقية';
+
+const canonical = '/ar/ai-automation-developer';
+const altLocales = altLocalesFor(canonical);
+
+const jsonLd = [
+  {
+    '@context': 'https://schema.org',
+    '@type': 'ProfessionalService',
+    '@id': 'https://ibrahimaher.com/#service-ai-ar',
+    name: 'إبراهيم البندر لأتمتة الذكاء الاصطناعي وروبوتات الدردشة',
+    url: 'https://ibrahimaher.com/ar/ai-automation-developer',
+    image: 'https://ibrahimaher.com/assets/og-image.png',
+    inLanguage: 'ar-IQ',
+    description:
+      'تطوير أتمتة الذكاء الاصطناعي وروبوتات الدردشة للشركات في العراق: رد تلقائي على واتساب وإنستغرام وماسنجر، ووكلاء ذكاء اصطناعي، وأتمتة المستندات والفواتير وتقييم العملاء المحتملين.',
+    provider: {
+      '@type': 'Person',
+      '@id': 'https://ibrahimaher.com/#ibrahim',
+      name: 'إبراهيم ماهر البندر',
+      url: 'https://ibrahimaher.com',
+    },
+    areaServed: IRAQ_AREA_SERVED,
+    address: {
+      '@type': 'PostalAddress',
+      addressLocality: 'أربيل',
+      addressRegion: 'إقليم كردستان',
+      addressCountry: 'IQ',
+    },
+    geo: { '@type': 'GeoCoordinates', latitude: 36.1901, longitude: 44.0091 },
+    telephone: '+9647719620471',
+    email: 'mailto:me@ibrahimaher.com',
+    priceRange: '$$',
+    makesOffer: ARABIC_SERVICE_OFFERS,
+  },
+  {
+    '@context': 'https://schema.org',
+    '@type': 'BreadcrumbList',
+    itemListElement: [
+      { '@type': 'ListItem', position: 1, name: 'الرئيسية', item: 'https://ibrahimaher.com/ar/' },
+      {
+        '@type': 'ListItem',
+        position: 2,
+        name: 'أتمتة الذكاء الاصطناعي',
+        item: 'https://ibrahimaher.com/ar/ai-automation-developer',
+      },
+    ],
+  },
+  {
+    '@context': 'https://schema.org',
+    '@type': 'FAQPage',
+    inLanguage: 'ar-IQ',
+    mainEntity: [
+      {
+        '@type': 'Question',
+        name: 'ما هو روبوت الدردشة وكيف يفيد شركتي في العراق؟',
+        acceptedAnswer: {
+          '@type': 'Answer',
+          text: 'روبوت الدردشة وكيل ذكاء اصطناعي يرد على رسائل عملائك على واتساب وإنستغرام وماسنجر خلال ثوانٍ وعلى مدار الساعة. وهو في العادة أول تطبيق مفيد للذكاء الاصطناعي في الشركات، لأن الرسائل تصل ليلاً وفي أيام العطل، والرد المتأخر يعني عميلاً انتقل إلى منافس. يجيب الروبوت عن الأسئلة المتكررة، ويجمع بيانات العميل، ويصنّف الطلب، ثم يحوّل الحالات المعقّدة إلى موظف مختص.',
+        },
+      },
+      {
+        '@type': 'Question',
+        name: 'هل يفهم روبوت الدردشة الرسائل المكتوبة بالعامية؟',
+        acceptedAnswer: {
+          '@type': 'Answer',
+          text: 'نعم. النماذج الحديثة مثل OpenAI وClaude وGemini تتعامل مع العربية الفصحى ومع اللهجات المحلية، وكذلك مع الرسائل التي تخلط العربية بالإنجليزية. وأضبط الروبوت على أمثلة حقيقية من محادثات شركتك حتى يرد بأسلوب عملك لا بأسلوب آلي جامد. أما ردوده فتُكتب بالعربية الفصحى، وهي الأوضح في مخاطبة العملاء.',
+        },
+      },
+      {
+        '@type': 'Question',
+        name: 'ما الفرق بين روبوت الدردشة وأتمتة الذكاء الاصطناعي؟',
+        acceptedAnswer: {
+          '@type': 'Answer',
+          text: 'روبوت الدردشة هو الواجهة التي يراها العميل، وأتمتة الذكاء الاصطناعي هي ما يجري خلفها: قراءة الفاتورة واستخراج بياناتها، وتقييم العميل المحتمل، وتحديث نظام إدارة العملاء، وإرسال الموافقة إلى المدير، وإعداد التقرير. الروبوت وحده يرد على الرسالة، أما الأتمتة الكاملة فتُنهي العملية.',
+        },
+      },
+      {
+        '@type': 'Question',
+        name: 'كم تستغرق مدة التنفيذ؟',
+        acceptedAnswer: {
+          '@type': 'Answer',
+          text: 'روبوت رد تلقائي يغطي أسئلة متكررة محددة يمكن أن يعمل خلال أيام. أما الأتمتة الكاملة التي تشمل قراءة المستندات والموافقات والربط بأنظمتك الحالية فتستغرق عادةً من أسبوع إلى بضعة أسابيع بحسب عدد التكاملات. وتحصل على جدول زمني وسعر ثابت قبل بدء العمل.',
+        },
+      },
+    ],
+  },
+];
+---
+
+<Base
+  title={title}
+  description={description}
+  keywords={keywords}
+  ogType="website"
+  jsonLd={jsonLd}
+  lang="ar"
+  altLocales={altLocales}
+>
+  <div class="shell lp">
+    <section class="section hero stagger" aria-labelledby="svc-h">
+      <p class="eyebrow" style="--i:0">اعمل معي</p>
+      <h1 class="hero__name" id="svc-h" style="--i:1">
+        أتمتة الذكاء الاصطناعي<br /><span class="hero__last">وروبوتات الدردشة في العراق</span>
+      </h1>
+      <p class="hero__role" style="--i:2">ردّ تلقائي، ووكلاء ذكاء اصطناعي، وأتمتة مستندات</p>
+      <p class="hero__tagline muted" style="--i:3">
+        لشركات بغداد وأربيل والبصرة والموصل والسليمانية &middot; وعن بُعد حول العالم
+      </p>
+      <div class="hero__actions" style="--i:4">
+        <a class="btn" href="/contact">اطلب عرض سعر ثابت</a>
+        <a class="btn btn-ghost" href="/ar/n8n-developer"
+          >أتمتة سير العمل <span aria-hidden="true">&larr;</span></a
+        >
+      </div>
+      <p class="hero__lead" style="--i:5">
+        أبني للشركات العراقية أنظمة ذكاء اصطناعي تعمل فعلاً. روبوت يرد على واتساب وإنستغرام خلال
+        ثوانٍ، ونماذج تقرأ الفواتير والمستندات وتستخرج بياناتها، ووكلاء يقيّمون العملاء المحتملين
+        ويوجّهونهم إلى فريق المبيعات. ليست عروضاً تجريبية، بل أنظمة تعمل يومياً دون إشراف.
+      </p>
+    </section>
+
+    <section class="section" aria-labelledby="what-h">
+      <div class="rail">
+        <p class="eyebrow">باختصار</p>
+        <div>
+          <h2 class="section-title" id="what-h">ما هي أتمتة الذكاء الاصطناعي؟</h2>
+          <p class="lede">
+            أتمتة الذكاء الاصطناعي تعني إسناد الأجزاء المتكررة من عملك إلى نموذج يقرأ ويقرر وينفّذ،
+            ضمن حدود تضعها أنت. الفرق بينها وبين الأتمتة التقليدية أن النظام لم يعد يحتاج إلى قواعد
+            جامدة، فهي تقرأ فاتورة بتنسيق لم تره من قبل، وتفهم رسالة عميل مكتوبة بأسلوب عامي، وتحكم على
+            جدّية طلب الشراء. ودوري أن أبني ذلك بحيث يبقى قابلاً للمراجعة والتدقيق، لا صندوقاً أسود
+            يتخذ قرارات لا يفهمها أحد.
+          </p>
+        </div>
+      </div>
+    </section>
+
+    <section class="section" aria-labelledby="chat-h">
+      <div class="rail">
+        <p class="eyebrow">الأكثر طلباً</p>
+        <div>
+          <h2 class="section-title" id="chat-h">روبوت دردشة لواتساب وإنستغرام</h2>
+          <p class="lede">
+            تفقد كثير من الشركات مبيعات في المساء وأيام العطل، لا لأن العميل لم يسأل، بل لأن أحداً لم
+            يرد في الوقت المناسب. وروبوت مدرَّب على أسئلة عملك يرد خلال ثوانٍ بالعربية أو الإنجليزية،
+            ويجمع بيانات العميل، ويصنّف الطلب بحسب جدّيته، ثم يحوّل الحالة إلى موظف مختص حين تستحق
+            ذلك.
+          </p>
+          <ul class="skills">
+            <li class="skill reveal">
+              <h3 class="skill__title">ردّ فوري على القنوات</h3>
+              <p class="skill__sub muted">واتساب، إنستغرام، ماسنجر، تيليغرام</p>
+              <ul class="tags">
+                <li class="tag">على مدار الساعة</li>
+                <li class="tag">عربي وإنجليزي</li>
+                <li class="tag">نبرة عملك</li>
+                <li class="tag">تحويل للموظف</li>
+              </ul>
+            </li>
+            <li class="skill reveal">
+              <h3 class="skill__title">تصنيف العملاء المحتملين</h3>
+              <p class="skill__sub muted">من يستحق متابعة فورية</p>
+              <ul class="tags">
+                <li class="tag">تقييم الجدّية</li>
+                <li class="tag">جمع البيانات</li>
+                <li class="tag">توجيه للمبيعات</li>
+                <li class="tag">متابعة تلقائية</li>
+              </ul>
+            </li>
+            <li class="skill reveal">
+              <h3 class="skill__title">قراءة المستندات والفواتير</h3>
+              <p class="skill__sub muted">من صورة أو ملف إلى بيانات منظّمة</p>
+              <ul class="tags">
+                <li class="tag">استخراج البيانات</li>
+                <li class="tag">كشف التلاعب</li>
+                <li class="tag">مطابقة الطلبات</li>
+                <li class="tag">مسارات الموافقات</li>
+              </ul>
+            </li>
+            <li class="skill reveal">
+              <h3 class="skill__title">وكلاء يتخذون خطوات</h3>
+              <p class="skill__sub muted">لا مجرد نص، بل تنفيذ</p>
+              <ul class="tags">
+                <li class="tag">تحديث الأنظمة</li>
+                <li class="tag">إرسال التقارير</li>
+                <li class="tag">جدولة المهام</li>
+                <li class="tag">موافقة بشرية</li>
+              </ul>
+            </li>
+          </ul>
+        </div>
+      </div>
+    </section>
+
+    <section class="section" aria-labelledby="cost-h">
+      <div class="rail">
+        <p class="eyebrow">التسعير</p>
+        <div>
+          <h2 class="section-title" id="cost-h">كم تكلفة أتمتة الذكاء الاصطناعي؟</h2>
+          <p class="lede">
+            التسعير لكل مشروع، بسعر ثابت متفق عليه قبل بدء العمل. بوت رد تلقائي مركّز يكلف أقل بكثير
+            من نظام كامل يقرأ المستندات ويربط أنظمتك الداخلية، ولذلك أبدأ دائماً بسؤال واحد: ما
+            العملية التي تكلّفك وقتاً أو مالاً الآن؟ من هناك أحدّد النطاق وأعطيك رقماً، إضافة إلى تقدير
+            لتكلفة تشغيل النموذج شهرياً حتى لا تفاجئك فاتورة لاحقاً.
+          </p>
+          <div class="hero__actions">
+            <a class="btn" href="/contact">اطلب عرض سعر</a>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section class="section" aria-labelledby="who-h">
+      <div class="rail">
+        <p class="eyebrow">مع من أعمل</p>
+        <div>
+          <h2 class="section-title" id="who-h">في أربيل حضورياً، وفي عموم العراق عن بُعد</h2>
+          <p class="lede">
+            متاجر التجزئة والعيادات والمكاتب العقارية وشركات التجارة والوكالات: أي عمل يصله عدد كبير
+            من الرسائل المتشابهة، أو يعالج مستندات يدوياً كل يوم. أعمل حضورياً في أربيل وإقليم كردستان،
+            وعن بُعد مع شركات في بغداد والبصرة والموصل والسليمانية والنجف وكربلاء وبقية المحافظات.
+          </p>
+        </div>
+      </div>
+    </section>
+
+    <section class="section" aria-labelledby="svc-faq-h">
+      <div class="rail">
+        <p class="eyebrow">إجابات سريعة</p>
+        <div>
+          <h2 class="section-title" id="svc-faq-h">أسئلة شائعة</h2>
+          <dl class="faq">
+            <div class="faq__item reveal">
+              <dt class="faq__q">هل يفهم روبوت الدردشة الرسائل المكتوبة بالعامية؟</dt>
+              <dd class="faq__a">
+                نعم. النماذج الحديثة تتعامل مع الفصحى ومع اللهجات المحلية، وكذلك مع الرسائل التي تخلط
+                العربية بالإنجليزية. وأضبط الروبوت على أمثلة من محادثات شركتك، وردوده تُكتب بالعربية
+                الفصحى.
+              </dd>
+            </div>
+            <div class="faq__item reveal">
+              <dt class="faq__q">ما الفرق بين روبوت الدردشة وأتمتة الذكاء الاصطناعي؟</dt>
+              <dd class="faq__a">
+                الروبوت هو الواجهة التي يراها العميل، والأتمتة هي ما يجري خلفها: قراءة الفاتورة، وتقييم
+                العميل، وتحديث الأنظمة، وإرسال الموافقة. الروبوت يرد على الرسالة، والأتمتة تُنهي
+                العملية.
+              </dd>
+            </div>
+            <div class="faq__item reveal">
+              <dt class="faq__q">كم تستغرق مدة التنفيذ؟</dt>
+              <dd class="faq__a">
+                روبوت محدود النطاق يمكن أن يعمل خلال أيام. أما النظام الكامل الذي يشمل قراءة المستندات
+                والموافقات والربط بأنظمتك فيستغرق عادةً من أسبوع إلى بضعة أسابيع بحسب عدد التكاملات.
+              </dd>
+            </div>
+            <div class="faq__item reveal">
+              <dt class="faq__q">هل بياناتنا آمنة؟</dt>
+              <dd class="faq__a">
+                أصمّم الأنظمة بحيث لا يخرج من بياناتك إلا ما تحتاجه المهمة فعلاً، مع تسجيل لكل قرار
+                يتخذه النموذج حتى تبقى العملية قابلة للمراجعة، وخطوة موافقة بشرية في كل ما يتعلق
+                بالمال.
+              </dd>
+            </div>
+          </dl>
+        </div>
+      </div>
+    </section>
+
+    <section class="section" aria-labelledby="svc-contact-h">
+      <div class="rail">
+        <p class="eyebrow">تواصل</p>
+        <div>
+          <h2 class="section-title" id="svc-contact-h">لنشغّل الذكاء الاصطناعي في عملك</h2>
+          <p class="lede">
+            أخبرني بالعملية التي تستهلك وقت فريقك، وسأقول لك بصراحة إن كان الذكاء الاصطناعي قادراً على
+            إزالتها، وكم تكلّف.
+          </p>
+          <a class="btn" href="/contact"
+            >اذهب إلى صفحة التواصل <span aria-hidden="true">&larr;</span></a
+          >
+        </div>
+      </div>
+    </section>
+  </div>
+</Base>

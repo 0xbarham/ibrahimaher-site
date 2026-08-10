@@ -4,6 +4,7 @@ export const prerender = false;
 import Base from '../layouts/Base.astro';
 import SocialIcon, { type SocialName } from '../components/SocialIcon.astro';
 import { makeAbs } from '../lib/url';
+import { altLocalesFor } from '../lib/i18n';
 import {
   getJobs,
   getProjects,
@@ -192,7 +193,7 @@ const contactEmail = setting(settings, 'contact_email', 'me@ibrahimaher.com');
 const faqs = [
   {
     q: 'Who is Ibrahim Maher Al-Bander?',
-    a: 'A social media marketer, accounts and inventory officer, and freelance AI automation developer based in Erbil, Iraq, currently working three roles at Help Tech Co. Ltd. while running an independent n8n automation practice. <a href="/about">Read the full story</a>.',
+    a: 'An AI automation developer based in Erbil, Iraq, building production n8n workflows, AI agents and chatbots, and social media automation for businesses in the Kurdistan Region and remote clients worldwide. <a href="/about">Read the full story</a>.',
   },
   {
     q: 'Is he available for freelance n8n or AI automation work?',
@@ -214,7 +215,7 @@ const faqs = [
 const faqLd = [
   {
     q: 'Who is Ibrahim Maher Al-Bander?',
-    a: 'Ibrahim Maher Al-Bander is a social media marketer, accounts and inventory officer, and freelance AI automation developer based in Erbil, Iraq, currently working three roles at Help Tech Co. Ltd. while running an independent n8n automation practice.',
+    a: 'Ibrahim Maher Al-Bander is an AI automation developer based in Erbil, Iraq, building production n8n workflows, AI agents and chatbots, and social media automation for businesses across the Kurdistan Region and for remote clients worldwide.',
   },
   {
     q: 'Is Ibrahim Al-Bander available for freelance n8n or AI automation work?',
@@ -350,6 +351,7 @@ if (featured?.external_url) {
   keywords={metaKeywords}
   ogType="profile"
   jsonLd={jsonLd}
+  altLocales={altLocalesFor('/')}
 >
   <div class="shell">
     {/* ---------------------------------------------------------------- Hero */}
@@ -380,12 +382,12 @@ if (featured?.external_url) {
       </div>
 
       <p class="hero__lead" style="--i:5">
-        I work across three things at once: social media marketing, accounting and inventory
-        operations, and building AI automations with n8n. Most people specialize in one of those. I
-        have spent the last few years getting good at all three, and they feed each other more than
-        you would expect. The reporting instincts I built doing bookkeeping made my marketing
-        numbers sharper. The automation skills I picked up building workflows now save my own team
-        hours every week.
+        I build AI automation that runs unattended: n8n workflows, AI agents and chatbots that read
+        and reply, and the social media automation behind them. The work is production, not demos —
+        invoice screening that flags fraud before money moves, lead scoring that answers in minutes,
+        reporting that lands before anyone asks for it. Every build ships documented, validated
+        against a schema, and logged, because an automation that fails silently is worse than no
+        automation at all.
       </p>
 
       {/* Figures set as a rule-separated row of type rather than three stat
@@ -401,7 +403,7 @@ if (featured?.external_url) {
         </div>
         <div class="hero__stat">
           <dt class="hero__stat-num">3</dt>
-          <dd class="hero__stat-label">roles held at once, same company</dd>
+          <dd class="hero__stat-label">AI models in production: OpenAI, Claude, Gemini</dd>
         </div>
       </dl>
     </section>
@@ -411,7 +413,7 @@ if (featured?.external_url) {
       <div class="rail">
         <p class="eyebrow">Career</p>
         <div>
-          <h2 class="section-title" id="experience-h">Experience</h2>
+          <h2 class="section-title reveal--line" id="experience-h">Experience</h2>
           <p class="lede">
             What I have actually been doing, day to day, for the last few years.
           </p>
@@ -487,11 +489,11 @@ if (featured?.external_url) {
     </section>
 
     {/* ------------------------------------------------------------ Projects */}
-    <section class="section" id="projects" aria-labelledby="projects-h">
+    <section class="section section--open" id="projects" aria-labelledby="projects-h">
       <div class="rail">
         <p class="eyebrow">Automation</p>
         <div>
-          <h2 class="section-title" id="projects-h">Projects</h2>
+          <h2 class="section-title reveal--line" id="projects-h">Projects</h2>
 
           {
             /*
@@ -722,7 +724,7 @@ if (featured?.external_url) {
       <div class="rail">
         <p class="eyebrow">How I actually use AI</p>
         <div>
-          <h2 class="section-title" id="ai-disciplines-h">Beyond prompting</h2>
+          <h2 class="section-title reveal--line" id="ai-disciplines-h">Beyond prompting</h2>
           <p class="lede">
             Anyone can type a clever prompt into a chat window. Getting an AI model to do real,
             unattended, production-grade work, like building and shipping the DAD LINK storefront
@@ -796,11 +798,11 @@ if (featured?.external_url) {
       #target above the skipped range removes the failure mode instead of
       betting on it.
     */}
-    <section class="section defer-paint" id="skills" aria-labelledby="skills-h">
+    <section class="section section--close defer-paint" id="skills" aria-labelledby="skills-h">
       <div class="rail">
         <p class="eyebrow">Toolkit</p>
         <div>
-          <h2 class="section-title" id="skills-h">Skills</h2>
+          <h2 class="section-title reveal--line" id="skills-h">Skills</h2>
 
           <ul class="skills">
             {
@@ -822,11 +824,11 @@ if (featured?.external_url) {
     </section>
 
     {/* ----------------------------------------------------------- Education */}
-    <section class="section defer-paint" id="education" aria-labelledby="education-h">
+    <section class="section section--close defer-paint" id="education" aria-labelledby="education-h">
       <div class="rail">
         <p class="eyebrow">Background</p>
         <div>
-          <h2 class="section-title" id="education-h">Education</h2>
+          <h2 class="section-title reveal--line" id="education-h">Education</h2>
 
           {
             education.map((e) => (
@@ -845,11 +847,11 @@ if (featured?.external_url) {
     </section>
 
     {/* ------------------------------------------------------ Certifications */}
-    <section class="section defer-paint" id="certifications" aria-labelledby="certifications-h">
+    <section class="section section--close defer-paint" id="certifications" aria-labelledby="certifications-h">
       <div class="rail">
         <p class="eyebrow">Credentials</p>
         <div>
-          <h2 class="section-title" id="certifications-h">Certifications</h2>
+          <h2 class="section-title reveal--line" id="certifications-h">Certifications</h2>
           <p class="lede">
             Courses and certificates I completed to back up what I already do in practice.
           </p>
@@ -870,11 +872,11 @@ if (featured?.external_url) {
     </section>
 
     {/* ---------------------------------------------------------------- Blog */}
-    <section class="section defer-paint" id="blog" aria-labelledby="blog-h">
+    <section class="section section--open defer-paint" id="blog" aria-labelledby="blog-h">
       <div class="rail">
         <p class="eyebrow">Writing</p>
         <div>
-          <h2 class="section-title" id="blog-h">From the blog</h2>
+          <h2 class="section-title reveal--line" id="blog-h">From the blog</h2>
           <p class="lede">
             Notes on AI automation, social media marketing, and shipping real software with AI
             tools, written from doing the work, not from a marketing deck.
@@ -913,7 +915,7 @@ if (featured?.external_url) {
       <div class="rail">
         <p class="eyebrow">Quick answers</p>
         <div>
-          <h2 class="section-title" id="faq-h">Frequently asked</h2>
+          <h2 class="section-title reveal--line" id="faq-h">Frequently asked</h2>
           <p class="lede">The questions people usually have before reaching out.</p>
 
           <dl class="faq">
@@ -931,11 +933,11 @@ if (featured?.external_url) {
     </section>
 
     {/* ------------------------------------------------------------- Contact */}
-    <section class="section defer-paint" id="contact" aria-labelledby="contact-h">
+    <section class="section section--open defer-paint" id="contact" aria-labelledby="contact-h">
       <div class="rail">
         <p class="eyebrow">Get in touch</p>
         <div>
-          <h2 class="section-title" id="contact-h">Let's talk</h2>
+          <h2 class="section-title reveal--line" id="contact-h">Let's talk</h2>
           <p class="lede">
             Whether it is a marketing role, an accounts position, or an automation project that
             needs building properly, I would like to hear about it.
@@ -1099,14 +1101,26 @@ if (featured?.external_url) {
     margin-bottom: var(--space-l);
   }
 
+  /*
+    The standfirst.
+
+    This used to carry a 2px accent-coloured rule down its left edge. That
+    specific device — a coloured left-border strip on a block of text — is one
+    of the most reliable visual signatures of generated design; designers cite
+    it the way writers cite the em-dash. It was doing real work here (marking
+    this paragraph as the lede rather than body copy), so it is replaced rather
+    than deleted: the paragraph now earns its emphasis from type instead of from
+    a coloured bar — larger, set in the display serif, at a narrower measure,
+    with the accent kept for the one word that carries meaning.
+  */
   .hero__lead {
-    max-width: var(--measure);
+    max-width: var(--measure-wide);
+    font-family: var(--font-display);
     font-size: var(--step-1);
-    line-height: 1.5;
-    color: var(--ink-2);
-    /* A hanging rule in the margin — marginalia, not a border-box. */
-    border-left: 2px solid var(--accent);
-    padding-left: var(--space-m);
+    font-weight: 400;
+    line-height: 1.45;
+    letter-spacing: var(--tracking-tight);
+    color: var(--ink);
     margin-bottom: var(--space-l);
   }
 
@@ -1627,13 +1641,21 @@ if (featured?.external_url) {
     margin-bottom: var(--space-xs);
   }
 
-  /* The analogy is an aside, and is set like one. */
+  /*
+    The analogy is an aside, and is set like one — italic display, indented, no
+    coloured rule. It previously carried the same 2px accent left-border as the
+    hero standfirst; four more of them on one page made that strip the most
+    repeated coloured element on the site, which is exactly how the device reads
+    as generated rather than authored. An italic serif at a smaller size already
+    says "this is an aside" without borrowing a callout component to say it.
+  */
   .discipline__analogy {
     max-width: var(--measure);
     margin: 0;
-    padding-left: var(--space-s);
-    border-left: 2px solid var(--accent);
-    font-size: var(--step--1);
+    padding-left: var(--space-m);
+    font-family: var(--font-display);
+    font-style: italic;
+    font-size: var(--step-0);
     line-height: var(--leading-snug);
     color: var(--ink-3);
   }

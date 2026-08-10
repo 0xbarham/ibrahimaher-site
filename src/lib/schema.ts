@@ -43,6 +43,10 @@ export const TABLE_COLUMNS = {
     'og_title', 'og_description', 'og_image',
     'twitter_title', 'twitter_description', 'twitter_image',
     'cta_heading', 'cta_md',
+    // Scheduled publishing (migration 0013). Nullable ISO-8601 UTC. Must be
+    // writable through /api/content/posts or the editor could only ever set a
+    // schedule, never clear one — which is how a post gets stuck queued.
+    'publish_at',
   ],
   authors: ['name', 'slug', 'role', 'bio', 'avatar_url', 'profile_url', 'sort_order'],
   redirects: ['source', 'destination', 'code', 'created_at'],
@@ -70,7 +74,7 @@ export const SETTINGS_WRITABLE = ['value'] as const;
 /** Field hints so the admin can render the right control per column. */
 export type FieldKind =
   | 'text' | 'textarea' | 'markdown' | 'html' | 'number' | 'boolean'
-  | 'date' | 'url' | 'image' | 'tags' | 'select';
+  | 'date' | 'datetime' | 'url' | 'image' | 'tags' | 'select';
 
 /**
  * Which admin panel the field belongs to.
@@ -104,7 +108,25 @@ export interface FieldSpec {
 export const POST_FIELDS: Record<string, FieldSpec> = {
   title: { kind: 'text', label: 'Title', group: 'content' },
   slug: { kind: 'text', label: 'Slug', hint: 'Changing this breaks existing links unless you add a redirect.', group: 'content' },
-  status: { kind: 'select', label: 'Status', options: ['draft', 'published'], group: 'content' },
+  status: {
+    kind: 'select',
+    label: 'Status',
+    options: ['draft', 'scheduled', 'published'],
+    hint: 'Scheduled posts go live automatically at the time below — no cron, no manual step.',
+    group: 'content',
+  },
+  /*
+    Scheduled publish time. Separate from post_date on purpose: post_date is the
+    DISPLAYED date (byline, BlogPosting JSON-LD) and is legitimately backdated,
+    while this is when the post becomes visible. Conflating them would make one
+    of the two impossible to express.
+  */
+  publish_at: {
+    kind: 'datetime',
+    label: 'Publish at',
+    hint: 'Only used when status is “scheduled”. Entered in your local time, stored as UTC.',
+    group: 'content',
+  },
   category: { kind: 'text', label: 'Category', group: 'content' },
   excerpt: { kind: 'textarea', label: 'Excerpt', hint: 'Shown on the blog index and used as a meta description fallback.', group: 'content', rows: 3 },
   body_md: { kind: 'markdown', label: 'Body', hint: 'Markdown. Supports headings, lists, tables, code, images and raw HTML.', group: 'content' },

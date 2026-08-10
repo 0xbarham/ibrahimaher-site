@@ -1,0 +1,283 @@
+---
+export const prerender = false;
+
+import Base from '../../layouts/Base.astro';
+import '../../styles/landing.css';
+import { altLocalesFor } from '../../lib/i18n';
+import { IRAQ_AREA_SERVED, ARABIC_SERVICE_OFFERS } from '../../lib/schema-geo';
+
+/*
+  Arabic counterpart of /vibe-coder.
+
+  "Vibe coding" has no established Arabic term and transliterating it would rank
+  for nothing — nobody searches "فايب كودينغ". So this page sells the OUTCOME
+  people do search for ("تصميم موقع", "برمجة تطبيق", "متجر إلكتروني") and
+  explains AI-assisted development as the method that makes it fast, rather than
+  leading with an untranslatable label. The English slug is kept so the hreflang
+  pair stays one-to-one with /vibe-coder.
+*/
+
+const title = 'برمجة المواقع والتطبيقات بالذكاء الاصطناعي في العراق | إبراهيم البندر';
+const description =
+  'بناء مواقع وتطبيقات وأدوات داخلية بسرعة باستخدام التطوير المدعوم بالذكاء الاصطناعي، لشركات بغداد وأربيل والبصرة والموصل، وعن بُعد حول العالم.';
+const keywords =
+  'تصميم موقع الكتروني العراق, برمجة تطبيقات بغداد, تطوير مواقع أربيل, متجر الكتروني العراق, برمجة بالذكاء الاصطناعي, أدوات داخلية للشركات, نماذج أولية سريعة';
+
+const canonical = '/ar/vibe-coder';
+const altLocales = altLocalesFor(canonical);
+
+const jsonLd = [
+  {
+    '@context': 'https://schema.org',
+    '@type': 'ProfessionalService',
+    '@id': 'https://ibrahimaher.com/#service-build-ar',
+    name: 'إبراهيم البندر لبناء المواقع والتطبيقات بالذكاء الاصطناعي',
+    url: 'https://ibrahimaher.com/ar/vibe-coder',
+    image: 'https://ibrahimaher.com/assets/og-image.png',
+    inLanguage: 'ar-IQ',
+    description:
+      'بناء مواقع وتطبيقات ويب وأدوات داخلية ونماذج أولية بسرعة باستخدام التطوير المدعوم بالذكاء الاصطناعي، للشركات في العراق وعن بُعد حول العالم.',
+    provider: {
+      '@type': 'Person',
+      '@id': 'https://ibrahimaher.com/#ibrahim',
+      name: 'إبراهيم ماهر البندر',
+      url: 'https://ibrahimaher.com',
+    },
+    areaServed: IRAQ_AREA_SERVED,
+    address: {
+      '@type': 'PostalAddress',
+      addressLocality: 'أربيل',
+      addressRegion: 'إقليم كردستان',
+      addressCountry: 'IQ',
+    },
+    geo: { '@type': 'GeoCoordinates', latitude: 36.1901, longitude: 44.0091 },
+    telephone: '+9647719620471',
+    email: 'mailto:me@ibrahimaher.com',
+    priceRange: '$$',
+    makesOffer: ARABIC_SERVICE_OFFERS,
+  },
+  {
+    '@context': 'https://schema.org',
+    '@type': 'BreadcrumbList',
+    itemListElement: [
+      { '@type': 'ListItem', position: 1, name: 'الرئيسية', item: 'https://ibrahimaher.com/ar/' },
+      {
+        '@type': 'ListItem',
+        position: 2,
+        name: 'بناء المواقع والتطبيقات',
+        item: 'https://ibrahimaher.com/ar/vibe-coder',
+      },
+    ],
+  },
+  {
+    '@context': 'https://schema.org',
+    '@type': 'FAQPage',
+    inLanguage: 'ar-IQ',
+    mainEntity: [
+      {
+        '@type': 'Question',
+        name: 'ما معنى البرمجة بمساعدة الذكاء الاصطناعي؟',
+        acceptedAnswer: {
+          '@type': 'Answer',
+          text: 'هي طريقة عمل يكتب فيها المطوّر جزءاً كبيراً من الشيفرة بمساعدة نماذج الذكاء الاصطناعي بدل كتابتها كلها يدوياً، مع بقاء المراجعة والاختبار والقرارات المعمارية مسؤولية المطوّر. النتيجة سرعة أعلى بكثير في الوصول إلى نسخة تعمل، دون التنازل عن جودة ما يصل إلى الإنتاج.',
+        },
+      },
+      {
+        '@type': 'Question',
+        name: 'هل الموقع المبني بهذه الطريقة جاهز للإنتاج فعلاً؟',
+        acceptedAnswer: {
+          '@type': 'Answer',
+          text: 'نعم، إذا بُني على وجهه الصحيح. والدليل عملي: متجر DAD LINK الإلكتروني بين الشركات يعمل فعلياً، وهذا الموقع نفسه مبني بالطريقة ذاتها. والفارق ليس في الأداة، بل في المراجعة والاختبار وضبط الأداء قبل الإطلاق.',
+        },
+      },
+      {
+        '@type': 'Question',
+        name: 'كم تستغرق مدة بناء موقع أو تطبيق؟',
+        acceptedAnswer: {
+          '@type': 'Answer',
+          text: 'الموقع التعريفي أو صفحة الهبوط يمكن أن يكون جاهزاً خلال أيام. أما المتجر الإلكتروني أو الأداة الداخلية التي فيها حسابات وصلاحيات وقاعدة بيانات فتستغرق عادةً من أسبوع إلى بضعة أسابيع. وتحصل على نطاق عمل وسعر ثابت قبل البدء.',
+        },
+      },
+    ],
+  },
+];
+---
+
+<Base
+  title={title}
+  description={description}
+  keywords={keywords}
+  ogType="website"
+  jsonLd={jsonLd}
+  lang="ar"
+  altLocales={altLocales}
+>
+  <div class="shell lp">
+    <section class="section hero stagger" aria-labelledby="svc-h">
+      <p class="eyebrow" style="--i:0">اعمل معي</p>
+      <h1 class="hero__name" id="svc-h" style="--i:1">
+        بناء المواقع والتطبيقات<br /><span class="hero__last">بالذكاء الاصطناعي في العراق</span>
+      </h1>
+      <p class="hero__role" style="--i:2">مواقع، وتطبيقات ويب، وأدوات داخلية، ونماذج أولية</p>
+      <p class="hero__tagline muted" style="--i:3">
+        لشركات بغداد وأربيل والبصرة والموصل والسليمانية &middot; وعن بُعد حول العالم
+      </p>
+      <div class="hero__actions" style="--i:4">
+        <a class="btn" href="/contact">اطلب عرض سعر ثابت</a>
+        <a class="btn btn-ghost" href="https://www.dad-link.com" target="_blank" rel="noopener"
+          >شاهد مثالاً حياً <span aria-hidden="true">&larr;</span></a
+        >
+      </div>
+      <p class="hero__lead" style="--i:5">
+        أبني برمجيات حقيقية بسرعة باستخدام التطوير المدعوم بالذكاء الاصطناعي: مواقع الشركات، والمتاجر
+        الإلكترونية، والأدوات الداخلية التي يستخدمها فريقك يومياً. والدليل ليس عرضاً تقديمياً، بل
+        متجر <span lang="en">DAD LINK</span> العامل، وهذا الموقع نفسه المبني بالطريقة ذاتها.
+      </p>
+    </section>
+
+    <section class="section" aria-labelledby="what-h">
+      <div class="rail">
+        <p class="eyebrow">باختصار</p>
+        <div>
+          <h2 class="section-title" id="what-h">ما معنى البرمجة بمساعدة الذكاء الاصطناعي؟</h2>
+          <p class="lede">
+            هي طريقة عمل يكتب فيها المطوّر جزءاً كبيراً من الشيفرة بمساعدة نماذج الذكاء الاصطناعي بدل
+            كتابتها كلها يدوياً، مع بقاء المراجعة والاختبار والقرارات المعمارية مسؤوليته وحده. النتيجة
+            أنك تصل إلى نسخة تعمل خلال أيام لا أشهر. غير أن السرعة وحدها لا تكفي، فما يفصل مشروعاً
+            ناجحاً عن آخر ينهار بعد شهر هو ما يجري بعد أن يكتب النموذج الشيفرة: المراجعة، والاختبار
+            على الحالات الاستثنائية، وضبط الأداء والأمان قبل الإطلاق.
+          </p>
+        </div>
+      </div>
+    </section>
+
+    <section class="section" aria-labelledby="build-h">
+      <div class="rail">
+        <p class="eyebrow">الخدمات</p>
+        <div>
+          <h2 class="section-title" id="build-h">ما الذي أبنيه</h2>
+          <ul class="skills">
+            <li class="skill reveal">
+              <h3 class="skill__title">مواقع الشركات</h3>
+              <p class="skill__sub muted">سريعة، ومهيّأة لمحركات البحث</p>
+              <ul class="tags">
+                <li class="tag">تصميم مخصص</li>
+                <li class="tag">عربي وإنجليزي</li>
+                <li class="tag">تحسين محركات البحث</li>
+                <li class="tag">لوحة تحكم</li>
+              </ul>
+            </li>
+            <li class="skill reveal">
+              <h3 class="skill__title">المتاجر الإلكترونية</h3>
+              <p class="skill__sub muted">بين الشركات أو للمستهلك</p>
+              <ul class="tags">
+                <li class="tag">كتالوج المنتجات</li>
+                <li class="tag">الطلبات</li>
+                <li class="tag">إدارة المخزون</li>
+                <li class="tag">تقارير</li>
+              </ul>
+            </li>
+            <li class="skill reveal">
+              <h3 class="skill__title">الأدوات الداخلية</h3>
+              <p class="skill__sub muted">ما يستخدمه فريقك يومياً</p>
+              <ul class="tags">
+                <li class="tag">حسابات وصلاحيات</li>
+                <li class="tag">قواعد بيانات</li>
+                <li class="tag">لوحات متابعة</li>
+                <li class="tag">ربط بالأنظمة</li>
+              </ul>
+            </li>
+            <li class="skill reveal">
+              <h3 class="skill__title">النماذج الأولية</h3>
+              <p class="skill__sub muted">لاختبار الفكرة قبل الاستثمار</p>
+              <ul class="tags">
+                <li class="tag">نسخة تعمل</li>
+                <li class="tag">خلال أيام</li>
+                <li class="tag">قابلة للتطوير</li>
+                <li class="tag">جاهزة للعرض</li>
+              </ul>
+            </li>
+          </ul>
+        </div>
+      </div>
+    </section>
+
+    <section class="section" aria-labelledby="cost-h">
+      <div class="rail">
+        <p class="eyebrow">التسعير</p>
+        <div>
+          <h2 class="section-title" id="cost-h">كم تكلفة بناء موقع أو تطبيق؟</h2>
+          <p class="lede">
+            سعر ثابت لكل مشروع، متفق عليه قبل بدء العمل. والموقع التعريفي أو صفحة الهبوط يكلّف أقل بكثير
+            من متجر إلكتروني أو أداة داخلية فيها حسابات وصلاحيات وقاعدة بيانات. أخبرني بما تريد بناءه
+            وسأحدد النطاق وأعطيك رقماً وجدولاً زمنياً.
+          </p>
+          <div class="hero__actions">
+            <a class="btn" href="/contact">أخبرني بما تريد بناءه</a>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section class="section" aria-labelledby="proof-h">
+      <div class="rail">
+        <p class="eyebrow">إثبات</p>
+        <div>
+          <h2 class="section-title" id="proof-h">برمجيات حقيقية، تعمل الآن</h2>
+          <p class="lede">
+            <a href="https://www.dad-link.com" target="_blank" rel="noopener">DAD LINK</a> متجر
+            إلكتروني بين الشركات لمعدات البنية التحتية للشبكات في العراق، صمّمته وبنيته وأطلقته.
+            والموقع الذي تقرأ فيه الآن مبني بالطريقة نفسها، بما في ذلك لوحة التحكم التي تدير محتواه.
+            وكلاهما يعمل في بيئة الإنتاج، لا في بيئة تجريبية.
+          </p>
+        </div>
+      </div>
+    </section>
+
+    <section class="section" aria-labelledby="svc-faq-h">
+      <div class="rail">
+        <p class="eyebrow">إجابات سريعة</p>
+        <div>
+          <h2 class="section-title" id="svc-faq-h">أسئلة شائعة</h2>
+          <dl class="faq">
+            <div class="faq__item reveal">
+              <dt class="faq__q">هل الموقع المبني بهذه الطريقة جاهز للإنتاج فعلاً؟</dt>
+              <dd class="faq__a">
+                نعم، إذا بُني على وجهه الصحيح. متجر <span lang="en">DAD LINK</span> يعمل فعلياً، وهذا
+                الموقع نفسه مبني بالطريقة ذاتها. والفارق ليس في الأداة، بل في المراجعة والاختبار وضبط
+                الأداء قبل الإطلاق.
+              </dd>
+            </div>
+            <div class="faq__item reveal">
+              <dt class="faq__q">كم تستغرق مدة البناء؟</dt>
+              <dd class="faq__a">
+                موقع تعريفي أو صفحة هبوط يمكن أن يكون جاهزاً خلال أيام. أما متجر إلكتروني أو أداة
+                داخلية فتستغرق عادةً من أسبوع إلى بضعة أسابيع.
+              </dd>
+            </div>
+            <div class="faq__item reveal">
+              <dt class="faq__q">هل تدعم المواقع العربية؟</dt>
+              <dd class="faq__a">
+                نعم، بما في ذلك التخطيط من اليمين إلى اليسار والخطوط العربية والمواقع ثنائية اللغة.
+                هذا الموقع نفسه ثنائي اللغة.
+              </dd>
+            </div>
+          </dl>
+        </div>
+      </div>
+    </section>
+
+    <section class="section" aria-labelledby="svc-contact-h">
+      <div class="rail">
+        <p class="eyebrow">تواصل</p>
+        <div>
+          <h2 class="section-title" id="svc-contact-h">لنبنِ شيئاً</h2>
+          <p class="lede">أخبرني بما تريد بناءه، وسأخبرك كم يستغرق وكم يكلّف.</p>
+          <a class="btn" href="/contact"
+            >اذهب إلى صفحة التواصل <span aria-hidden="true">&larr;</span></a
+          >
+        </div>
+      </div>
+    </section>
+  </div>
+</Base>

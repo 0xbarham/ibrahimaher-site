@@ -3,8 +3,14 @@
 
   Deliberately NOT global.css: the public site is an editorial layout with a
   generous measure and paced motion. The admin is a tool — denser, flatter,
-  faster. What it shares is the *system*: the same tokens, the same Sora + Inter
-  pairing, the same terracotta accent, so it still reads as the same hand.
+  faster. What it shares is the *system*: the same tokens, the same Newsreader +
+  Sofia Sans + Spline Sans Mono pairing, and the same brick accent, so it still
+  reads as the same hand.
+
+  Because this file imports tokens.css rather than restating any of it, the 2026
+  type and palette change reached the admin for free — the only work needed here
+  was retiring the hardcoded radii (3/4/5/8px literals) in favour of the shared
+  --radius-* scale, so a corner rounded in the CMS matches one on the site.
 
   Everything here is scoped loosely under the admin shell; no admin page loads
   global.css, so there is nothing to fight.
@@ -50,7 +56,7 @@ a {
 :where(a, button, input, textarea, select, summary, [tabindex]):focus-visible {
   outline: 2px solid var(--accent);
   outline-offset: 2px;
-  border-radius: 3px;
+  border-radius: var(--radius-xs);
 }
 
 .visually-hidden {
@@ -155,7 +161,7 @@ a {
   align-items: center;
   gap: 0.55rem;
   padding: 0.45rem 0.55rem;
-  border-radius: 5px;
+  border-radius: var(--radius-sm);
   text-decoration: none;
   color: var(--ink-2);
   font-size: var(--step--1);
@@ -238,7 +244,7 @@ a {
   color: var(--ink);
   background: var(--surface);
   border: var(--rule) solid var(--rule-color);
-  border-radius: 5px;
+  border-radius: var(--radius-sm);
   cursor: pointer;
   text-decoration: none;
   white-space: nowrap;
@@ -305,7 +311,7 @@ a {
 .card {
   background: var(--surface);
   border: var(--rule) solid var(--rule-color);
-  border-radius: 8px;
+  border-radius: var(--radius-md);
   padding: var(--space-s);
 }
 
@@ -376,7 +382,7 @@ a {
   color: var(--ink);
   background: var(--surface);
   border: var(--rule) solid var(--rule-color);
-  border-radius: 5px;
+  border-radius: var(--radius-sm);
 }
 
 .input:focus,
@@ -477,7 +483,7 @@ a {
   padding: var(--space-3xs);
   background: var(--paper-2);
   border: var(--rule) solid var(--rule-color);
-  border-radius: 5px;
+  border-radius: var(--radius-sm);
   overflow: hidden;
 }
 
@@ -508,7 +514,7 @@ a {
   padding: var(--space-3xs);
   background: var(--paper-2);
   border: var(--rule) solid var(--rule-color);
-  border-radius: 5px;
+  border-radius: var(--radius-sm);
 }
 
 /* Capped and scrolled. The library only grows, and this panel opens inside a
@@ -530,7 +536,7 @@ a {
   padding: 0.3rem;
   background: var(--surface);
   border: var(--rule) solid var(--rule-color);
-  border-radius: 4px;
+  border-radius: var(--radius-xs);
   text-align: left;
   cursor: pointer;
 }
@@ -552,7 +558,7 @@ a {
   height: 3.5rem;
   object-fit: contain;
   background: var(--paper-2);
-  border-radius: 3px;
+  border-radius: var(--radius-xs);
 }
 
 /* Truncated, not wrapped: filenames are long and alike, and a grid whose cells
@@ -607,6 +613,247 @@ a {
   border-color: var(--rule-color);
 }
 
+/* Scheduled is a third state, not a shade of draft: the post is finished and
+   queued, which is a different thing from unfinished. Warning-toned because it
+   is the one status that changes on its own without anyone touching it. */
+.badge--scheduled {
+  color: var(--warning);
+  background: color-mix(in oklab, var(--warning) 12%, transparent);
+  border-color: color-mix(in oklab, var(--warning) 30%, transparent);
+}
+
+/* ==========================================================================
+   Bulk selection
+   ========================================================================== */
+
+/*
+  The bulk bar is sticky at the bottom of the viewport rather than inline above
+  the table. A selection made forty rows down is acted on from wherever the
+  reader is, and an inline toolbar would have scrolled out of reach by then —
+  which is how people end up scrolling back up, losing their place, and
+  reselecting.
+*/
+.bulkbar {
+  position: sticky;
+  bottom: var(--space-s);
+  z-index: 5;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-s);
+  margin-top: var(--space-s);
+  padding: var(--space-xs) var(--space-s);
+  border: var(--rule) solid var(--rule-color-strong);
+  border-radius: var(--radius-sm);
+  background: var(--surface);
+  box-shadow: var(--shadow);
+}
+
+.bulkbar__count {
+  margin: 0;
+  font-family: var(--font-mono);
+  font-size: var(--step--2);
+  letter-spacing: var(--tracking-mono);
+  color: var(--ink-2);
+}
+
+/* An armed destructive button. Filled rather than outlined, so the difference
+   between "Delete" and "Confirm delete (3)" is not carried by the label alone —
+   the button visibly changes state before it will do anything. */
+.btn.is-armed {
+  background: var(--danger);
+  border-color: var(--danger);
+  color: var(--paper);
+}
+
+.table__check {
+  width: 1px; /* shrink-to-fit: the column is one control wide */
+  padding-right: 0;
+  vertical-align: middle;
+}
+
+/* ==========================================================================
+   Version history
+   ========================================================================== */
+
+.history__summary {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: var(--space-2xs) var(--space-s);
+  cursor: pointer;
+  font-weight: 600;
+}
+
+/* The disclosure triangle is the affordance; removing it would leave a heading
+   that happens to be clickable, which is worse than a slightly plain marker. */
+.history__summary::-webkit-details-marker {
+  color: var(--ink-3);
+}
+
+.history__hint {
+  font-size: var(--step--2);
+  font-weight: 400;
+}
+
+.history__list {
+  display: flex;
+  flex-direction: column;
+  margin-top: var(--space-s);
+}
+
+/*
+  Rows separated by a rule rather than boxed as cards. Twenty stacked cards is a
+  wall; twenty ruled rows is a list, which is what a history actually is.
+*/
+.history__row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-s);
+  padding: var(--space-xs) 0;
+  border-top: var(--rule) solid var(--rule-color);
+}
+
+.history__row:first-child {
+  border-top: 0;
+}
+
+.history__when {
+  font-family: var(--font-mono);
+  font-size: var(--step--2);
+  letter-spacing: var(--tracking-mono);
+  color: var(--ink);
+}
+
+.history__note {
+  font-size: var(--step--2);
+}
+
+/* ==========================================================================
+   Body measurements
+   ========================================================================== */
+
+.md__stats {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-2xs);
+  margin: var(--space-2xs) 0 0;
+  font-family: var(--font-mono);
+  font-size: var(--step--2);
+  letter-spacing: var(--tracking-mono);
+  color: var(--ink-3);
+}
+
+/* A link, not a button: it performs a small reversible edit to a field the
+   author can still overwrite, and styling it as a button would give it the
+   same weight as Save. */
+.md__apply {
+  padding: 0;
+  border: 0;
+  background: none;
+  font: inherit;
+  color: var(--accent);
+  text-decoration: underline;
+  text-underline-offset: 0.2em;
+  cursor: pointer;
+}
+
+.md__apply:hover {
+  color: var(--accent-ink);
+}
+
+/* ==========================================================================
+   Media picker
+   ========================================================================== */
+
+.mediadlg {
+  width: min(64rem, 92vw);
+  max-height: 84vh;
+  padding: var(--space-m);
+  border: var(--rule) solid var(--rule-color-strong);
+  border-radius: var(--radius-md);
+  background: var(--surface);
+  color: var(--ink);
+}
+
+/* The platform's default backdrop is a flat black wash; this keeps the warm
+   paper tone so the dialog reads as part of the same product. */
+.mediadlg::backdrop {
+  background: color-mix(in oklab, var(--ink) 55%, transparent);
+}
+
+.mediadlg__head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-s);
+  margin-bottom: var(--space-xs);
+}
+
+.mediadlg__title {
+  margin: 0;
+  font-family: var(--font-display);
+  font-size: var(--step-1);
+  letter-spacing: var(--tracking-display);
+}
+
+.mediadlg__grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(9rem, 1fr));
+  gap: var(--space-s);
+  overflow-y: auto;
+  max-height: 62vh;
+  padding-top: var(--space-2xs);
+}
+
+.mediadlg__item {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3xs);
+  padding: var(--space-3xs);
+  border: var(--rule) solid var(--rule-color);
+  border-radius: var(--radius-sm);
+  background: var(--paper-2);
+  cursor: pointer;
+  text-align: left;
+  transition:
+    border-color var(--dur-fast) var(--ease-ui),
+    transform var(--dur-fast) var(--ease-ui);
+}
+
+.mediadlg__item:hover,
+.mediadlg__item:focus-visible {
+  border-color: var(--accent);
+  transform: translateY(-1px);
+}
+
+.mediadlg__item img {
+  width: 100%;
+  aspect-ratio: 4 / 3;
+  object-fit: cover;
+  border-radius: var(--radius-xs);
+  background: var(--paper);
+}
+
+.mediadlg__name {
+  font-family: var(--font-mono);
+  font-size: var(--step--2);
+  color: var(--ink-3);
+  overflow-wrap: anywhere;
+}
+
+.table__check input {
+  display: block;
+  width: 1rem;
+  height: 1rem;
+  accent-color: var(--accent);
+  cursor: pointer;
+}
+
 .badge__dot {
   width: 5px;
   height: 5px;
@@ -619,7 +866,7 @@ a {
 .table-wrap {
   overflow-x: auto;
   border: var(--rule) solid var(--rule-color);
-  border-radius: 8px;
+  border-radius: var(--radius-md);
   background: var(--surface);
 }
 
@@ -704,7 +951,7 @@ a {
   padding: 0.35rem 0.5rem;
   background: color-mix(in oklab, var(--danger) 10%, var(--surface));
   border: var(--rule) solid color-mix(in oklab, var(--danger) 40%, transparent);
-  border-radius: 5px;
+  border-radius: var(--radius-sm);
   font-size: 0.8rem;
 }
 
@@ -779,7 +1026,7 @@ a {
 /* --- Markdown editor ---------------------------------------------------- */
 .md {
   border: var(--rule) solid var(--rule-color);
-  border-radius: 8px;
+  border-radius: var(--radius-md);
   background: var(--surface);
   overflow: hidden;
 }
@@ -809,7 +1056,7 @@ a {
   appearance: none;
   background: none;
   border: 0;
-  border-radius: 4px;
+  border-radius: var(--radius-xs);
   padding: 0.3rem;
   color: var(--ink-2);
   cursor: pointer;
@@ -893,7 +1140,7 @@ kbd {
   background: var(--surface);
   border: var(--rule) solid var(--rule-color);
   border-bottom-width: 2px;
-  border-radius: 3px;
+  border-radius: var(--radius-xs);
   padding: 0 0.25em;
 }
 
@@ -936,7 +1183,7 @@ kbd {
 .prose img {
   max-width: 100%;
   height: auto;
-  border-radius: 4px;
+  border-radius: var(--radius-xs);
 }
 .prose blockquote {
   border-left: 2px solid var(--accent);
@@ -950,12 +1197,12 @@ kbd {
   font-size: 0.85em;
   background: var(--paper-2);
   padding: 0.1em 0.3em;
-  border-radius: 3px;
+  border-radius: var(--radius-xs);
 }
 .prose pre {
   background: var(--paper-2);
   padding: var(--space-2xs);
-  border-radius: 5px;
+  border-radius: var(--radius-sm);
   overflow-x: auto;
   border: var(--rule) solid var(--rule-color);
 }
@@ -997,7 +1244,7 @@ kbd {
   padding: 0.3rem;
   background: var(--surface);
   border: var(--rule) solid var(--rule-color);
-  border-radius: 5px;
+  border-radius: var(--radius-sm);
   cursor: text;
 }
 
@@ -1012,7 +1259,7 @@ kbd {
   padding: 0.1rem 0.2rem 0.1rem 0.45rem;
   background: var(--accent-soft);
   color: var(--accent-ink);
-  border-radius: 3px;
+  border-radius: var(--radius-xs);
   font-size: 0.78rem;
   max-width: 100%;
 }
@@ -1084,7 +1331,7 @@ kbd {
   font-family: Arial, sans-serif;
   background: var(--surface);
   border: var(--rule) solid var(--rule-color);
-  border-radius: 8px;
+  border-radius: var(--radius-md);
   padding: var(--space-s);
 }
 
@@ -1132,7 +1379,7 @@ kbd {
 /* --- OG card preview ---------------------------------------------------- */
 .ogcard {
   border: var(--rule) solid var(--rule-color);
-  border-radius: 8px;
+  border-radius: var(--radius-md);
   overflow: hidden;
   background: var(--paper-2);
 }
@@ -1209,7 +1456,7 @@ kbd {
 .stat {
   background: var(--surface);
   border: var(--rule) solid var(--rule-color);
-  border-radius: 8px;
+  border-radius: var(--radius-md);
   padding: var(--space-s);
 }
 
@@ -1247,7 +1494,7 @@ kbd {
   max-width: 22rem;
   background: var(--surface);
   border: var(--rule) solid var(--rule-color);
-  border-radius: 10px;
+  border-radius: var(--radius-md);
   padding: var(--space-l);
   box-shadow: var(--shadow);
 }
@@ -1267,7 +1514,7 @@ kbd {
 .row {
   background: var(--surface);
   border: var(--rule) solid var(--rule-color);
-  border-radius: 8px;
+  border-radius: var(--radius-md);
   padding: var(--space-s);
 }
 
@@ -1291,6 +1538,62 @@ kbd {
   font-family: var(--font-mono);
   font-size: 0.72rem;
   color: var(--ink-3);
+}
+
+/*
+  The id chip, when it is also the drag grip.
+
+  Only saved rows get this class — a new, unsaved row has no position to hold.
+  The grab cursor is the entire affordance, so it has to be unambiguous: the
+  chip is padded out to a real target and given a border on hover so it reads as
+  something you take hold of rather than a label that happens to move.
+*/
+.row__handle--grip {
+  padding: 0.1rem 0.35rem;
+  border: var(--rule) solid transparent;
+  border-radius: var(--radius-xs);
+  cursor: grab;
+  user-select: none;
+  touch-action: none;
+  transition:
+    border-color var(--dur-fast) var(--ease-ui),
+    background var(--dur-fast) var(--ease-ui);
+}
+
+.row__handle--grip:hover {
+  border-color: var(--rule-color-strong);
+  background: var(--paper-2);
+  color: var(--ink-2);
+}
+
+.row__handle--grip:active {
+  cursor: grabbing;
+}
+
+/*
+  The row being dragged. Dimmed and flattened rather than lifted: the card is
+  already moving between siblings, and adding a shadow and a scale on top reads
+  as two separate animations fighting. The point is to show which row is in
+  flight, not to celebrate it.
+*/
+.row--dragging {
+  opacity: 0.55;
+  cursor: grabbing;
+}
+
+.row--dragging * {
+  /* Stops the dragged card from swallowing the dragover events its own
+     children would otherwise capture, which makes the drop position jitter. */
+  pointer-events: none;
+}
+
+/* Reordering is a pointer gesture with a keyboard equivalent (the arrows), so
+   the visual noise of a drag has nothing to say to someone who has asked for
+   less motion. */
+@media (prefers-reduced-motion: reduce) {
+  .row__handle--grip {
+    transition: none;
+  }
 }
 
 .row__name {
@@ -1364,7 +1667,7 @@ kbd {
   background: color-mix(in oklab, var(--danger) 8%, transparent);
   border: var(--rule) solid color-mix(in oklab, var(--danger) 35%, transparent);
   border-left-width: 3px;
-  border-radius: 4px;
+  border-radius: var(--radius-xs);
   font-size: 0.78rem;
   color: var(--ink-2);
 }

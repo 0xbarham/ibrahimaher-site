@@ -4,18 +4,45 @@ export const prerender = false;
 import Base from '../../layouts/Base.astro';
 import {
   getPostBySlug,
+  getPostBySlugAnyStatus,
   getAuthor,
   getPublishedPosts,
   parseTags,
   getSettings,
   setting,
 } from '../../lib/db';
+import { isAuthed } from '../../lib/auth';
 import { renderMarkdown, markdownToText, readingTime } from '../../lib/markdown';
 import { makeAbs } from '../../lib/url';
 
 const { slug } = Astro.params;
 
-const post = slug ? await getPostBySlug(slug) : null;
+/*
+ * Draft preview.
+ *
+ * ?preview=1 renders an unpublished post in the real layout, so a draft can be
+ * checked the way a reader will see it rather than in the editor's
+ * approximation of it.
+ *
+ * The gate is an authenticated admin session — the same credential
+ * src/middleware.ts requires for /admin — and deliberately NOT a secret in the
+ * URL. A shareable preview token would be a second credential to leak, and this
+ * only ever needs to serve the one person who can already read the post in the
+ * CMS.
+ *
+ * Order matters: isPreview is only true once isAuthed has resolved true, so an
+ * anonymous visitor appending ?preview=1 falls through to the normal
+ * published-only lookup and still gets a 404 for a draft. Previews are also
+ * marked noindex below, so even a logged-in crawl cannot index one.
+ */
+const wantsPreview = Astro.url.searchParams.get('preview') === '1';
+const isPreview = wantsPreview && (await isAuthed(Astro.request));
+
+const post = slug
+  ? isPreview
+    ? await getPostBySlugAnyStatus(slug)
+    : await getPostBySlug(slug)
+  : null;
 if (!post) return Astro.rewrite('/404');
 
 const [author, settings, all] = await Promise.all([
@@ -120,11 +147,30 @@ const jsonLd = [
   twitterTitle={post.twitter_title || undefined}
   twitterDescription={post.twitter_description || undefined}
   twitterImage={post.twitter_image || undefined}
-  noindex={post.noindex === 1}
+  noindex={post.noindex === 1 || isPreview}
   jsonLd={jsonLd}
 >
   <article class="shell post">
     <header class="post__head stagger">
+      {
+        /*
+          Preview banner. A draft rendered in the real layout is indistinguishable
+          from a live page at a glance, which is exactly the confusion that gets
+          someone sharing a URL that 404s for everyone else. This states the
+          status in words and links back to the editor.
+        */
+        isPreview && (
+          <p class="preview-flag" role="status">
+            <strong>Preview</strong> — this post is <strong>{post.status}</strong>
+            {post.publish_at && <> until {post.publish_at.replace('T', ' ').replace('Z', ' UTC')}</>}
+            . Only you can see this page.
+            <a class="link" href={`/admin/posts/${post.id}`}>
+              Back to the editor
+            </a>
+          </p>
+        )
+      }
+
       <nav class="post__crumbs" aria-label="Breadcrumb" style="--i:0">
         <a class="link" href="/blog/">Writing</a>
         <span aria-hidden="true">/</span>
@@ -379,5 +425,32 @@ const jsonLd = [
   .post__body :global(h2),
   .post__body :global(h3) {
     scroll-margin-top: 5rem;
+  }
+
+  /*
+    Preview banner. Uses --warning rather than --accent: the accent is the site's
+    own voice and appears throughout a normal post, so a banner in it would read
+    as part of the design instead of as an interruption. This should look like
+    something the page is telling you, not something the page is.
+  */
+  .preview-flag {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: baseline;
+    gap: var(--space-2xs);
+    margin: 0 0 var(--space-l);
+    padding: var(--space-xs) var(--space-s);
+    border-left: var(--rule-strong) solid var(--warning);
+    background: var(--paper-2);
+    font-family: var(--font-mono);
+    font-size: var(--step--2);
+    letter-spacing: var(--tracking-mono);
+    line-height: var(--leading-mono);
+    color: var(--ink-2);
+  }
+
+  .preview-flag strong {
+    color: var(--ink);
+    font-weight: 600;
   }
 </style>

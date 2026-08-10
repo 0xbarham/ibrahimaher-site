@@ -57,15 +57,39 @@ body {
   A fixed pseudo-element is promoted to its own layer and costs nothing to
   scroll past.
 */
+/*
+  Paper grain, replacing the two accent radial gradients that used to wash the
+  corners of the page.
+
+  Those gradients were the last decorative gradient on the site, and a soft
+  coloured glow bleeding out of a corner is close enough to the generated-page
+  signature — the aurora blob behind the hero — that it was working against the
+  rest of this design. Texture does the same job honestly: it gives flat colour
+  some depth without pretending to be light.
+
+  The noise is an inline SVG turbulence filter, so it costs one data URI and no
+  network request, and it tiles at 180px to stay out of moiré range on a 2x
+  display. --grain-opacity is set per theme; dark paper needs roughly twice as
+  much before the eye reads any texture at all.
+*/
 body::before {
   content: '';
   position: fixed;
   inset: 0;
   z-index: -1;
   pointer-events: none;
-  background-image:
-    radial-gradient(circle at 15% 12%, var(--accent-soft), transparent 42%),
-    radial-gradient(circle at 85% 88%, var(--accent-soft), transparent 46%);
+  opacity: var(--grain-opacity);
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='180' height='180'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.82' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='180' height='180' filter='url(%23n)'/%3E%3C/svg%3E");
+  background-repeat: repeat;
+}
+
+/* Grain is decoration, and a fractal-noise field is precisely the kind of
+   texture that can bother people with visual sensitivities. It is the first
+   thing to go when motion and effects are turned down. */
+@media (prefers-reduced-motion: reduce) {
+  body::before {
+    opacity: 0;
+  }
 }
 
 img,
@@ -172,9 +196,38 @@ html {
   max-width: var(--measure);
 }
 
+/*
+  Section rhythm.
+
+  This used to be a single padding value on every .section, which put nine of the
+  homepage's eleven sections at an identical 95.6px top and bottom. That evenness
+  is the most machine-legible thing a long page can do — a person laying out
+  sixteen thousand pixels by hand varies the beat, because some sections belong
+  to the one above them and some need air before they land.
+
+  Three tempos, applied by meaning rather than by position:
+
+    .section            the default beat
+    .section--close     belongs to the section above it
+    .section--open      wants a breath before or after — used around the heaviest
+                        material on the page
+
+  The hairline carries the same information as the spacing. A --close section is
+  a continuation, so it gets no rule; putting a rule above every section is the
+  same uniformity problem in a different property.
+*/
 .section {
-  padding-block: clamp(var(--space-xl), 9vw, var(--space-3xl));
+  padding-block: var(--section-base);
   border-top: var(--rule) solid var(--rule-color);
+}
+
+.section--close {
+  padding-block: var(--section-close);
+  border-top: 0;
+}
+
+.section--open {
+  padding-block: var(--section-open);
 }
 
 .section:first-of-type {
@@ -192,8 +245,18 @@ h4 {
   font-family: var(--font-display);
   font-weight: 600;
   line-height: var(--leading-tight);
-  letter-spacing: var(--tracking-tight);
+  letter-spacing: var(--tracking-display);
   margin: 0;
+  /*
+    Newsreader ships an optical-size axis, and the instantiated woff2 keeps the
+    14-72 range rather than pinning it. This is the whole reason to pay for a
+    serif with an opsz axis: the browser thins the strokes and tightens the
+    spacing as the headline grows, so a 100px hero and a 20px subhead are drawn
+    as genuinely different cuts instead of one outline scaled up. `auto` is the
+    initial value, but it is declared here because it is load-bearing, not
+    incidental — anyone removing it would flatten every headline on the site.
+  */
+  font-optical-sizing: auto;
   /* Stop headlines breaking to a lonely last word. */
   text-wrap: balance;
 }
@@ -340,8 +403,8 @@ p {
 
 .prose blockquote {
   margin: var(--space-l) 0;
-  padding-left: var(--space-m);
-  border-left: 2px solid var(--accent);
+  padding-inline-start: var(--space-m);
+  border-inline-start: 2px solid var(--accent);
   font-size: var(--step-1);
   line-height: 1.45;
   color: var(--ink-2);
@@ -401,7 +464,7 @@ p {
 
 .prose th,
 .prose td {
-  text-align: left;
+  text-align: start;
   padding: var(--space-2xs) var(--space-xs);
   border-bottom: var(--rule) solid var(--rule-color);
 }
@@ -428,15 +491,36 @@ p {
   margin: var(--space-s) 0 0;
 }
 
+/*
+  Tags, set as type rather than as chips.
+
+  These used to be bordered pills at a 999px radius, and there are seventy-odd of
+  them on the homepage alone — frequently nested, chips inside cards inside cards.
+  A page assembled out of pills reads as a component library no matter what
+  colour it is, and it was the most repeated shape on the site by a wide margin.
+
+  They are now mono marginalia separated by hairline rules: the same information,
+  the same scan-ability, without borrowing a UI-kit component to say it.
+*/
 .tag {
   font-family: var(--font-mono);
-  font-size: var(--step--1);
+  font-size: var(--step--2);
+  letter-spacing: var(--tracking-mono);
+  line-height: var(--leading-mono);
   color: var(--ink-3);
-  border: var(--rule) solid var(--rule-color);
-  border-radius: 999px;
-  padding: 0.15em 0.7em;
+  padding-inline: var(--space-xs) 0;
+  padding-block: 0;
+  border-inline-start: var(--rule) solid var(--rule-color);
   white-space: nowrap;
   max-width: 100%;
+}
+
+/* The first tag carries no leading rule. On a wrapped row the rule reads as a
+   separator between items, which is exactly what it is, so only the very first
+   item needs special-casing. */
+.tag:first-child {
+  padding-inline-start: 0;
+  border-inline-start: 0;
 }
 
 /*
@@ -469,8 +553,11 @@ p {
   border: var(--rule) solid var(--ink);
   background: var(--ink);
   color: var(--paper);
-  padding: 0.6em 1.2em;
-  border-radius: 999px;
+  padding: 0.62em 1.35em;
+  /* Squared off. A rounded-full button beside rounded-full tags beside rounded
+     cards is the uniform-radius signature; here the button is the only element
+     on the page with a fill, so it does not also need a shape to be found. */
+  border-radius: var(--radius-xs);
   cursor: pointer;
   transition: transform var(--dur-fast) var(--ease-out),
     background-color var(--dur-fast) var(--ease-out);
@@ -524,9 +611,27 @@ p {
   }
 }
 
-/* Scroll-driven reveal. Where supported this runs entirely off the main thread
-   via animation-timeline; the @supports guard means unsupported browsers simply
-   show the content, so nothing is ever left invisible and no JS is needed. */
+/*
+  A vocabulary, not a single effect.
+
+  Every one of the thirty-five revealed elements on the old homepage ran the same
+  `rise` keyframe over the same range. One gesture repeated that many times stops
+  reading as motion design and starts reading as a loop — it is the animation
+  equivalent of setting every section to the same padding.
+
+  Two scroll behaviours now, chosen by what is being revealed:
+
+    .reveal        blocks of content — the original rise, still the default
+    .reveal--line  headings — the line lifts out from behind its own edge, the
+                   one gesture that actually suits type. Uses a clip inset rather
+                   than a wrapper element so it works on existing markup.
+
+  Framed imagery keeps its own `settle` below, which makes three gestures across
+  the page instead of one. Both stay on animation-timeline, so they cost no
+  main-thread work and need no JS or IntersectionObserver. The @supports guard
+  means an unsupported browser simply shows the content — nothing is ever left
+  invisible.
+*/
 @supports (animation-timeline: view()) {
   @media (prefers-reduced-motion: no-preference) {
     .reveal {
@@ -534,8 +639,34 @@ p {
       animation-timeline: view();
       animation-range: entry 0% entry 42%;
     }
+
+    .reveal--line {
+      animation: line-lift linear both;
+      animation-timeline: view();
+      /* Resolves earlier than .reveal: a heading that is still assembling itself
+         when the reader has reached the paragraph below it feels broken. */
+      animation-range: entry 0% entry 30%;
+    }
   }
 }
+
+/* The line lift. clip-path is animated alongside the transform so the type is
+   masked by its own box as it rises, instead of sliding in over whatever sits
+   above it. 118% on the bottom edge leaves room for descenders — clipping at
+   100% shears the tail off every g and y for the first half of the animation. */
+@keyframes line-lift {
+  from {
+    opacity: 0;
+    transform: translateY(0.36em);
+    clip-path: inset(0 0 100% 0);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+    clip-path: inset(-0.1em 0 -18% 0);
+  }
+}
+
 
 /* A slow settle for framed imagery: the picture eases back to its true size as
    it comes into view, so a screenshot arrives rather than appears.
@@ -564,12 +695,27 @@ p {
   }
 }
 
-/* Staggered reveal for the hero — runs once on load, not on scroll. */
+/*
+  Staggered reveal for the hero — runs once on load, not on scroll.
+
+  The delay used to be `calc(var(--i) * 90ms)`, which put six elements on an
+  exact 90/180/270/360/450ms lattice. A perfectly even stagger is the most
+  machine-legible thing motion can do; no one hand-times a sequence onto a clean
+  multiple. The tokens it now reads from are irregular, and the gaps between them
+  are themselves irregular, so the hero arrives with a cadence rather than a
+  count. Nothing else about the effect changed.
+*/
 @media (prefers-reduced-motion: no-preference) {
   .stagger > * {
-    animation: rise var(--dur-slow) var(--ease-out) both;
-    animation-delay: calc(var(--i, 0) * 90ms);
+    animation: rise var(--dur-reveal) var(--ease-entrance) both;
+    animation-delay: var(--stagger-1);
   }
+
+  .stagger > *:nth-child(2) { animation-delay: var(--stagger-2); }
+  .stagger > *:nth-child(3) { animation-delay: var(--stagger-3); }
+  .stagger > *:nth-child(4) { animation-delay: var(--stagger-4); }
+  .stagger > *:nth-child(5) { animation-delay: var(--stagger-5); }
+  .stagger > *:nth-child(n + 6) { animation-delay: var(--stagger-6); }
 }
 
 @media (prefers-reduced-motion: reduce) {
@@ -640,7 +786,7 @@ p {
    move on this site, so it may as well be the smooth one. */
 .skip-link {
   position: absolute;
-  left: var(--space-s);
+  inset-inline-start: var(--space-s);
   top: 0;
   z-index: 100;
   background: var(--ink);
@@ -658,4 +804,83 @@ p {
 
 .stack > * + * {
   margin-top: var(--flow, var(--space-m));
+}
+
+/* ---- Arabic / RTL --------------------------------------------------------
+   Everything directional in this file uses logical properties, so `dir="rtl"`
+   on <html> already mirrors the layout. What remains is typography: Newsreader
+   and Sofia Sans are latin-only subsets, so Arabic text would fall back to an
+   arbitrary system serif at the wrong optical size.
+
+   No Arabic webfont is loaded on purpose. The two latin faces are already
+   preloaded on the critical path, and adding a third — Arabic faces are large,
+   since the script needs four contextual forms per letter — would cost more LCP
+   than it buys in polish. The stack below names the good Arabic UI faces that
+   ship with Windows, macOS/iOS, and Android respectively, so nearly every real
+   reader gets a properly designed face at zero bytes. */
+:root {
+  --font-arabic:
+    'Noto Sans Arabic', 'Segoe UI', 'Geeza Pro', 'Droid Arabic Naskh', Tahoma, sans-serif;
+}
+
+/* `body` sets font-family directly, so it wins over anything inherited from
+   <html> — the RTL body must be named explicitly or Arabic prose keeps rendering
+   in the latin-only body face. */
+[lang='ar'],
+[dir='rtl'],
+[dir='rtl'] body {
+  font-family: var(--font-arabic);
+}
+
+/* Arabic has no capitals and a taller x-height equivalent, so latin letter-spacing
+   and tight leading both read as cramped. Loosen the line and drop the tracking
+   that the display face wants but Arabic actively fights. */
+[dir='rtl'] {
+  line-height: 1.85;
+}
+
+[dir='rtl'] h1,
+[dir='rtl'] h2,
+[dir='rtl'] h3,
+[dir='rtl'] .hero__name,
+[dir='rtl'] .section-title,
+[dir='rtl'] .eyebrow {
+  font-family: var(--font-arabic);
+  letter-spacing: normal;
+  line-height: 1.4;
+}
+
+/* Latin-script runs inside Arabic copy — "n8n", "OpenAI", brand names — keep the
+   body face. Without this they inherit the Arabic fallback, which renders latin
+   noticeably worse than the face chosen for it. */
+[dir='rtl'] [lang='en'],
+[dir='rtl'] code,
+[dir='rtl'] .tag {
+  font-family: var(--font-body);
+}
+
+/* The monogram is a latin lockup and stays LTR even on an RTL page — mirroring
+   "IMB" would spell it backwards. */
+[dir='rtl'] .wordmark {
+  direction: ltr;
+}
+
+/* ---- Language switcher --------------------------------------------------- */
+.lang-switch {
+  font-family: var(--font-body);
+  font-size: var(--step--1);
+  line-height: 1;
+  color: var(--ink-2);
+  text-decoration: none;
+  padding: var(--space-2xs) var(--space-xs);
+  border: var(--rule) solid var(--rule-color);
+  border-radius: 999px;
+  white-space: nowrap;
+  transition: color var(--dur-fast) var(--ease-out), border-color var(--dur-fast) var(--ease-out);
+}
+
+.lang-switch:hover,
+.lang-switch:focus-visible {
+  color: var(--ink);
+  border-color: var(--accent);
 }

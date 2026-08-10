@@ -3,6 +3,8 @@ export const prerender = false;
 
 import Base from '../layouts/Base.astro';
 import '../styles/landing.css';
+import { altLocalesFor } from '../lib/i18n';
+import { IRAQ_AREA_SERVED } from '../lib/schema-geo';
 
 /*
   Service page targeting "AI automation developer" in Erbil / Iraq / Kurdistan.
@@ -43,6 +45,8 @@ const faqs = [
   },
 ];
 
+const altLocales = altLocalesFor('/ai-automation-developer');
+
 const jsonLd = [
   {
     '@context': 'https://schema.org',
@@ -59,12 +63,7 @@ const jsonLd = [
       name: 'Ibrahim Maher Al-Bander',
       url: 'https://ibrahimaher.com',
     },
-    areaServed: [
-      { '@type': 'City', name: 'Erbil' },
-      { '@type': 'AdministrativeArea', name: 'Kurdistan Region' },
-      { '@type': 'Country', name: 'Iraq' },
-      'Worldwide (remote)',
-    ],
+    areaServed: IRAQ_AREA_SERVED,
     address: {
       '@type': 'PostalAddress',
       addressLocality: 'Erbil',
@@ -140,7 +139,9 @@ const jsonLd = [
 ];
 ---
 
-<Base title={title} description={description} keywords={keywords} ogType="website" jsonLd={jsonLd}>
+<Base title={title} description={description} keywords={keywords} ogType="website" jsonLd={jsonLd}
+  altLocales={altLocales}
+>
   <div class="shell lp">
     <section class="section hero stagger" aria-labelledby="svc-h">
       <p class="eyebrow" style="--i:0">Work with me</p>

@@ -23,7 +23,23 @@ const PUBLIC_ADMIN_PATHS = new Set([
   '/api/auth/setup',
 ]);
 
-const PROTECTED_PREFIXES = ['/admin', '/api/content', '/api/settings', '/api/media'];
+/*
+ * An allowlist of PRIVATE prefixes, so the failure mode is forgetting to expose
+ * something rather than forgetting to protect it.
+ *
+ * /api/posts carries the revision, bulk-action and duplicate endpoints. Every
+ * one of them writes, and none re-checks auth on its own — exactly like
+ * /api/content. Adding a route under that prefix without adding the prefix here
+ * would publish unauthenticated write access to the whole posts table.
+ */
+const PROTECTED_PREFIXES = [
+  '/admin',
+  '/api/content',
+  '/api/settings',
+  '/api/media',
+  '/api/posts',
+  '/api/reorder',
+];
 
 function isProtected(pathname: string): boolean {
   return PROTECTED_PREFIXES.some((p) => pathname === p || pathname.startsWith(`${p}/`));

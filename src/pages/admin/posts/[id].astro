@@ -223,6 +223,20 @@ const title = isNew ? 'New post' : post.title || '(untitled)';
                           </div>
                         </div>
 
+                        {/*
+                          read_time is a free-text column typed by hand, so it
+                          drifts from the body the moment the body is edited and
+                          nothing ever says so. The word count beside the label
+                          already knows the answer; this offers to write it into
+                          the field rather than silently overwriting a value the
+                          author may have chosen deliberately.
+                        */}
+                        <p class="md__stats">
+                          <button class="md__apply" type="button" id="md-apply-time" hidden>
+                            Use this as the read time
+                          </button>
+                        </p>
+
                         <p class="md__hint">
                           <kbd>Tab</kbd> indents. Press <kbd>Esc</kbd> then <kbd>Tab</kbd> to leave
                           the editor. <kbd>Ctrl</kbd>+<kbd>B</kbd> / <kbd>I</kbd> / <kbd>K</kbd> for
@@ -318,15 +332,17 @@ const title = isNew ? 'New post' : post.title || '(untitled)';
                   );
                 }
 
-                /* text | number | date | url | image */
+                /* text | number | date | datetime | url | image */
                 const type =
                   f.kind === 'number'
                     ? 'number'
                     : f.kind === 'date'
                       ? 'date'
-                      : f.kind === 'url'
-                        ? 'url'
-                        : 'text';
+                      : f.kind === 'datetime'
+                        ? 'datetime-local'
+                        : f.kind === 'url'
+                          ? 'url'
+                          : 'text';
 
                 return (
                   <div class={wide ? 'field field--wide' : 'field'}>
@@ -351,12 +367,30 @@ const title = isNew ? 'New post' : post.title || '(untitled)';
                       inputmode={f.kind === 'number' ? 'numeric' : undefined}
                     />
                     {f.kind === 'image' && (
-                      <img
-                        id={`thumb-${name}`}
-                        alt=""
-                        hidden
-                        style="max-height:5rem;width:auto;border-radius:4px;border:1px solid var(--rule-color);margin-top:0.3rem;"
-                      />
+                      <>
+                        {/*
+                          Image fields were a bare URL box: you had to open the
+                          media library in another tab, copy a URL, and paste it
+                          back. The picker reads the same /api/content/media the
+                          library page does, so there is no second source of
+                          truth — it is the same list, surfaced where it is used.
+                          The text input stays editable for external URLs.
+                        */}
+                        <div class="cluster" style="margin-top:0.35rem;">
+                          <button class="btn btn--sm" type="button" data-pick={name}>
+                            Choose from media
+                          </button>
+                          <button class="btn btn--sm" type="button" data-clear-image={name} hidden>
+                            Clear
+                          </button>
+                        </div>
+                        <img
+                          id={`thumb-${name}`}
+                          alt=""
+                          hidden
+                          style="max-height:5rem;width:auto;border-radius:var(--radius-xs);border:var(--rule) solid var(--rule-color);margin-top:0.3rem;"
+                        />
+                      </>
                     )}
                     <p class="fallback-note" id={`fb-${name}`} hidden />
                     {name === 'slug' && (
@@ -404,6 +438,49 @@ const title = isNew ? 'New post' : post.title || '(untitled)';
       ))
     }
   </form>
+
+  {/*
+    Media picker.
+
+    A native <dialog> rather than a hand-rolled overlay: it gets focus trapping,
+    Escape-to-close, inert background and the top layer from the platform, all of
+    which are easy to implement badly and pointless to reimplement.
+  */}
+  <dialog id="media-dialog" class="mediadlg" aria-label="Choose an image">
+    <div class="mediadlg__head">
+      <h2 class="mediadlg__title">Media library</h2>
+      <button class="btn btn--sm" type="button" id="media-close">Close</button>
+    </div>
+    <p class="status" id="media-status" role="status" aria-live="polite" />
+    <div class="mediadlg__grid" id="media-grid" />
+  </dialog>
+
+  {
+    /*
+      Version history.
+
+      A <details> rather than a tab: history is something you go looking for
+      after something has gone wrong, not a normal part of writing, so it should
+      not occupy a permanent slot in the editor's primary navigation. Collapsed
+      by default also means the list is only fetched when it is actually opened.
+
+      Hidden entirely on a new post — there is nothing to have a history of yet,
+      and an empty panel would just be a question the page cannot answer.
+    */
+    !isNew && (
+      <details class="card history" id="history" style="margin-top: var(--space-m);">
+        <summary class="history__summary">
+          <span>Version history</span>
+          <span class="muted history__hint">
+            Snapshots taken before each save — the last 20 are kept
+          </span>
+        </summary>
+
+        <p class="status" id="history-status" role="status" aria-live="polite" />
+        <div id="history-list" class="history__list" />
+      </details>
+    )
+  }
 
   {/* Slug-change redirect offer. Hidden until the slug actually changes. */}
   <div id="redirect-offer" class="card" hidden style="margin-top: var(--space-m); border-color: var(--accent);">
@@ -507,6 +584,25 @@ const title = isNew ? 'New post' : post.title || '(untitled)';
     if (kind === 'boolean') return (el as HTMLInputElement).checked ? 1 : 0;
     const raw = (el as HTMLInputElement).value;
     if (kind === 'number') return raw === '' ? null : Number(raw);
+
+    /*
+     * datetime-local has no timezone. Its value is wall-clock time in whatever
+     * zone the author happens to be in ("2026-08-14T09:00"), while the database
+     * stores ISO-8601 UTC. new Date(localString) interprets it in the browser's
+     * zone, which is exactly the intent — someone in Erbil scheduling 09:00
+     * means 09:00 where they are, and it must be stored as 06:00Z.
+     *
+     * Empty means "not scheduled" and must be null, not '' — publish_at is the
+     * one nullable column here, and '' would satisfy `publish_at IS NOT NULL` in
+     * PUBLISHED_PREDICATE and then fail the string comparison, quietly keeping a
+     * post invisible forever.
+     */
+    if (kind === 'datetime') {
+      if (!raw) return null;
+      const d = new Date(raw);
+      return Number.isNaN(d.getTime()) ? null : d.toISOString().replace(/\.\d{3}Z$/, 'Z');
+    }
+
     return raw;
   }
 
@@ -514,6 +610,28 @@ const title = isNew ? 'New post' : post.title || '(untitled)';
     const out: Record<string, unknown> = {};
     for (const el of fields()) out[el.dataset.field!] = getValue(el);
     return out;
+  }
+
+  /*
+   * Seed datetime fields from UTC into local wall-clock.
+   *
+   * The server renders publish_at as it is stored — '2026-08-14T06:00:00Z' —
+   * and a datetime-local input silently REJECTS that: it accepts no timezone
+   * designator and no seconds, so the control would simply render blank and the
+   * author would think their schedule had been lost. This runs once on load and
+   * rewrites the value into the shape the control accepts, in the author's own
+   * zone, which is the same zone getValue() converts back from on save.
+   */
+  for (const el of document.querySelectorAll<HTMLInputElement>('[data-kind="datetime"]')) {
+    if (!el.value) continue;
+    const d = new Date(el.value);
+    if (Number.isNaN(d.getTime())) {
+      el.value = '';
+      continue;
+    }
+    // toISOString() is UTC; subtracting the offset first makes the slice local.
+    const local = new Date(d.getTime() - d.getTimezoneOffset() * 60000);
+    el.value = local.toISOString().slice(0, 16);
   }
 
   // --- Tabs (roving tabindex, arrow keys) -------------------------------
@@ -1027,6 +1145,288 @@ const title = isNew ? 'New post' : post.title || '(untitled)';
     };
   }
 
+  // --- Media picker ------------------------------------------------------
+  const mediaDialog = document.getElementById('media-dialog') as HTMLDialogElement | null;
+  const mediaGrid = document.getElementById('media-grid');
+  const mediaStatus = document.getElementById('media-status');
+  let mediaTarget: string | null = null;
+  let mediaCache: Array<{ url: string; filename?: string; alt?: string; mime?: string }> | null = null;
+
+  function setMediaStatus(msg: string, kind?: 'ok' | 'err' | 'busy') {
+    if (!mediaStatus) return;
+    mediaStatus.textContent = msg;
+    mediaStatus.className = 'status' + (kind ? ` status--${kind}` : '');
+  }
+
+  async function openMedia(fieldName: string) {
+    mediaTarget = fieldName;
+    mediaDialog?.showModal();
+
+    // Cached for the life of the page: the library changes rarely and the
+    // dialog is often opened several times while filling out one post.
+    if (mediaCache) return renderMedia();
+
+    setMediaStatus('Loading…', 'busy');
+    try {
+      const res = await fetch('/api/content/media');
+      if (res.status === 401) return sessionExpired();
+
+      const data = (await res.json().catch(() => ({}))) as {
+        ok?: boolean;
+        error?: string;
+        data?: Array<{ url: string; filename?: string; alt?: string; mime?: string }>;
+      };
+      if (!res.ok || !data.ok) throw new Error(data.error || `Failed (${res.status})`);
+
+      // Only images are selectable here — the library also holds other uploads,
+      // and offering a PDF as a hero image is a bug waiting to be filed.
+      mediaCache = (data.data ?? []).filter((m) => !m.mime || m.mime.startsWith('image/'));
+      renderMedia();
+    } catch (err) {
+      setMediaStatus(err instanceof Error ? err.message : 'Could not load media.', 'err');
+    }
+  }
+
+  function renderMedia() {
+    if (!mediaGrid) return;
+    mediaGrid.innerHTML = '';
+
+    if (!mediaCache || mediaCache.length === 0) {
+      setMediaStatus('No images uploaded yet. Add some in Media, then reopen this.');
+      return;
+    }
+
+    setMediaStatus('');
+    for (const m of mediaCache) {
+      const btn = document.createElement('button');
+      btn.type = 'button';
+      btn.className = 'mediadlg__item';
+      btn.title = m.filename || m.url;
+
+      const img = document.createElement('img');
+      img.src = m.url;
+      img.alt = m.alt || '';
+      img.loading = 'lazy';
+
+      const cap = document.createElement('span');
+      cap.className = 'mediadlg__name';
+      cap.textContent = m.filename || m.url.split('/').pop() || m.url;
+
+      btn.append(img, cap);
+      btn.addEventListener('click', () => {
+        if (!mediaTarget) return;
+        const field = byName(mediaTarget) as HTMLInputElement | null;
+        if (field) {
+          field.value = m.url;
+          // Dispatch so the thumbnail, previews, dirty flag and local draft all
+          // update exactly as they would from typing.
+          field.dispatchEvent(new Event('input', { bubbles: true }));
+        }
+        mediaDialog?.close();
+      });
+
+      mediaGrid.append(btn);
+    }
+  }
+
+  document.getElementById('media-close')?.addEventListener('click', () => mediaDialog?.close());
+
+  document.addEventListener('click', (e) => {
+    const t = e.target as HTMLElement;
+
+    const pick = t.closest<HTMLButtonElement>('[data-pick]');
+    if (pick) {
+      void openMedia(pick.dataset.pick!);
+      return;
+    }
+
+    const clear = t.closest<HTMLButtonElement>('[data-clear-image]');
+    if (clear) {
+      const field = byName(clear.dataset.clearImage!) as HTMLInputElement | null;
+      if (field) {
+        field.value = '';
+        field.dispatchEvent(new Event('input', { bubbles: true }));
+      }
+    }
+  });
+
+  /** Show "Clear" only when an image field actually holds something. */
+  function syncImageClears() {
+    for (const btn of document.querySelectorAll<HTMLButtonElement>('[data-clear-image]')) {
+      const field = byName(btn.dataset.clearImage!) as HTMLInputElement | null;
+      btn.hidden = !field?.value.trim();
+    }
+  }
+  form.addEventListener('input', syncImageClears);
+  syncImageClears();
+
+  // --- Body measurements -------------------------------------------------
+  //
+  // updateCounter() already knows how to count the body — it has a body_md
+  // branch computing words and minutes with the same formula as
+  // src/lib/markdown.ts readingTime(). It was simply never being called: the
+  // input handler guards on `if (LIMITS[name])`, and body_md is not in LIMITS,
+  // so the counter beside the Body label sat at whatever it was on load.
+  // Calling it on input is the whole fix; nothing here recomputes anything.
+  const mdArea = document.querySelector<HTMLTextAreaElement>('[data-kind="markdown"]');
+  const applyTimeBtn = document.getElementById('md-apply-time') as HTMLButtonElement | null;
+
+  /** Same shape as readingTime() in src/lib/markdown.ts, from the same count. */
+  function currentReadTime(): string {
+    if (!mdArea) return '';
+    const words = mdToText(mdArea.value, Number.MAX_SAFE_INTEGER).split(/\s+/).filter(Boolean).length;
+    return `~${Math.max(1, Math.round(words / 200))} min read`;
+  }
+
+  function syncReadTimeOffer() {
+    const field = byName('read_time') as HTMLInputElement | null;
+    // Only offer when it would change something — a button that writes the value
+    // already in the field is noise.
+    if (applyTimeBtn && field) applyTimeBtn.hidden = field.value.trim() === currentReadTime();
+  }
+
+  applyTimeBtn?.addEventListener('click', () => {
+    const field = byName('read_time') as HTMLInputElement | null;
+    if (!field) return;
+    field.value = currentReadTime();
+    field.dispatchEvent(new Event('input', { bubbles: true }));
+    syncReadTimeOffer();
+  });
+
+  mdArea?.addEventListener('input', () => {
+    updateCounter('body_md');
+    syncReadTimeOffer();
+  });
+  updateCounter('body_md');
+  syncReadTimeOffer();
+
+  // --- Version history ---------------------------------------------------
+  //
+  // Loaded lazily on first open. History is consulted rarely and costs a D1
+  // round trip, so fetching it on every editor load would tax the common case to
+  // serve the uncommon one.
+  const history = document.getElementById('history') as HTMLDetailsElement | null;
+  const historyList = document.getElementById('history-list');
+  const historyStatus = document.getElementById('history-status');
+  let historyLoaded = false;
+
+  function setHistoryStatus(msg: string, kind?: 'ok' | 'err' | 'busy') {
+    if (!historyStatus) return;
+    historyStatus.textContent = msg;
+    historyStatus.className = 'status' + (kind ? ` status--${kind}` : '');
+  }
+
+  /** '2026-08-10T15:04:02Z' → '10 Aug 2026, 15:04 UTC'. */
+  function fmtStamp(iso: string): string {
+    const d = new Date(iso);
+    if (Number.isNaN(d.getTime())) return iso;
+    return (
+      d.toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric', timeZone: 'UTC' }) +
+      ', ' +
+      d.toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit', timeZone: 'UTC' }) +
+      ' UTC'
+    );
+  }
+
+  async function loadHistory() {
+    if (!historyList || !CFG.postId) return;
+    setHistoryStatus('Loading…', 'busy');
+    try {
+      const res = await fetch(`/api/posts/revisions?post_id=${CFG.postId}`);
+      if (res.status === 401) return sessionExpired();
+
+      const data = (await res.json().catch(() => ({}))) as {
+        ok?: boolean;
+        error?: string;
+        data?: Array<{ id: number; created_at: string; note: string | null; title: string | null; status: string | null }>;
+      };
+      if (!res.ok || !data.ok) throw new Error(data.error || `Failed (${res.status})`);
+
+      const rows = data.data ?? [];
+      historyList.innerHTML = '';
+
+      if (rows.length === 0) {
+        setHistoryStatus('No snapshots yet — the first one is taken the next time you save.');
+        return;
+      }
+
+      setHistoryStatus('');
+      for (const r of rows) {
+        const row = document.createElement('div');
+        row.className = 'history__row';
+
+        const meta = document.createElement('div');
+        meta.innerHTML =
+          `<div class="history__when">${fmtStamp(r.created_at)}</div>` +
+          `<div class="muted history__note">${r.note ?? ''}${
+            r.status ? ` · ${r.status}` : ''
+          }</div>`;
+
+        const actions = document.createElement('div');
+        actions.className = 'cluster';
+
+        const restore = document.createElement('button');
+        restore.type = 'button';
+        restore.className = 'btn btn--sm';
+        restore.textContent = 'Restore';
+        // Two-step, matching the rest of the admin: no native confirm().
+        let armed = false;
+        restore.addEventListener('click', () => {
+          if (!armed) {
+            armed = true;
+            restore.textContent = 'Confirm restore';
+            restore.classList.add('is-armed');
+            return;
+          }
+          void doRestore(r.id);
+        });
+
+        actions.append(restore);
+        row.append(meta, actions);
+        historyList.append(row);
+      }
+    } catch (err) {
+      setHistoryStatus(err instanceof Error ? err.message : 'Could not load history.', 'err');
+    }
+  }
+
+  async function doRestore(revisionId: number) {
+    setHistoryStatus('Restoring…', 'busy');
+    try {
+      const res = await fetch('/api/posts/revisions', {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ id: revisionId }),
+      });
+      if (res.status === 401) return sessionExpired();
+
+      const data = (await res.json().catch(() => ({}))) as { ok?: boolean; error?: string };
+      if (!res.ok || !data.ok) throw new Error(data.error || `Restore failed (${res.status})`);
+
+      /*
+       * Reload rather than repopulating the form in place.
+       *
+       * A restore rewrites seven fields including the markdown body, and the
+       * editor derives a lot from those — preview, counters, tag chips, slug
+       * checks. Rebuilding all of that by hand is how a form ends up showing one
+       * thing while the database holds another. Clearing the local draft first
+       * stops the restore-prompt from immediately offering to undo the restore.
+       */
+      dirty = false;
+      clearLocal();
+      location.reload();
+    } catch (err) {
+      setHistoryStatus(err instanceof Error ? err.message : 'Restore failed.', 'err');
+    }
+  }
+
+  history?.addEventListener('toggle', () => {
+    if (history.open && !historyLoaded) {
+      historyLoaded = true;
+      void loadHistory();
+    }
+  });
+
   // --- Dirty tracking + localStorage autosave ---------------------------
   const LS_KEY = `admin:post:${CFG.isNew ? 'new' : CFG.postId}`;
   let dirty = false;
@@ -1167,6 +1567,31 @@ const title = isNew ? 'New post' : post.title || '(untitled)';
 
     const slugChanged =
       !isCreate && CFG.originalSlug && body.slug !== CFG.originalSlug ? String(body.slug) : null;
+
+    /*
+     * Snapshot BEFORE writing, and only on an edit.
+     *
+     * The order is the entire point: what lands in history is the last
+     * known-good version, not the one being saved. Restoring is then always
+     * "go back to before this save", which is what someone wants at the moment
+     * they realise they have destroyed something.
+     *
+     * Deliberately swallowed on failure. A snapshot that errors must not block
+     * the save — losing a history entry is an inconvenience, refusing to store
+     * the writer's actual work because the safety net hiccuped is much worse.
+     * The local draft in localStorage is still there either way.
+     */
+    if (!isCreate && CFG.postId) {
+      try {
+        await fetch('/api/posts/revisions', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ post_id: CFG.postId, note: 'before save' }),
+        });
+      } catch {
+        // Non-fatal, by design. See above.
+      }
+    }
 
     try {
       const res = await fetch('/api/content/posts', {

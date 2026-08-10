@@ -428,6 +428,27 @@ const titleCol = columns.includes('title') ? 'title' : columns.includes('categor
     head.append(handle, name, spacer);
 
     if (!isNew) {
+      /*
+       * The id chip doubles as the drag grip.
+       *
+       * draggable is switched on only while the pointer is held on this handle,
+       * and off again on dragend. Marking the whole card permanently draggable
+       * is the usual shortcut and it breaks the card: you can no longer select
+       * text inside its inputs, because the browser starts a drag instead of a
+       * selection.
+       */
+      handle.classList.add('row__handle--grip');
+      handle.title = 'Drag to reorder';
+      handle.addEventListener('pointerdown', () => {
+        card.draggable = true;
+      });
+      handle.addEventListener('pointerup', () => {
+        card.draggable = false;
+      });
+      card.addEventListener('dragend', () => {
+        card.draggable = false;
+      });
+
       const up = document.createElement('button');
       up.type = 'button';
       up.className = 'btn btn--sm btn--icon';
@@ -630,6 +651,132 @@ const titleCol = columns.includes('title') ? 'title' : columns.includes('categor
       moved?.querySelector<HTMLButtonElement>(`[data-move="${dir}"]`)?.focus();
     } catch (err) {
       setStatus(err instanceof Error ? err.message : 'Reorder failed.', 'err', true);
+    }
+  }
+
+  /* ---------------------------------------------------------------------
+     Drag to reorder
+
+     A pointer alternative to the arrows, not a replacement for them. HTML5
+     drag-and-drop does not fire on touch at all, and dragging is not reachable
+     from a keyboard, so removing the arrows would make reordering impossible on
+     a phone and impossible without a mouse. Both paths write the same column.
+
+     The arrows swap two adjacent rows through the generic row endpoint. A drag
+     can move a row anywhere, which renumbers every row in between, so it posts
+     the whole resulting order to /api/reorder and lets D1 apply it in one batch.
+     --------------------------------------------------------------------- */
+
+  /** Ordered, saved rows only — a half-filled "new" card has no place in an order. */
+  const orderedCards = () =>
+    Array.from(rowsEl.querySelectorAll<HTMLElement>('.row:not([data-new])'));
+
+  /**
+   * The card the dragged row should be inserted BEFORE, decided by pointer
+   * position against each card's vertical midpoint. Returns null for "past the
+   * last one", which append handles.
+   */
+  function cardAfter(y: number, dragging: HTMLElement): HTMLElement | null {
+    let closest: HTMLElement | null = null;
+    let closestOffset = Number.NEGATIVE_INFINITY;
+
+    for (const card of orderedCards()) {
+      if (card === dragging) continue;
+      const box = card.getBoundingClientRect();
+      const offset = y - box.top - box.height / 2;
+      // The largest negative offset is the nearest card whose midpoint we are
+      // still above — i.e. the one we would land in front of.
+      if (offset < 0 && offset > closestOffset) {
+        closestOffset = offset;
+        closest = card;
+      }
+    }
+    return closest;
+  }
+
+  let draggingCard: HTMLElement | null = null;
+  /** DOM order before the drag, so a failed save can be visually rolled back. */
+  let orderBeforeDrag: string[] = [];
+
+  rowsEl.addEventListener('dragstart', (e) => {
+    const card = (e.target as HTMLElement)?.closest<HTMLElement>('.row:not([data-new])');
+    if (!card) return;
+
+    draggingCard = card;
+    orderBeforeDrag = orderedCards().map((c) => c.dataset.id!);
+    card.classList.add('row--dragging');
+
+    // Firefox refuses to start a drag unless setData is called.
+    e.dataTransfer?.setData('text/plain', card.dataset.id ?? '');
+    if (e.dataTransfer) e.dataTransfer.effectAllowed = 'move';
+  });
+
+  rowsEl.addEventListener('dragover', (e) => {
+    if (!draggingCard) return;
+    // Without preventDefault the browser treats the area as an invalid target
+    // and never fires drop.
+    e.preventDefault();
+    if (e.dataTransfer) e.dataTransfer.dropEffect = 'move';
+
+    const before = cardAfter(e.clientY, draggingCard);
+    if (before) rowsEl.insertBefore(draggingCard, before);
+    else rowsEl.append(draggingCard);
+  });
+
+  rowsEl.addEventListener('drop', (e) => {
+    if (!draggingCard) return;
+    e.preventDefault();
+    const card = draggingCard;
+    card.classList.remove('row--dragging');
+    draggingCard = null;
+    void persistOrder(card);
+  });
+
+  // Dropping outside the list, or pressing Escape mid-drag, fires dragend
+  // without drop. The DOM has already been reordered by dragover, so the
+  // pre-drag order has to be put back or the screen would keep showing a move
+  // that was never committed.
+  rowsEl.addEventListener('dragend', () => {
+    if (!draggingCard) return;
+    draggingCard.classList.remove('row--dragging');
+    draggingCard = null;
+    restoreOrder(orderBeforeDrag);
+  });
+
+  function restoreOrder(ids: string[]) {
+    for (const id of ids) {
+      const card = rowsEl.querySelector<HTMLElement>(`.row[data-id="${id}"]`);
+      if (card) rowsEl.append(card);
+    }
+  }
+
+  async function persistOrder(moved: HTMLElement) {
+    const ids = orderedCards().map((c) => Number(c.dataset.id));
+
+    // Nothing actually moved — don't spend a write on it.
+    if (ids.join() === orderBeforeDrag.join()) return;
+
+    setStatus('Saving order…', 'busy', true);
+    try {
+      await api('/api/reorder', {
+        method: 'POST',
+        body: JSON.stringify({ table: CFG.table, ids }),
+      });
+      setStatus('Order saved.', 'ok');
+      await load();
+      /*
+       * Put focus on the moved row's up-arrow, exactly as move() does. Not the
+       * drag handle: it is a <span>, so it takes no focus, and calling focus()
+       * on it would silently do nothing while looking like it had been handled.
+       */
+      rowsEl
+        .querySelector<HTMLButtonElement>(`.row[data-id="${moved.dataset.id}"] [data-move="up"]`)
+        ?.focus();
+    } catch (err) {
+      // The list on screen no longer matches the database, so put it back rather
+      // than leave a lie in front of the reader.
+      restoreOrder(orderBeforeDrag);
+      setStatus(err instanceof Error ? err.message : 'Could not save the new order.', 'err', true);
     }
   }
 

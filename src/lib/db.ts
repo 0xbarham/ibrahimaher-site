@@ -170,20 +170,95 @@ export interface Redirect {
 export const findRedirect = (source: string) =>
   first<Redirect>('SELECT * FROM redirects WHERE source = ?', source);
 
+/**
+ * What "live" means, in one place.
+ *
+ * A post is public if it is published outright, or if it is scheduled and its
+ * publish_at has passed. Because the site is SSR on every request, that second
+ * clause *is* the scheduler — there is no cron trigger and no queue. A scheduled
+ * post goes live on the first request after its timestamp, which on this site
+ * means a few minutes of drift at worst, and costs no extra moving parts.
+ *
+ * This is a single exported constant rather than repeated inline, because it is
+ * the one predicate in the codebase where getting it wrong leaks an unpublished
+ * draft to the public internet. Every public read must use it: listings, the
+ * single-post route, RSS, and the sitemap.
+ *
+ * strftime(...,'now') is UTC in SQLite, and publish_at is written as ISO-8601
+ * UTC, so the comparison is like-for-like with no timezone conversion. Storing
+ * local time here would silently publish posts hours early or late.
+ */
+export const PUBLISHED_PREDICATE = `(
+  status = 'published'
+  OR (status = 'scheduled' AND publish_at IS NOT NULL
+      AND publish_at <= strftime('%Y-%m-%dT%H:%M:%SZ', 'now'))
+)`;
+
 /** Public listing: drafts must never leak to the live site. */
 export const getPublishedPosts = (limit?: number) =>
   all<Post>(
-    `SELECT * FROM posts WHERE status = 'published'
+    `SELECT * FROM posts WHERE ${PUBLISHED_PREDICATE}
      ORDER BY post_date DESC, sort_order ASC${limit ? ' LIMIT ?' : ''}`,
     ...(limit ? [limit] : [])
   );
 
 export const getPostBySlug = (slug: string) =>
-  first<Post>("SELECT * FROM posts WHERE slug = ? AND status = 'published'", slug);
+  first<Post>(`SELECT * FROM posts WHERE slug = ? AND ${PUBLISHED_PREDICATE}`, slug);
 
 /** Admin listing: drafts included. */
 export const getAllPosts = () =>
   all<Post>('SELECT * FROM posts ORDER BY post_date DESC, sort_order ASC');
+
+/**
+ * Any post by slug regardless of status — for the admin's draft preview only.
+ *
+ * This deliberately does NOT check status, which makes it the one query in this
+ * file capable of exposing an unpublished post. Its single caller
+ * (src/pages/blog/[slug].astro) gates it behind a valid admin session before it
+ * is ever reached, and marks the response noindex. Never call it from a public
+ * code path.
+ */
+export const getPostBySlugAnyStatus = (slug: string) =>
+  first<Post>('SELECT * FROM posts WHERE slug = ?', slug);
+
+// ---------------------------------------------------------------- revisions
+
+export interface PostRevision {
+  id: number;
+  post_id: number;
+  title: string | null;
+  slug: string | null;
+  excerpt: string | null;
+  body_md: string | null;
+  status: string | null;
+  category: string | null;
+  tags_json: string | null;
+  created_at: string;
+  note: string | null;
+}
+
+/**
+ * History for one post, newest first. body_md is excluded on purpose: rendering
+ * a list of twenty timestamps does not need twenty copies of the largest column
+ * in the schema crossing the wire. getRevision() fetches the body when one is
+ * actually opened.
+ */
+export const getRevisionList = (postId: number, limit = 20) =>
+  all<Omit<PostRevision, 'body_md'>>(
+    `SELECT id, post_id, title, slug, excerpt, status, category, tags_json,
+            created_at, note
+       FROM post_revisions
+      WHERE post_id = ?
+      ORDER BY created_at DESC, id DESC
+      LIMIT ?`,
+    postId,
+    limit
+  );
+
+/** One full revision, body included — fetched only when previewing or
+ *  restoring, which is the only time the body is worth transferring. */
+export const getRevision = (id: number) =>
+  first<PostRevision>('SELECT * FROM post_revisions WHERE id = ?', id);
 
 /**
  * Global settings as a plain map. Rendering must not depend on a row existing,

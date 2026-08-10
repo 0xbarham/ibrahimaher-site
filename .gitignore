@@ -5,3 +5,9 @@ dist/
 .dev.vars
 .env
 .dev-password.txt
+
+# D1 exports. A full dump includes the admin_users table, so it carries the
+# password hash in plain sight — these must never reach the remote. The one
+# tracked file in backups/ (pre-cms-migration.sql) predates that table and was
+# checked: it contains no credentials.
+backups/d1-export-*.sql

@@ -3,6 +3,8 @@ export const prerender = false;
 
 import Base from '../layouts/Base.astro';
 import '../styles/landing.css';
+import { altLocalesFor } from '../lib/i18n';
+import { IRAQ_AREA_SERVED, SERVICE_OFFERS } from '../lib/schema-geo';
 
 /*
   Reconciliation page. The live apex already serves /n8n-developer (captured in
@@ -17,12 +19,20 @@ const title = 'Hire an n8n Developer in Erbil, Iraq | Ibrahim Al-Bander';
 const description =
   'Hire an n8n & AI automation developer in Erbil, Iraq. Production n8n workflows, AI agents, and business automations for clients in Iraq and worldwide.';
 const keywords =
-  'hire n8n developer, n8n developer Iraq, n8n developer Erbil, automation developer Iraq, n8n automation services Erbil, n8n consultant Iraq, n8n expert Kurdistan, AI automation developer Iraq';
+  'hire n8n developer, n8n developer Iraq, n8n developer Erbil, n8n developer Baghdad, automation developer Iraq, n8n automation services Erbil, n8n consultant Iraq, n8n expert Kurdistan, AI automation developer Iraq';
 
-// Ported verbatim from the three <script type="application/ld+json"> blocks in the
-// snapshot. Keeps @id #service and provider Person @id #ibrahim exactly. The
-// makesOffer→OfferCatalog range quirk is intentionally preserved for fidelity and
-// is fixed site-wide in the Phase-1 JSON-LD consolidation, not here.
+const altLocales = altLocalesFor('/n8n-developer');
+
+// Ported from the three <script type="application/ld+json"> blocks in the
+// snapshot. Keeps @id #service and provider Person @id #ibrahim exactly.
+//
+// Two things no longer match the snapshot, both deliberate:
+//  - makesOffer now takes an Offer array (lib/schema-geo.ts) instead of wrapping
+//    an OfferCatalog, which was out of range for the property. This is the
+//    consolidation the previous comment here deferred.
+//  - areaServed names the governorate capitals rather than Erbil alone. The work
+//    is delivered remotely, so the narrow claim understated the real service area
+//    and left Baghdad — the largest market in the country — unstated.
 const jsonLd = [
   {
     '@context': 'https://schema.org',
@@ -39,12 +49,7 @@ const jsonLd = [
       name: 'Ibrahim Maher Al-Bander',
       url: 'https://ibrahimaher.com',
     },
-    areaServed: [
-      { '@type': 'City', name: 'Erbil' },
-      { '@type': 'AdministrativeArea', name: 'Kurdistan Region' },
-      { '@type': 'Country', name: 'Iraq' },
-      'Worldwide (remote)',
-    ],
+    areaServed: IRAQ_AREA_SERVED,
     address: {
       '@type': 'PostalAddress',
       addressLocality: 'Erbil',
@@ -55,52 +60,7 @@ const jsonLd = [
     telephone: '+9647719620471',
     email: 'mailto:me@ibrahimaher.com',
     priceRange: '$$',
-    makesOffer: {
-      '@type': 'OfferCatalog',
-      name: 'n8n & AI automation services',
-      itemListElement: [
-        {
-          '@type': 'Offer',
-          itemOffered: {
-            '@type': 'Service',
-            name: 'n8n workflow automation',
-            serviceType: 'n8n workflow automation',
-          },
-        },
-        {
-          '@type': 'Offer',
-          itemOffered: {
-            '@type': 'Service',
-            name: 'AI agent & chatbot development',
-            serviceType: 'AI agent development',
-          },
-        },
-        {
-          '@type': 'Offer',
-          itemOffered: {
-            '@type': 'Service',
-            name: 'AI invoice & lead automation',
-            serviceType: 'AI document and lead automation',
-          },
-        },
-        {
-          '@type': 'Offer',
-          itemOffered: {
-            '@type': 'Service',
-            name: 'Business process automation',
-            serviceType: 'Business process automation',
-          },
-        },
-        {
-          '@type': 'Offer',
-          itemOffered: {
-            '@type': 'Service',
-            name: 'Integrations & custom n8n function nodes',
-            serviceType: 'API integration',
-          },
-        },
-      ],
-    },
+    makesOffer: SERVICE_OFFERS,
   },
   {
     '@context': 'https://schema.org',
@@ -164,7 +124,14 @@ const jsonLd = [
 ];
 ---
 
-<Base title={title} description={description} keywords={keywords} ogType="website" jsonLd={jsonLd}>
+<Base
+  title={title}
+  description={description}
+  keywords={keywords}
+  ogType="website"
+  jsonLd={jsonLd}
+  altLocales={altLocales}
+>
   <div class="shell lp">
     <section class="section hero stagger" aria-labelledby="svc-h">
       <p class="eyebrow" style="--i:0">Work with me</p>

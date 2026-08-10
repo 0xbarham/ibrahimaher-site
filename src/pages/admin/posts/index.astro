@@ -43,6 +43,7 @@ const drafts = posts.filter((p) => p.status !== 'published').length;
         <select class="select" id="status-filter">
           <option value="">All statuses</option>
           <option value="published">Published</option>
+          <option value="scheduled">Scheduled</option>
           <option value="draft">Drafts</option>
         </select>
       </div>
@@ -53,6 +54,24 @@ const drafts = posts.filter((p) => p.status !== 'published').length;
     </div>
 
     <p class="status" id="list-status" role="status" aria-live="polite"></p>
+
+    {/*
+      Bulk bar. Hidden until something is selected rather than always-present-
+      but-disabled: a permanently visible toolbar of dead buttons is noise on
+      every visit, and the selection state is what makes the actions meaningful.
+      aria-live announces the count so it is not a purely visual change.
+    */}
+    <div class="bulkbar" id="bulk-bar" hidden>
+      <p class="bulkbar__count" role="status" aria-live="polite">
+        <span id="bulk-count">0</span> selected
+      </p>
+      <div class="cluster">
+        <button class="btn btn--sm" type="button" data-bulk="published">Publish</button>
+        <button class="btn btn--sm" type="button" data-bulk="draft">Move to drafts</button>
+        <button class="btn btn--sm btn--danger" type="button" data-bulk="delete">Delete</button>
+        <button class="btn btn--sm" type="button" id="bulk-clear">Clear</button>
+      </div>
+    </div>
 
     {
       total === 0 ? (
@@ -66,6 +85,13 @@ const drafts = posts.filter((p) => p.status !== 'published').length;
           <table class="table" id="posts-table">
             <thead>
               <tr>
+                <th scope="col" class="table__check">
+                  <input
+                    type="checkbox"
+                    id="select-all"
+                    aria-label="Select all visible posts"
+                  />
+                </th>
                 <th scope="col">Title</th>
                 <th scope="col">Status</th>
                 <th scope="col">Category</th>
@@ -79,9 +105,23 @@ const drafts = posts.filter((p) => p.status !== 'published').length;
                 <tr
                   data-row
                   data-id={p.id}
-                  data-status={p.status === 'published' ? 'published' : 'draft'}
+                  data-status={
+                    p.status === 'published'
+                      ? 'published'
+                      : p.status === 'scheduled'
+                        ? 'scheduled'
+                        : 'draft'
+                  }
                   data-search={`${p.title} ${p.slug} ${p.category}`.toLowerCase()}
                 >
+                  <td class="table__check">
+                    <input
+                      type="checkbox"
+                      data-select
+                      value={p.id}
+                      aria-label={`Select ${p.title || 'untitled post'}`}
+                    />
+                  </td>
                   <td>
                     <a class="table__title" href={`/admin/posts/${p.id}`}>
                       {p.title || '(untitled)'}
@@ -91,10 +131,34 @@ const drafts = posts.filter((p) => p.status !== 'published').length;
                     </div>
                   </td>
                   <td>
-                    <span class={`badge badge--${p.status === 'published' ? 'published' : 'draft'}`}>
+                    {/*
+                      Three states, not two. A scheduled post is neither live nor
+                      abandoned, and collapsing it into "Draft" is how one sits
+                      queued for a week without anyone noticing it never went out.
+                      The publish time is shown inline because "scheduled" without
+                      "when" is not actionable.
+                    */}
+                    <span
+                      class={`badge badge--${
+                        p.status === 'published'
+                          ? 'published'
+                          : p.status === 'scheduled'
+                            ? 'scheduled'
+                            : 'draft'
+                      }`}
+                    >
                       <span class="badge__dot" aria-hidden="true" />
-                      {p.status === 'published' ? 'Published' : 'Draft'}
+                      {p.status === 'published'
+                        ? 'Published'
+                        : p.status === 'scheduled'
+                          ? 'Scheduled'
+                          : 'Draft'}
                     </span>
+                    {p.status === 'scheduled' && p.publish_at && (
+                      <div class="muted" style="font-family: var(--font-mono); font-size: 0.68rem;">
+                        {p.publish_at.replace('T', ' ').replace('Z', ' UTC')}
+                      </div>
+                    )}
                   </td>
                   <td data-empty={!p.category}>{p.category || '—'}</td>
                   <td class="muted" style="white-space: nowrap;">{p.post_date || '—'}</td>
@@ -107,23 +171,38 @@ const drafts = posts.filter((p) => p.status !== 'published').length;
                         Edit
                       </a>
                       {/*
-                        Drafts 404 on the public site by design — getPostBySlug()
-                        filters on status. Opening one is still the fastest way to
-                        confirm that, so the link stays and the title says so.
+                        This used to be a link that knowingly 404'd for drafts,
+                        with a title attribute explaining why. Now that
+                        /blog/<slug>?preview=1 renders any status behind an admin
+                        session, an unpublished post opens in the real layout
+                        instead — which is what someone clicking "View" on a draft
+                        was always trying to do.
                       */}
                       <a
                         class="btn btn--sm"
-                        href={`/blog/${p.slug}`}
+                        href={
+                          p.status === 'published' ? `/blog/${p.slug}` : `/blog/${p.slug}?preview=1`
+                        }
                         target="_blank"
                         rel="noopener"
                         title={
                           p.status === 'published'
                             ? 'Open the live post in a new tab'
-                            : 'Drafts are not public — this will 404 until published'
+                            : 'Preview this unpublished post in the real layout'
                         }
                       >
-                        View{p.status !== 'published' ? ' ↗*' : ' ↗'}
+                        {p.status === 'published' ? 'View ↗' : 'Preview ↗'}
                       </a>
+                      <button
+                        class="btn btn--sm"
+                        type="button"
+                        data-duplicate
+                        data-id={p.id}
+                        data-title={p.title || '(untitled)'}
+                        title="Create a draft copy of this post"
+                      >
+                        Duplicate
+                      </button>
                       <button
                         class="btn btn--sm btn--danger"
                         type="button"
@@ -138,7 +217,7 @@ const drafts = posts.filter((p) => p.status !== 'published').length;
                 </tr>
               ))}
               <tr id="no-results" hidden>
-                <td colspan="6" class="muted" style="text-align:center; padding: var(--space-m);">
+                <td colspan="7" class="muted" style="text-align:center; padding: var(--space-m);">
                   No posts match that filter.
                 </td>
               </tr>
@@ -149,8 +228,9 @@ const drafts = posts.filter((p) => p.status !== 'published').length;
     }
 
     <p class="muted" style="font-size: 0.72rem;">
-      * Draft posts are not published to the live site and will return 404 until their status is
-      set to published.
+      Drafts and scheduled posts are not public — they return 404 to anyone else until they go
+      live. <strong>Preview</strong> opens them in the real layout for you only. A scheduled post
+      publishes itself on the first visit after its time.
     </p>
   </div>
 </Admin>
@@ -189,8 +269,162 @@ const drafts = posts.filter((p) => p.status !== 'published').length;
     if (count) count.textContent = `${visible} ${visible === 1 ? 'post' : 'posts'}`;
   }
 
-  search?.addEventListener('input', applyFilter);
-  statusFilter?.addEventListener('change', applyFilter);
+  search?.addEventListener('input', () => {
+    applyFilter();
+    syncSelection();
+  });
+  statusFilter?.addEventListener('change', () => {
+    applyFilter();
+    syncSelection();
+  });
+
+  // --- Selection and bulk actions ---------------------------------------
+  const bulkBar = document.getElementById('bulk-bar');
+  const bulkCount = document.getElementById('bulk-count');
+  const selectAll = document.getElementById('select-all') as HTMLInputElement | null;
+
+  const boxes = () =>
+    Array.from(document.querySelectorAll<HTMLInputElement>('input[data-select]'));
+
+  /** Checkboxes on rows the filter is currently showing. */
+  const visibleBoxes = () => boxes().filter((b) => !b.closest('tr')?.hidden);
+
+  const selectedIds = () =>
+    visibleBoxes()
+      .filter((b) => b.checked)
+      .map((b) => Number(b.value));
+
+  /**
+   * Keep the selection honest.
+   *
+   * A row hidden by the filter is deselected, because acting on rows you cannot
+   * see is the classic bulk-action accident: search for "draft", select all,
+   * clear the search, hit delete, and take the whole table with you. Selection
+   * is therefore only ever what is on screen.
+   */
+  function syncSelection() {
+    for (const b of boxes()) {
+      if (b.closest('tr')?.hidden) b.checked = false;
+    }
+
+    const n = selectedIds().length;
+    const vis = visibleBoxes();
+
+    if (bulkCount) bulkCount.textContent = String(n);
+    if (bulkBar) bulkBar.hidden = n === 0;
+
+    if (selectAll) {
+      selectAll.checked = n > 0 && n === vis.length;
+      // Distinct from both checked and unchecked: some-but-not-all.
+      selectAll.indeterminate = n > 0 && n < vis.length;
+    }
+  }
+
+  selectAll?.addEventListener('change', () => {
+    for (const b of visibleBoxes()) b.checked = selectAll.checked;
+    syncSelection();
+  });
+
+  document.addEventListener('change', (e) => {
+    if ((e.target as HTMLElement).matches?.('input[data-select]')) syncSelection();
+  });
+
+  document.getElementById('bulk-clear')?.addEventListener('click', () => {
+    for (const b of boxes()) b.checked = false;
+    syncSelection();
+  });
+
+  async function runBulk(action: 'status' | 'delete', status_?: string) {
+    const ids = selectedIds();
+    if (ids.length === 0) return;
+
+    setStatus(action === 'delete' ? 'Deleting…' : 'Updating…', 'busy');
+    try {
+      const res = await fetch('/api/posts/bulk', {
+        method: 'POST',
+        headers: { 'content-type': 'application/json' },
+        body: JSON.stringify(
+          action === 'delete' ? { action: 'delete', ids } : { action: 'status', ids, status: status_ }
+        ),
+      });
+
+      if (res.status === 401) {
+        setStatus('Your session expired. Log in again to continue.', 'err');
+        showLoginLink();
+        return;
+      }
+
+      const data = (await res.json().catch(() => ({}))) as { ok?: boolean; error?: string; changed?: number };
+      if (!res.ok || !data.ok) throw new Error(data.error || `Failed (${res.status})`);
+
+      /*
+       * Reload rather than patching the DOM.
+       *
+       * A bulk status change alters the badge, the scheduled timestamp, the
+       * counts in the header, and which rows the current filter should show.
+       * Reconstructing all of that by hand is how an admin list drifts out of
+       * sync with the database it claims to be showing; the page is
+       * server-rendered and cheap, so re-rendering it is both simpler and
+       * guaranteed correct.
+       */
+      location.reload();
+    } catch (err) {
+      setStatus(err instanceof Error ? err.message : 'Bulk action failed.', 'err');
+    }
+  }
+
+  /*
+   * Bulk delete arms itself before firing.
+   *
+   * This page deliberately avoids window.confirm() — a native modal is
+   * unstyleable, blocks the whole tab, and reads as a browser error rather than
+   * as part of the tool. The per-row delete already uses an inline confirm, so
+   * the bulk button does the same thing in the space it has: the first click
+   * turns it into "Confirm delete (3)", the second one commits, and anything
+   * else disarms it.
+   */
+  let armedDelete = false;
+
+  function disarmDelete() {
+    const btn = document.querySelector<HTMLButtonElement>('[data-bulk="delete"]');
+    if (!btn) return;
+    armedDelete = false;
+    btn.textContent = 'Delete';
+    btn.classList.remove('is-armed');
+  }
+
+  for (const btn of document.querySelectorAll<HTMLButtonElement>('[data-bulk]')) {
+    btn.addEventListener('click', () => {
+      const action = btn.dataset.bulk!;
+      const n = selectedIds().length;
+      if (n === 0) return;
+
+      if (action !== 'delete') {
+        disarmDelete();
+        void runBulk('status', action);
+        return;
+      }
+
+      if (!armedDelete) {
+        armedDelete = true;
+        btn.textContent = `Confirm delete (${n})`;
+        btn.classList.add('is-armed');
+        return;
+      }
+
+      disarmDelete();
+      void runBulk('delete');
+    });
+  }
+
+  // Changing the selection invalidates an armed delete — the count on the
+  // button would otherwise be a lie about what is about to be removed.
+  document.addEventListener('change', (e) => {
+    if ((e.target as HTMLElement).matches?.('input[data-select], #select-all')) disarmDelete();
+  });
+  document.addEventListener('keydown', (e) => {
+    if (e.key === 'Escape') disarmDelete();
+  });
 
   // --- Delete, with an inline confirm (never a bare link, never confirm()) --
   let openConfirm: HTMLElement | null = null;
@@ -237,6 +471,51 @@ const drafts = posts.filter((p) => p.status !== 'published').length;
 
   document.addEventListener('click', (e) => {
     const target = e.target as HTMLElement;
+
+    /*
+     * Duplicate. Lands the user in the copy's editor rather than back on the
+     * list: the only reason to duplicate a post is to start changing it, and
+     * bouncing to a list where the new row is titled "… (copy)" just adds a
+     * click to every use of the feature.
+     */
+    const dup = target.closest<HTMLButtonElement>('[data-duplicate]');
+    if (dup) {
+      const id = Number(dup.dataset.id);
+      dup.disabled = true;
+      setStatus(`Duplicating “${dup.dataset.title}”…`, 'busy');
+
+      void (async () => {
+        try {
+          const res = await fetch('/api/posts/bulk', {
+            method: 'POST',
+            headers: { 'content-type': 'application/json' },
+            body: JSON.stringify({ action: 'duplicate', id }),
+          });
+
+          if (res.status === 401) {
+            setStatus('Your session expired. Log in again to continue.', 'err');
+            showLoginLink();
+            return;
+          }
+
+          const data = (await res.json().catch(() => ({}))) as {
+            ok?: boolean;
+            error?: string;
+            id?: number;
+          };
+          if (!res.ok || !data.ok || !data.id) {
+            throw new Error(data.error || `Duplicate failed (${res.status})`);
+          }
+
+          location.href = `/admin/posts/${data.id}`;
+        } catch (err) {
+          setStatus(err instanceof Error ? err.message : 'Duplicate failed.', 'err');
+        } finally {
+          dup.disabled = false;
+        }
+      })();
+      return;
+    }
 
     const trigger = target.closest<HTMLButtonElement>('[data-delete]');
     if (trigger) {
