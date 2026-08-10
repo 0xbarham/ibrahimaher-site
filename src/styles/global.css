@@ -893,19 +893,39 @@ p {
 /* Headings take the Kufi display face. This is the whole reason two Arabic faces
    are loaded rather than one: the geometry reads as modern exactly where a
    reader spends a second, and never where they spend a minute. .eyebrow and
-   .faq__q are included because both are headings in everything but tag name. */
-[dir='rtl'] h1,
-[dir='rtl'] h2,
-[dir='rtl'] h3,
-[dir='rtl'] .hero__name,
-[dir='rtl'] .section-title,
-[dir='rtl'] .contact__title,
-[dir='rtl'] .skill__title,
-[dir='rtl'] .faq__q,
-[dir='rtl'] .eyebrow {
+   .faq__q are included because both are headings in everything but tag name.
+
+   Every selector below is prefixed `html` on purpose, and it is load-bearing.
+   The page stylesheets (landing.css, contact.css) are imported by the PAGE, so
+   they cascade after this file. A plain `[dir='rtl'] .faq__q` is (0,2,0), which
+   only TIES `.lp .faq__q` in landing.css, and the tie goes to whoever comes
+   last: the latin face wins and Arabic silently falls back to a system font.
+   `html[dir='rtl']` is (0,2,1) and beats any single-class page rule outright.
+
+   That is not hypothetical. .faq__q, .contact__crumbs and .field__label were all
+   rendering Arabic through Newsreader or Spline Sans Mono, neither of which has
+   a single Arabic glyph, purely because of this tie. */
+html[dir='rtl'] h1,
+html[dir='rtl'] h2,
+html[dir='rtl'] h3,
+html[dir='rtl'] .hero__name,
+html[dir='rtl'] .section-title,
+html[dir='rtl'] .contact__title,
+html[dir='rtl'] .skill__title,
+html[dir='rtl'] .faq__q,
+html[dir='rtl'] .eyebrow {
   font-family: var(--font-arabic-display);
   letter-spacing: normal;
   line-height: 1.4;
+}
+
+/* The remaining latin-only bindings that carry Arabic text. These ask for
+   --font-mono, and there is no Arabic monospace in this stack, so they take the
+   body face rather than the display one: both are small UI labels, not
+   headings. */
+html[dir='rtl'] .contact__crumbs,
+html[dir='rtl'] .field__label {
+  font-family: var(--font-arabic);
 }
 
 /* Kufi's counters close up at small sizes, so the eyebrow — uppercase-styled,
@@ -949,9 +969,14 @@ p {
 
 /* Latin-script runs inside Arabic copy — "n8n", "OpenAI", brand names — keep the
    body face. Without this they inherit the Arabic fallback, which renders latin
-   noticeably worse than the face chosen for it. */
-[dir='rtl'] [lang='en'],
-[dir='rtl'] code {
+   noticeably worse than the face chosen for it.
+
+   Also prefixed `html`, and it has to be: the heading rules above are (0,2,1)
+   now, so at (0,2,0) this would lose to them and "n8n" inside an Arabic h1 would
+   come out in Kufi. At (0,2,1) it ties and wins on source order, which is why it
+   must stay BELOW that block. */
+html[dir='rtl'] [lang='en'],
+html[dir='rtl'] code {
   font-family: var(--font-body);
 }
 
