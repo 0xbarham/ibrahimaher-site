@@ -917,8 +917,52 @@ p {
    body face. Without this they inherit the Arabic fallback, which renders latin
    noticeably worse than the face chosen for it. */
 [dir='rtl'] [lang='en'],
-[dir='rtl'] code,
+[dir='rtl'] code {
+  font-family: var(--font-body);
+}
+
+/*
+  Elements that name a latin-only face directly, and so were rendering Arabic
+  through a font with no Arabic glyphs. The browser does not fail loudly here —
+  it silently falls back to whatever system Arabic face it can find, which is
+  why these looked generic while the rest of the page did not.
+
+  Each maps to the Arabic equivalent of what the latin design asked for:
+
+  - .hero__role and .btn ask for --font-display (Newsreader), so they get the
+    Arabic display face. Both are short, so Kufi costs nothing in readability.
+    .lp .hero__role is 0-2-0, hence the .lp here to win on specificity rather
+    than on stylesheet order, which depends on import sequence.
+  - .tag asks for --font-mono. There is no Arabic monospace in this stack and a
+    latin mono has no Arabic glyphs at all, so tags take the body face. This
+    replaces an older rule that sent them to --font-body (Sofia Sans), which was
+    latin-only too and therefore had the same bug.
+*/
+[dir='rtl'] .lp .hero__role,
+[dir='rtl'] .btn {
+  font-family: var(--font-arabic-display);
+}
+
 [dir='rtl'] .tag {
+  font-family: var(--font-arabic);
+}
+
+/*
+  The language switcher is the one place Arabic appears on an otherwise English
+  page, and vice versa. Keyed on the element's own lang, not the page direction,
+  so each label renders in a face that actually has its glyphs: "العربية" on the
+  English pages, "English" on the Arabic ones.
+
+  This does mean an English page lazily fetches the Arabic body face for a
+  seven-character label. It is not preloaded and font-display is swap, so it
+  neither blocks render nor affects LCP, but it is a real request. Dropping the
+  first family from this stack reverts to the zero-byte system fallback.
+*/
+.lang-switch[lang='ar'] {
+  font-family: var(--font-arabic);
+}
+
+.lang-switch[lang='en'] {
   font-family: var(--font-body);
 }
 
