@@ -61,9 +61,10 @@ interface Chrome {
 /**
  * Nav hrefs differ per language, not just the labels: the Arabic nav must point
  * at the Arabic routes or every click would drop the reader back into English.
- * Arabic has no /ar/about, /ar/blog or /ar/contact yet, so its nav links the four
- * pages that exist and sends the remaining intent to the English contact page,
- * which is a real destination rather than a 404.
+ * Arabic has no /ar/about or /ar/blog yet, so its nav links the pages that do
+ * exist. /ar/contact is deliberately among them: it is where every CTA on the
+ * Arabic pages lands, and routing the site's one conversion action through an
+ * English form was the largest leak in the Arabic funnel.
  */
 export const CHROME: Record<Lang, Chrome> = {
   en: {
@@ -88,7 +89,7 @@ export const CHROME: Record<Lang, Chrome> = {
       { href: '/ar/n8n-developer', label: 'مطوّر n8n' },
       { href: '/ar/ai-automation-developer', label: 'أتمتة الذكاء الاصطناعي' },
       { href: '/ar/vibe-coder', label: 'برمجة بالذكاء الاصطناعي' },
-      { href: '/contact', label: 'تواصل' },
+      { href: '/ar/contact', label: 'تواصل' },
     ],
     skipLink: 'تخطَّ إلى المحتوى',
     primaryNavLabel: 'التنقل الرئيسي',
@@ -124,6 +125,7 @@ export const TRANSLATED: { en: string; ar: string }[] = [
   { en: '/n8n-developer', ar: '/ar/n8n-developer' },
   { en: '/ai-automation-developer', ar: '/ar/ai-automation-developer' },
   { en: '/vibe-coder', ar: '/ar/vibe-coder' },
+  { en: '/contact', ar: '/ar/contact' },
 ];
 
 /**

@@ -1,0 +1,303 @@
+---
+export const prerender = false;
+
+import Base from '../../layouts/Base.astro';
+import '../../styles/contact.css';
+import { getSettings, setting } from '../../lib/db';
+import { altLocalesFor } from '../../lib/i18n';
+
+/*
+  Arabic counterpart of /contact, and the page that closes the loop on the
+  Arabic funnel. Until this existed every CTA on /ar/* pointed at the English
+  /contact, so a reader who had been addressed in Arabic for four pages hit a
+  conversion form in a language they had not chosen. That is the worst
+  drop-off in the Arabic journey, which is why it comes before the blog posts.
+
+  Not a translation of the English page. That one splits three ways (marketing
+  role, accounts position, automation project) because it doubles as a jobs
+  page for an English-reading recruiter. The Arabic reader is a business owner
+  with a process to automate, so the reasons and the FAQ are all commercial,
+  and the "are you open to a full-time role" question is dropped entirely.
+
+  The form posts to the same Web3Forms endpoint with the same field names as
+  the English page. Only `subject` and `from_name` differ, so the origin of a
+  lead is visible in the inbox without opening it.
+*/
+
+const settings = await getSettings();
+
+const siteUrl = setting(settings, 'site_url', 'https://ibrahimaher.com').replace(/\/$/, '');
+const web3formsKey = setting(settings, 'web3forms_key');
+
+const canonical = '/ar/contact';
+const altLocales = altLocalesFor(canonical);
+
+const metaTitle = 'تواصل معي | إبراهيم البندر لأتمتة الذكاء الاصطناعي';
+const metaDesc =
+  'اطلب عرض سعر ثابت لمشروع أتمتة أو روبوت دردشة. أعمل مع شركات في بغداد وأربيل والبصرة والموصل، وأرد على كل رسالة بنفسي خلال يوم.';
+const metaKeywords =
+  'تواصل مع مطور أتمتة, طلب عرض سعر أتمتة, مطور n8n العراق, شات بوت العراق, أتمتة الذكاء الاصطناعي بغداد';
+
+const elsewhere = [
+  { href: 'https://www.linkedin.com/in/ibrahimaher', label: 'LinkedIn' },
+  { href: 'https://www.facebook.com/ibmabr', label: 'Facebook' },
+  { href: 'https://www.instagram.com/ibmabr', label: 'Instagram' },
+  { href: 'https://t.me/ibmabr', label: 'Telegram' },
+];
+
+const faqs = [
+  {
+    q: 'ما الذي أكتبه في الرسالة؟',
+    a: 'اشرح العملية التي تريد أتمتتها بجملتين، واذكر الأدوات أو المنصات التي تستخدمها الآن مثل واتساب أو إنستغرام أو جداول البيانات أو نظام المحاسبة. وإن كان لديك سقف للميزانية أو موعد محدد فاذكره من البداية، لأنه يختصر الطريق إلى عرض سعر دقيق.',
+  },
+  {
+    q: 'كم تستغرق مدة الرد؟',
+    a: 'كل رسالة تصل إلى بريدي الشخصي مباشرة، لا إلى فريق دعم. أقرأ الرسائل وأرد عليها بنفسي، وغالباً خلال يوم واحد.',
+  },
+  {
+    q: 'هل تعمل مع شركات خارج أربيل؟',
+    a: 'نعم. مقرّي أربيل وأعمل حضورياً مع الشركات هناك، لكن الأتمتة تُسلَّم عن بُعد بالكامل، لذلك أعمل مع شركات في بغداد والبصرة والموصل والسليمانية والنجف وكربلاء وبقية المحافظات. الاجتماعات تتم عبر الإنترنت والتسليم رقمي.',
+  },
+  {
+    q: 'كيف يتم تحديد السعر؟',
+    a: 'السعر ثابت لكل مشروع ويُتفق عليه قبل بدء العمل، ولا أعمل بالساعة. بعد أن تشرح العملية أحدد نطاق العمل وأعطيك رقماً واضحاً، مع تقدير لأي تكلفة تشغيل شهرية مثل استهلاك نماذج الذكاء الاصطناعي حتى لا تفاجئك فاتورة لاحقة.',
+  },
+  {
+    q: 'ماذا لو لم أكن متأكداً أن الأتمتة تناسب عملي؟',
+    a: 'اسأل على أي حال. إن كانت العملية لا تستحق الأتمتة أو كان الحل الأبسط كافياً فسأقول لك ذلك بصراحة بدل أن أبيعك مشروعاً لا تحتاجه.',
+  },
+];
+
+const jsonLd: Record<string, unknown>[] = [
+  {
+    '@context': 'https://schema.org',
+    '@type': 'ContactPage',
+    url: `${siteUrl}/ar/contact`,
+    name: 'تواصل مع إبراهيم ماهر البندر',
+    inLanguage: 'ar-IQ',
+    about: {
+      '@type': 'Person',
+      '@id': 'https://ibrahimaher.com/#ibrahim',
+      name: 'إبراهيم ماهر البندر',
+      email: 'mailto:me@ibrahimaher.com',
+      telephone: '+9647719620471',
+      url: siteUrl,
+    },
+  },
+  {
+    '@context': 'https://schema.org',
+    '@type': 'BreadcrumbList',
+    itemListElement: [
+      { '@type': 'ListItem', position: 1, name: 'الرئيسية', item: `${siteUrl}/ar/` },
+      { '@type': 'ListItem', position: 2, name: 'تواصل', item: `${siteUrl}/ar/contact` },
+    ],
+  },
+  {
+    '@context': 'https://schema.org',
+    '@type': 'FAQPage',
+    inLanguage: 'ar-IQ',
+    mainEntity: faqs.map((f) => ({
+      '@type': 'Question',
+      name: f.q,
+      acceptedAnswer: { '@type': 'Answer', text: f.a },
+    })),
+  },
+];
+
+const reasons = [
+  'روبوت دردشة أو رد تلقائي',
+  'أتمتة سير عمل أو فواتير',
+  'بناء موقع أو تطبيق',
+  'شيء آخر',
+];
+---
+
+<Base
+  title={metaTitle}
+  description={metaDesc}
+  canonical={canonical}
+  keywords={metaKeywords}
+  jsonLd={jsonLd}
+  lang="ar"
+  altLocales={altLocales}
+>
+  <div class="shell contact">
+    <header class="contact__head stagger">
+      <nav class="contact__crumbs" aria-label="مسار التنقل" style="--i:0">
+        <a class="link" href="/ar/">الرئيسية</a>
+        <span aria-hidden="true">/</span>
+        <span class="muted">تواصل</span>
+      </nav>
+
+      <p class="eyebrow" style="--i:1">اطلب عرض سعر</p>
+
+      <h1 class="contact__title" style="--i:2">
+        أخبرني بالعملية التي <span class="accent">تريد أتمتتها</span>
+      </h1>
+
+      <p class="lede contact__lede" style="--i:3">
+        اشرح ما تريد أتمتته في سطرين، وسأرد عليك بنطاق عمل وسعر ثابت قبل أن يبدأ أي عمل. أعمل
+        حضورياً مع الشركات في أربيل، وعن بُعد مع شركات في عموم العراق. أقرأ كل رسالة وأرد عليها
+        بنفسي.
+      </p>
+    </header>
+
+    <div class="contact__body">
+      <form
+        class="form reveal"
+        id="contactForm"
+        action="https://api.web3forms.com/submit"
+        method="POST"
+        aria-labelledby="form-h"
+      >
+        <h2 id="form-h" class="eyebrow">أرسل رسالة</h2>
+
+        <input type="hidden" name="access_key" value={web3formsKey} />
+        <input type="hidden" name="subject" value="New message from ibrahimaher.com (Arabic)" />
+        <input type="hidden" name="from_name" value="ibrahimaher.com Arabic contact form" />
+        <input type="checkbox" name="botcheck" style="display:none" tabindex="-1" autocomplete="off" />
+
+        <div class="field">
+          <label class="field__label" for="name">الاسم</label>
+          <input class="field__input" type="text" id="name" name="name" required autocomplete="name" />
+        </div>
+
+        <div class="field">
+          {/* dir="ltr" on the value fields: an email address or phone number typed
+              into an RTL input renders with its punctuation in the wrong place. */}
+          <label class="field__label" for="email">البريد الإلكتروني</label>
+          <input
+            class="field__input"
+            type="email"
+            id="email"
+            name="email"
+            required
+            autocomplete="email"
+            dir="ltr"
+          />
+        </div>
+
+        <div class="field">
+          <label class="field__label" for="reason">موضوع الرسالة</label>
+          <select class="field__input" id="reason" name="reason">
+            {reasons.map((r) => <option>{r}</option>)}
+          </select>
+        </div>
+
+        <div class="field">
+          <label class="field__label" for="message">الرسالة</label>
+          <textarea class="field__input field__textarea" id="message" name="message" required></textarea>
+        </div>
+
+        <button type="submit" class="btn form__submit">إرسال</button>
+
+        <p class="form__status" id="formStatus" role="status" aria-live="polite"></p>
+      </form>
+
+      <aside class="aside">
+        <section class="aside__block reveal" aria-labelledby="direct-h">
+          <h2 id="direct-h" class="eyebrow">تواصل مباشر</h2>
+          <ul class="aside__list">
+            <li><a class="link" href="mailto:me@ibrahimaher.com" dir="ltr">me@ibrahimaher.com</a></li>
+            <li><a class="link" href="tel:+9647719620471" dir="ltr">+964 (0)771 962 0471</a></li>
+            <li class="muted">أربيل، العراق &middot; وعن بُعد في عموم العراق</li>
+          </ul>
+        </section>
+
+        <section class="aside__block reveal" aria-labelledby="elsewhere-h">
+          <h2 id="elsewhere-h" class="eyebrow">حسابات أخرى</h2>
+          <ul class="aside__list">
+            {
+              elsewhere.map((e) => (
+                <li>
+                  <a class="link" href={e.href} target="_blank" rel="noopener" dir="ltr">
+                    {e.label}
+                  </a>
+                </li>
+              ))
+            }
+          </ul>
+        </section>
+
+        <section class="aside__block reveal" aria-labelledby="best-h">
+          <h2 id="best-h" class="eyebrow">الخدمات</h2>
+          <p class="aside__note">
+            روبوتات الدردشة والرد التلقائي، وأتمتة سير العمل والفواتير، وبناء المواقع والتطبيقات.
+            التفاصيل في <a class="link" href="/ar/ai-automation-developer">أتمتة الذكاء الاصطناعي</a>
+            و<a class="link" href="/ar/n8n-developer">أتمتة سير العمل</a>.
+          </p>
+        </section>
+      </aside>
+    </div>
+
+    <section class="section rail" aria-labelledby="faq-h">
+      <p class="eyebrow">قبل أن ترسل</p>
+      <div>
+        <h2 id="faq-h" class="section-title">أسئلة شائعة</h2>
+        <p class="lede faq__sub">ما يسأل عنه معظم الناس قبل التواصل.</p>
+
+        <ul class="faqs">
+          {
+            faqs.map((f) => (
+              <li class="faq reveal">
+                <h3 class="faq__q">{f.q}</h3>
+                <p class="faq__a">{f.a}</p>
+              </li>
+            ))
+          }
+        </ul>
+      </div>
+    </section>
+  </div>
+</Base>
+
+<script>
+  // Same fetch upgrade as the English page, with Arabic status copy. The form
+  // still posts natively if this never runs.
+  const form = document.getElementById('contactForm') as HTMLFormElement | null;
+
+  if (form) {
+    const statusEl = document.getElementById('formStatus') as HTMLParagraphElement | null;
+    const submitBtn = form.querySelector('.form__submit') as HTMLButtonElement | null;
+
+    const setStatus = (text: string, state: '' | 'success' | 'error') => {
+      if (!statusEl) return;
+      statusEl.textContent = text;
+      // dataset, not className — overwriting the class would strip Astro's
+      // scope hash and the status would lose its styling entirely.
+      statusEl.dataset.state = state;
+    };
+
+    form.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      if (submitBtn) {
+        submitBtn.disabled = true;
+        submitBtn.textContent = 'جارٍ الإرسال...';
+      }
+      setStatus('', '');
+
+      try {
+        const response = await fetch('https://api.web3forms.com/submit', {
+          method: 'POST',
+          headers: { Accept: 'application/json' },
+          body: new FormData(form),
+        });
+        const result = (await response.json()) as { success?: boolean };
+
+        if (result.success) {
+          setStatus('وصلت رسالتك. سأرد عليك قريباً.', 'success');
+          form.reset();
+        } else {
+          setStatus('تعذّر إرسال الرسالة. راسلني على البريد مباشرة من فضلك.', 'error');
+        }
+      } catch {
+        setStatus('تعذّر إرسال الرسالة. راسلني على البريد مباشرة من فضلك.', 'error');
+      } finally {
+        if (submitBtn) {
+          submitBtn.disabled = false;
+          submitBtn.textContent = 'إرسال';
+        }
+      }
+    });
+  }
+</script>

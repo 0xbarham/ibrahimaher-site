@@ -80,6 +80,7 @@ export const GET: APIRoute = async () => {
     { loc: `${base}/ar/n8n-developer`, changefreq: 'monthly', priority: '0.9' },
     { loc: `${base}/ar/ai-automation-developer`, changefreq: 'monthly', priority: '0.9' },
     { loc: `${base}/ar/vibe-coder`, changefreq: 'monthly', priority: '0.9' },
+    { loc: `${base}/ar/contact`, changefreq: 'yearly', priority: '0.7' },
     ...posts
       // A post flagged noindex must never appear in the sitemap — telling Google
       // "index this" and "don't index this" at once is a real Semrush finding.
