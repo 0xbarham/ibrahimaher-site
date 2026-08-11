@@ -1,0 +1,140 @@
+---
+export const prerender = false;
+
+import Base from '../../../layouts/Base.astro';
+import '../../../styles/blog-index.css';
+import { getPublishedPosts, getAuthor, getSettings, setting } from '../../../lib/db';
+import { markdownToText, readingTime } from '../../../lib/markdown';
+import { altLocalesFor } from '../../../lib/i18n';
+
+/*
+  Arabic writing index.
+
+  Deliberately simpler than the English one, and not because Arabic deserves
+  less. The English index carries a category filter because it lists seventeen
+  posts across several subjects; a filter bar over three posts is furniture that
+  filters nothing. It comes back the moment the count justifies it.
+
+  Everything visual comes from the shared blog-index.css, so the two indexes
+  cannot drift apart, and the RTL flip is free because that file uses logical
+  properties throughout.
+*/
+
+const [posts, settings, author] = await Promise.all([
+  getPublishedPosts(undefined, 'ar'),
+  getSettings(),
+  getAuthor(1),
+]);
+
+const siteUrl = setting(settings, 'site_url', 'https://ibrahimaher.com').replace(/\/$/, '');
+const authorName = author?.name ?? 'إبراهيم ماهر البندر';
+
+const canonical = '/ar/blog/';
+const altLocales = altLocalesFor(canonical);
+
+/*
+  ar-IQ, not a bare ar: Iraq uses the Syriac month names (آب, أيلول) rather than
+  the Egyptian and Gulf ones (أغسطس, سبتمبر). Getting that wrong is a small thing
+  that reads as foreign immediately to the reader this page exists for.
+*/
+const dateLabel = (d: string) =>
+  new Date(`${d}T00:00:00Z`).toLocaleDateString('ar-IQ', {
+    day: 'numeric',
+    month: 'long',
+    year: 'numeric',
+    timeZone: 'UTC',
+  });
+
+const rows = posts.map((post) => ({
+  post,
+  href: `/blog/${post.slug}`,
+  label: dateLabel(post.post_date),
+  excerpt: post.excerpt || markdownToText(post.body_md, 160),
+  readTime: post.read_time || readingTime(post.body_md),
+}));
+
+const metaTitle = `مقالات | ${authorName}`;
+const metaDesc =
+  'مقالات عن أتمتة الذكاء الاصطناعي وروبوتات الدردشة وسير العمل الآلي، مكتوبة من واقع العمل مع شركات في العراق.';
+const metaKeywords =
+  'مقالات الذكاء الاصطناعي, أتمتة الأعمال العراق, روبوتات الدردشة, n8n بالعربي, أتمتة واتساب';
+
+const jsonLd = [
+  {
+    '@context': 'https://schema.org',
+    '@type': 'Blog',
+    '@id': `${siteUrl}/ar/blog/`,
+    url: `${siteUrl}/ar/blog/`,
+    name: metaTitle,
+    description: metaDesc,
+    inLanguage: 'ar-IQ',
+    author: { '@type': 'Person', '@id': `${siteUrl}/#ibrahim`, name: authorName },
+    blogPost: posts.map((p) => ({
+      '@type': 'BlogPosting',
+      headline: p.title,
+      url: `${siteUrl}/blog/${p.slug}`,
+      datePublished: p.post_date,
+      inLanguage: 'ar-IQ',
+    })),
+  },
+  {
+    '@context': 'https://schema.org',
+    '@type': 'BreadcrumbList',
+    itemListElement: [
+      { '@type': 'ListItem', position: 1, name: 'الرئيسية', item: `${siteUrl}/ar/` },
+      { '@type': 'ListItem', position: 2, name: 'مقالات', item: `${siteUrl}/ar/blog/` },
+    ],
+  },
+];
+---
+
+<Base
+  title={metaTitle}
+  description={metaDesc}
+  canonical={canonical}
+  keywords={metaKeywords}
+  jsonLd={jsonLd}
+  lang="ar"
+  altLocales={altLocales}
+>
+  <div class="shell index">
+    <header class="index__head stagger">
+      <p class="eyebrow" style="--i:0">مقالات</p>
+      <h1 class="index__title" style="--i:1">
+        ملاحظات من <span class="index__accent">قلب العمل</span>
+      </h1>
+      <p class="lede index__lede" style="--i:2">
+        عن أتمتة الذكاء الاصطناعي وروبوتات الدردشة وسير العمل الآلي، مكتوبة من واقع مشاريع فعلية مع
+        شركات في العراق، لا من جدول محتوى.
+      </p>
+    </header>
+
+    {/* The same printed table of contents as the English index: date and
+        category in the margin, the title carrying the row. In RTL the margin
+        flips on its own, because the shared stylesheet is written with logical
+        properties rather than left/right. */}
+    <ol class="index__list">
+      {
+        rows.map(({ post, href, label, excerpt, readTime }) => (
+          <li class="reveal" data-category={post.category}>
+            <a class="entry" href={href}>
+              <span class="entry__margin">
+                <time class="entry__date" datetime={post.post_date}>
+                  {label}
+                </time>
+                <span class="entry__cat">{post.category}</span>
+              </span>
+              <span class="entry__body">
+                <span class="entry__title">{post.title}</span>
+                {excerpt && <span class="entry__excerpt">{excerpt}</span>}
+                <span class="entry__read">{readTime}</span>
+              </span>
+            </a>
+          </li>
+        ))
+      }
+    </ol>
+
+    {posts.length === 0 && <p class="index__empty muted">لا توجد مقالات بعد.</p>}
+  </div>
+</Base>

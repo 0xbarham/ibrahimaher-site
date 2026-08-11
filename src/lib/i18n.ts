@@ -61,10 +61,11 @@ interface Chrome {
 /**
  * Nav hrefs differ per language, not just the labels: the Arabic nav must point
  * at the Arabic routes or every click would drop the reader back into English.
- * Arabic has no /ar/about or /ar/blog yet, so its nav links the pages that do
- * exist. /ar/contact is deliberately among them: it is where every CTA on the
- * Arabic pages lands, and routing the site's one conversion action through an
- * English form was the largest leak in the Arabic funnel.
+ * Arabic has no /ar/about yet, so its nav links the pages that do exist, and it
+ * is capped at five because a sixth would wrap on a 375px phone. /ar/vibe-coder
+ * gives up its slot to /ar/blog/ rather than the nav growing: the writing needs
+ * a route in from every page or it is an orphan, whereas the vibe-coder page is
+ * still one click away from the homepage service cards.
  */
 export const CHROME: Record<Lang, Chrome> = {
   en: {
@@ -97,7 +98,7 @@ export const CHROME: Record<Lang, Chrome> = {
       { href: '/ar/', label: 'الرئيسية' },
       { href: '/ar/n8n-developer', label: 'الأتمتة' },
       { href: '/ar/ai-automation-developer', label: 'ذكاء اصطناعي' },
-      { href: '/ar/vibe-coder', label: 'برمجة' },
+      { href: '/ar/blog/', label: 'مقالات' },
       { href: '/ar/contact', label: 'تواصل' },
     ],
     skipLink: 'تخطَّ إلى المحتوى',
@@ -135,15 +136,36 @@ export const TRANSLATED: { en: string; ar: string }[] = [
   { en: '/ai-automation-developer', ar: '/ar/ai-automation-developer' },
   { en: '/vibe-coder', ar: '/ar/vibe-coder' },
   { en: '/contact', ar: '/ar/contact' },
+  { en: '/blog/', ar: '/ar/blog/' },
 ];
 
 /**
+ * Trailing slashes are normalised away so `/n8n-developer/` and
+ * `/n8n-developer` resolve to the same pair. `/` and `/ar/` are exempt, because
+ * for them the slash IS the path.
+ */
+function normalisePath(path: string): string {
+  return path === '/' || path === '/ar/' ? path : path.replace(/\/$/, '');
+}
+
+/**
  * The `altLocales` object for a path, or undefined when the page has no
- * translation. Trailing slashes are normalised away first so `/n8n-developer/`
- * and `/n8n-developer` resolve to the same pair; `/` and `/ar/` are exempt
- * because for them the slash IS the path.
+ * translation.
+ *
+ * BOTH sides are normalised before comparing, and that is the whole point. This
+ * used to normalise only the incoming path and compare it against the raw table,
+ * which silently failed for any pair whose stored value carried a trailing
+ * slash: `/blog/` normalised to `/blog`, the table held `/blog/`, nothing
+ * matched, and the blog pair emitted no hreflang at all in EITHER language.
+ * Every other pair happened to be slash-free, so the bug stayed invisible until
+ * the blog pair was added.
+ *
+ * The stored values keep their trailing slashes deliberately: they are emitted
+ * as hreflang hrefs and must match each page's canonical URL exactly.
  */
 export function altLocalesFor(path: string): { en: string; ar: string } | undefined {
-  const normalised = path === '/' || path === '/ar/' ? path : path.replace(/\/$/, '');
-  return TRANSLATED.find((p) => p.en === normalised || p.ar === normalised);
+  const normalised = normalisePath(path);
+  return TRANSLATED.find(
+    (p) => normalisePath(p.en) === normalised || normalisePath(p.ar) === normalised
+  );
 }
