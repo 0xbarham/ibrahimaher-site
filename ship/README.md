@@ -23,6 +23,29 @@ cp -r ship/skill/. "$USERPROFILE/.claude/skills/ship-daily/"
 
 Edit the copy in this repo. The other one is a deployment.
 
+## The nightly task
+
+A local scheduled task, `ship-daily-check`, runs at 22:00 Baghdad every day and
+lives at `%USERPROFILE%\.claude\scheduled-tasks\ship-daily-check\SKILL.md`. It
+invokes the skill and stops at step 6.
+
+**It never publishes**, and that is the whole design. Every public page is SSR
+from D1, so a row is public within seconds with no build and no staging pause.
+Publishing is a decision someone makes while looking at the copy, and a task
+firing at 22:00 will often fire while nobody is looking. So it runs doctor,
+status and a dry harvest, writes drafts if there is something worth drafting,
+lints them, and reports what needs a person.
+
+It is deliberately a **local** scheduled task rather than a cloud routine. Cloud
+routines run in Anthropic's infrastructure with no access to local files, local
+services or local environment variables, and this workflow needs all three: the
+repo, the wrangler OAuth token, and Chrome for captures. A cloud routine would
+fail every night.
+
+Recreate it with the `create_scheduled_task` tool if the file is ever lost. The
+prompt is short and mostly delegates to `ship/skill/SKILL.md`, which is the part
+worth version-controlling.
+
 ## Why this exists
 
 The site renders every public page from D1 on the request, so content changes
