@@ -1,0 +1,8 @@
+# The draft JSON files ARE tracked: each one is the authored source of a
+# published piece, small enough to diff, and the only record of what the copy
+# looked like before it went into D1.
+#
+# The PREVIEW-*.md files are not. They are rendered from the JSON beside them
+# purely so a person can read a draft as prose, so tracking one would commit a
+# second copy of something already in the repo.
+PREVIEW-*.md

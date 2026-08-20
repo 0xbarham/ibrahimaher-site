@@ -1,0 +1,439 @@
+{
+  "version": 1,
+  "updated": "2026-08-20",
+  "items": [
+    {
+      "id": "invoice-fraud-firewall",
+      "title": "Invoice Fraud Firewall",
+      "kind": "project",
+      "source": "",
+      "built": "2026-08-20",
+      "state": "published",
+      "visibility": "public",
+      "site": {
+        "table": "projects",
+        "id": 1,
+        "url": "https://ibrahimaher.com/#projects"
+      },
+      "images": [
+        "/assets/projects/invoice-fraud-firewall-light.webp",
+        "/assets/projects/invoice-fraud-firewall-dark.webp"
+      ],
+      "notes": "Adopted: published before ship/ existed."
+    },
+    {
+      "id": "ai-lead-intelligence-auto-response",
+      "title": "AI Lead Intelligence & Auto-Response",
+      "kind": "project",
+      "source": "",
+      "built": "2026-08-20",
+      "state": "published",
+      "visibility": "public",
+      "site": {
+        "table": "projects",
+        "id": 2,
+        "url": "https://ibrahimaher.com/#projects"
+      },
+      "images": [
+        "/assets/projects/ai-lead-intelligence-light.webp",
+        "/assets/projects/ai-lead-intelligence-dark.webp"
+      ],
+      "notes": "Adopted: published before ship/ existed."
+    },
+    {
+      "id": "multi-stage-invoice-approval-pipeline",
+      "title": "Multi-Stage Invoice Approval Pipeline",
+      "kind": "project",
+      "source": "",
+      "built": "2026-08-20",
+      "state": "published",
+      "visibility": "public",
+      "site": {
+        "table": "projects",
+        "id": 3,
+        "url": "https://ibrahimaher.com/#projects"
+      },
+      "images": [
+        "/assets/projects/invoice-approval-pipeline-light.webp",
+        "/assets/projects/invoice-approval-pipeline-dark.webp"
+      ],
+      "notes": "Adopted: published before ship/ existed."
+    },
+    {
+      "id": "facebook-audience-interest-tool",
+      "title": "Facebook Audience-Interest Tool",
+      "kind": "project",
+      "source": "",
+      "built": "2026-08-20",
+      "state": "captured",
+      "visibility": "public",
+      "site": {
+        "table": "projects",
+        "id": 4,
+        "url": "https://ibrahimaher.com/#projects"
+      },
+      "images": [],
+      "notes": "Adopted: published before ship/ existed."
+    },
+    {
+      "id": "dad-link-a-live-e-commerce-site-for-network-infrastructure-equip",
+      "title": "DAD LINK: a live e-commerce site for network infrastructure equipment in Iraq",
+      "kind": "project",
+      "source": "",
+      "built": "2026-08-20",
+      "state": "published",
+      "visibility": "public",
+      "site": {
+        "table": "projects",
+        "id": 5,
+        "url": "https://ibrahimaher.com/#projects"
+      },
+      "images": [
+        "/media/2026/08/dad-link-a-live-e-commerce-site-for-network-infrastructure-e-99c008c3.webp"
+      ],
+      "notes": "Adopted: published before ship/ existed."
+    },
+    {
+      "id": "rabt-labs-the-ai-reply-layer-for-iraqi-businesses",
+      "title": "RABT Labs: the AI reply layer for Iraqi businesses",
+      "kind": "project",
+      "source": "",
+      "built": "2026-08-20",
+      "state": "published",
+      "visibility": "public",
+      "site": {
+        "table": "projects",
+        "id": 6,
+        "url": "https://ibrahimaher.com/#projects"
+      },
+      "images": [
+        "/media/2026/08/rabt-labs-the-ai-reply-layer-for-iraqi-businesses-dark-461635de.webp",
+        "/media/2026/08/rabt-labs-the-ai-reply-layer-for-iraqi-businesses-light-de409938.webp"
+      ],
+      "notes": "Adopted: published before ship/ existed."
+    },
+    {
+      "id": "arabic-english-social-posts-n8n",
+      "title": "Arabic and English social posts from one n8n workflow",
+      "kind": "post",
+      "source": "E:/Second Brain/claude-brain/n8n/bilingual-carousel-publisher",
+      "built": "2026-08-20",
+      "state": "published",
+      "visibility": "public",
+      "site": {
+        "table": "posts",
+        "id": 20,
+        "url": "https://ibrahimaher.com/blog/arabic-english-social-posts-n8n"
+      },
+      "images": [
+        "/media/2026/08/arabic-english-social-posts-n8n-image-2026-08-20-17-27-34-76abf216.webp",
+        "/media/2026/08/arabic-english-social-posts-n8n-telegram-run-7a551e9d.webp"
+      ],
+      "notes": "Copy written and lint-clean. HELD at Ibrahim request: he is supplying workflow and output sample images before it publishes. Draft at ship/drafts/arabic-english-social-posts-n8n.json. Publish with: node ship/bin/publish.mjs --id arabic-english-social-posts-n8n --status published --live"
+    },
+    {
+      "id": "min-ayna-tabda-maa-al-dhaka-al-istinai",
+      "title": "من أين تبدأ مع الذكاء الاصطناعي في شركتك",
+      "kind": "post",
+      "source": "",
+      "built": "2026-08-11",
+      "state": "published",
+      "visibility": "public",
+      "site": {
+        "table": "posts",
+        "id": 18,
+        "url": "https://ibrahimaher.com/blog/min-ayna-tabda-maa-al-dhaka-al-istinai"
+      },
+      "images": [],
+      "notes": "Adopted: published before ship/ existed."
+    },
+    {
+      "id": "taklifat-atmatat-al-dhaka-al-istinai-fi-al-iraq",
+      "title": "كم تكلف أتمتة الذكاء الاصطناعي في العراق",
+      "kind": "post",
+      "source": "",
+      "built": "2026-08-11",
+      "state": "published",
+      "visibility": "public",
+      "site": {
+        "table": "posts",
+        "id": 19,
+        "url": "https://ibrahimaher.com/blog/taklifat-atmatat-al-dhaka-al-istinai-fi-al-iraq"
+      },
+      "images": [],
+      "notes": "Adopted: published before ship/ existed."
+    },
+    {
+      "id": "ikhtiyar-robot-dardasha-lil-matjar",
+      "title": "كيف تختار روبوت دردشة لمتجرك",
+      "kind": "post",
+      "source": "",
+      "built": "2026-08-10",
+      "state": "published",
+      "visibility": "public",
+      "site": {
+        "table": "posts",
+        "id": 17,
+        "url": "https://ibrahimaher.com/blog/ikhtiyar-robot-dardasha-lil-matjar"
+      },
+      "images": [],
+      "notes": "Adopted: published before ship/ existed."
+    },
+    {
+      "id": "n8n-automation-erbil-iraq",
+      "title": "n8n Automation in Erbil and Iraq: What Businesses Here Actually Automate",
+      "kind": "post",
+      "source": "",
+      "built": "2026-07-23",
+      "state": "published",
+      "visibility": "public",
+      "site": {
+        "table": "posts",
+        "id": 13,
+        "url": "https://ibrahimaher.com/blog/n8n-automation-erbil-iraq"
+      },
+      "images": [],
+      "notes": "Adopted: published before ship/ existed."
+    },
+    {
+      "id": "what-is-n8n-ai-automation",
+      "title": "What Is n8n, and What Does AI Automation With It Actually Look Like?",
+      "kind": "post",
+      "source": "",
+      "built": "2026-07-23",
+      "state": "published",
+      "visibility": "public",
+      "site": {
+        "table": "posts",
+        "id": 14,
+        "url": "https://ibrahimaher.com/blog/what-is-n8n-ai-automation"
+      },
+      "images": [],
+      "notes": "Adopted: published before ship/ existed."
+    },
+    {
+      "id": "vibe-coding-what-it-actually-takes",
+      "title": "Vibe Coding: What It Actually Takes to Ship Something Real",
+      "kind": "post",
+      "source": "",
+      "built": "2026-07-23",
+      "state": "published",
+      "visibility": "public",
+      "site": {
+        "table": "posts",
+        "id": 15,
+        "url": "https://ibrahimaher.com/blog/vibe-coding-what-it-actually-takes"
+      },
+      "images": [],
+      "notes": "Adopted: published before ship/ existed."
+    },
+    {
+      "id": "ai-in-iraq-business-use-cases",
+      "title": "AI in Iraq: Where Businesses Are Actually Using It",
+      "kind": "post",
+      "source": "",
+      "built": "2026-07-23",
+      "state": "published",
+      "visibility": "public",
+      "site": {
+        "table": "posts",
+        "id": 16,
+        "url": "https://ibrahimaher.com/blog/ai-in-iraq-business-use-cases"
+      },
+      "images": [],
+      "notes": "Adopted: published before ship/ existed."
+    },
+    {
+      "id": "automate-invoices-with-n8n-and-ai",
+      "title": "How to Automate Invoice Processing with n8n and AI",
+      "kind": "post",
+      "source": "",
+      "built": "2026-07-21",
+      "state": "published",
+      "visibility": "public",
+      "site": {
+        "table": "posts",
+        "id": 12,
+        "url": "https://ibrahimaher.com/blog/automate-invoices-with-n8n-and-ai"
+      },
+      "images": [],
+      "notes": "Adopted: published before ship/ existed."
+    },
+    {
+      "id": "how-much-does-an-n8n-developer-cost",
+      "title": "How Much Does an n8n Developer Cost? (2026 Guide)",
+      "kind": "post",
+      "source": "",
+      "built": "2026-07-20",
+      "state": "published",
+      "visibility": "public",
+      "site": {
+        "table": "posts",
+        "id": 11,
+        "url": "https://ibrahimaher.com/blog/how-much-does-an-n8n-developer-cost"
+      },
+      "images": [],
+      "notes": "Adopted: published before ship/ existed."
+    },
+    {
+      "id": "ai-automation-beyond-chatbots",
+      "title": "What AI Automation Actually Means in a Small Business (Not Just Chatbots)",
+      "kind": "post",
+      "source": "",
+      "built": "2026-07-14",
+      "state": "published",
+      "visibility": "public",
+      "site": {
+        "table": "posts",
+        "id": 1,
+        "url": "https://ibrahimaher.com/blog/ai-automation-beyond-chatbots"
+      },
+      "images": [],
+      "notes": "Adopted: published before ship/ existed."
+    },
+    {
+      "id": "growing-a-facebook-page-500-percent",
+      "title": "How I Grew a Small Business Facebook Page by 500% Without an Agency",
+      "kind": "post",
+      "source": "",
+      "built": "2026-07-14",
+      "state": "published",
+      "visibility": "public",
+      "site": {
+        "table": "posts",
+        "id": 2,
+        "url": "https://ibrahimaher.com/blog/growing-a-facebook-page-500-percent"
+      },
+      "images": [],
+      "notes": "Adopted: published before ship/ existed."
+    },
+    {
+      "id": "n8n-vs-zapier-vs-make",
+      "title": "n8n vs Zapier vs Make: What I Learned Building Production Workflows",
+      "kind": "post",
+      "source": "",
+      "built": "2026-07-14",
+      "state": "published",
+      "visibility": "public",
+      "site": {
+        "table": "posts",
+        "id": 3,
+        "url": "https://ibrahimaher.com/blog/n8n-vs-zapier-vs-make"
+      },
+      "images": [],
+      "notes": "Adopted: published before ship/ existed."
+    },
+    {
+      "id": "four-layers-of-working-with-ai",
+      "title": "Prompt, Context, Harness, and Loop Engineering: The Four Layers of Working With AI",
+      "kind": "post",
+      "source": "",
+      "built": "2026-07-14",
+      "state": "published",
+      "visibility": "public",
+      "site": {
+        "table": "posts",
+        "id": 4,
+        "url": "https://ibrahimaher.com/blog/four-layers-of-working-with-ai"
+      },
+      "images": [],
+      "notes": "Adopted: published before ship/ existed."
+    },
+    {
+      "id": "quickbooks-ap-ar-from-scratch",
+      "title": "Why I Set Up QuickBooks AP/AR From Scratch With No Accounting Background",
+      "kind": "post",
+      "source": "",
+      "built": "2026-07-14",
+      "state": "published",
+      "visibility": "public",
+      "site": {
+        "table": "posts",
+        "id": 5,
+        "url": "https://ibrahimaher.com/blog/quickbooks-ap-ar-from-scratch"
+      },
+      "images": [],
+      "notes": "Adopted: published before ship/ existed."
+    },
+    {
+      "id": "invoice-fraud-firewall-case-study",
+      "title": "Building an Invoice Fraud Firewall With n8n and Gemini: A Case Study",
+      "kind": "post",
+      "source": "",
+      "built": "2026-07-14",
+      "state": "published",
+      "visibility": "public",
+      "site": {
+        "table": "posts",
+        "id": 6,
+        "url": "https://ibrahimaher.com/blog/invoice-fraud-firewall-case-study"
+      },
+      "images": [],
+      "notes": "Adopted: published before ship/ existed."
+    },
+    {
+      "id": "hidden-meta-ads-targeting-data",
+      "title": "The Hidden Meta Ads Targeting Data Most Small-Business Marketers Never See",
+      "kind": "post",
+      "source": "",
+      "built": "2026-07-14",
+      "state": "published",
+      "visibility": "public",
+      "site": {
+        "table": "posts",
+        "id": 7,
+        "url": "https://ibrahimaher.com/blog/hidden-meta-ads-targeting-data"
+      },
+      "images": [],
+      "notes": "Adopted: published before ship/ existed."
+    },
+    {
+      "id": "ai-assisted-development-no-cs-degree",
+      "title": "AI-Assisted Development: How I Built and Shipped Real Software Without a CS Degree",
+      "kind": "post",
+      "source": "",
+      "built": "2026-07-14",
+      "state": "published",
+      "visibility": "public",
+      "site": {
+        "table": "posts",
+        "id": 8,
+        "url": "https://ibrahimaher.com/blog/ai-assisted-development-no-cs-degree"
+      },
+      "images": [],
+      "notes": "Adopted: published before ship/ existed."
+    },
+    {
+      "id": "human-in-the-loop-ai-automation",
+      "title": "Human-in-the-Loop: Why the Best AI Automations Still Need a Person in the Approval Chain",
+      "kind": "post",
+      "source": "",
+      "built": "2026-07-14",
+      "state": "published",
+      "visibility": "public",
+      "site": {
+        "table": "posts",
+        "id": 9,
+        "url": "https://ibrahimaher.com/blog/human-in-the-loop-ai-automation"
+      },
+      "images": [],
+      "notes": "Adopted: published before ship/ existed."
+    },
+    {
+      "id": "traffic-sign-recognition-to-ai-agents",
+      "title": "From a Traffic-Sign Recognition Capstone to Production AI Agents: My Path Into Automation",
+      "kind": "post",
+      "source": "",
+      "built": "2026-07-14",
+      "state": "published",
+      "visibility": "public",
+      "site": {
+        "table": "posts",
+        "id": 10,
+        "url": "https://ibrahimaher.com/blog/traffic-sign-recognition-to-ai-agents"
+      },
+      "images": [],
+      "notes": "Adopted: published before ship/ existed."
+    }
+  ]
+}

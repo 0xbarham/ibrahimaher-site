@@ -8,7 +8,18 @@
     "build": "node scripts/gen-og.mjs && astro build",
     "postbuild": "node -e \"const f='dist/client/_redirects';require('fs').existsSync(f)&&require('fs').writeFileSync(f,'')\"",
     "preview": "wrangler pages dev dist",
-    "check": "astro check"
+    "check": "astro check",
+    "ship:doctor": "node ship/bin/doctor.mjs",
+    "ship:status": "node ship/bin/status.mjs",
+    "ship:harvest": "node ship/bin/harvest.mjs",
+    "ship:draft": "node ship/bin/draft.mjs",
+    "ship:lint": "node ship/bin/lint.mjs",
+    "ship:capture": "node ship/bin/capture.mjs",
+    "ship:ingest": "node ship/bin/ingest.mjs",
+    "ship:publish": "node ship/bin/publish.mjs",
+    "ship:verify": "node ship/bin/verify.mjs",
+    "ship:adopt": "node ship/bin/adopt.mjs",
+    "ship:patch": "node ship/bin/patch.mjs"
   },
   "dependencies": {
     "@astrojs/cloudflare": "^14.1.3",
@@ -20,6 +31,7 @@
     "@astrojs/check": "^0.9.4",
     "@cloudflare/workers-types": "^5.20260716.1",
     "@resvg/resvg-js": "^2.6.2",
+    "playwright-core": "^1.62.1",
     "satori": "^0.28.0",
     "satori-html": "^0.3.2",
     "typescript": "^5.6.3"

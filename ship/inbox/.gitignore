@@ -1,0 +1,10 @@
+# Working directory for screenshots on their way to R2.
+#
+# Once ship:ingest has run, the bytes live in R2 and the row lives in `media`,
+# so these local files are a staging copy and nothing more. They are also large:
+# a full-page PNG of the homepage is around 5 MB before conversion.
+#
+# The ledger, the shipped log and the style guide are the durable part of ship/
+# and are tracked normally.
+*
+!.gitignore
