@@ -2,9 +2,26 @@
 
 The end-of-day publishing routine for this site.
 
-The routine itself is written up as a Claude Code skill at
-`~/.claude/skills/ship-daily/SKILL.md`, invoked with `/ship-daily`. This file
+The routine itself is a Claude Code skill, invoked with `/ship-daily`. This file
 covers the parts that belong to the repository rather than to the workflow.
+
+## Where the routine lives
+
+Claude Code loads skills from `%USERPROFILE%\.claude\skills\`, which is in no
+repository. `RESTORE-ON-NEW-PC.md` says so plainly, and its only backup is a tar
+someone has to remember to make. Losing the machine would take the routine with
+it while leaving the commands here intact, which is the wrong half to keep.
+
+So `ship/skill/` is the canonical copy, committed beside the commands it drives,
+and the installed copy is a mirror of it. `ship:doctor` diffs the two on every
+run, the same way it diffs the column allowlist.
+
+```bash
+# install, or reconcile after editing either copy
+cp -r ship/skill/. "$USERPROFILE/.claude/skills/ship-daily/"
+```
+
+Edit the copy in this repo. The other one is a deployment.
 
 ## Why this exists
 

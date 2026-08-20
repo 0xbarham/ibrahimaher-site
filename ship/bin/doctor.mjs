@@ -10,7 +10,7 @@ import fs from 'node:fs';
 import path from 'node:path';
 import { query, whoami, WRITABLE } from '../lib/d1.mjs';
 import * as ledgerLib from '../lib/ledger.mjs';
-import { SITE_DIR, STYLE_PATH, sourcesThatExist, missingSources } from '../lib/config.mjs';
+import { SITE_DIR, SHIP_DIR, STYLE_PATH, sourcesThatExist, missingSources } from '../lib/config.mjs';
 
 let failures = 0;
 const ok = (m) => console.log(`  ok    ${m}`);
@@ -64,6 +64,51 @@ function checkSchemaDrift() {
   }
 }
 
+/**
+ * The routine itself lives in two places, and this is what stops them drifting.
+ *
+ * Claude Code loads skills from %USERPROFILE%\.claude\skills\, which is in no
+ * repository: RESTORE-ON-NEW-PC.md says so outright, and its only backup is a
+ * tar someone has to remember to make. So the canonical copy is committed here
+ * under ship/skill/ alongside the commands it drives, and the installed copy is
+ * a mirror of it.
+ *
+ * A mirror nothing checks is worse than no mirror, because it looks current. So
+ * this diffs them, exactly as checkSchemaDrift does for the column allowlist.
+ * Reconcile with:  cp -r ship/skill/. ~/.claude/skills/ship-daily/
+ */
+function checkSkillDrift() {
+  const home = process.env.USERPROFILE || process.env.HOME;
+  if (!home) { warn('cannot resolve the home directory; skipping the skill drift check'); return; }
+  const installed = path.join(home, '.claude', 'skills', 'ship-daily');
+  const canonical = path.join(SHIP_DIR, 'skill');
+
+  if (!fs.existsSync(installed)) {
+    warn(`the ship-daily skill is not installed at ${installed}`);
+    warn('install it with: cp -r ship/skill/. "$USERPROFILE/.claude/skills/ship-daily/"');
+    return;
+  }
+
+  const files = ['SKILL.md', 'references/first-run.md', 'references/images.md',
+    'references/publishing.md'];
+  const drifted = files.filter((f) => {
+    const a = path.join(canonical, f);
+    const b = path.join(installed, f);
+    if (!fs.existsSync(a) || !fs.existsSync(b)) return true;
+    // Normalise line endings: git is configured to check out CRLF here, so the
+    // two copies differ by nothing but that on every single line.
+    const read = (p) => fs.readFileSync(p, 'utf8').replace(/\r\n/g, '\n');
+    return read(a) !== read(b);
+  });
+
+  if (drifted.length) {
+    warn(`skill copies differ: ${drifted.join(', ')}`);
+    warn('reconcile with: cp -r ship/skill/. "$USERPROFILE/.claude/skills/ship-daily/"');
+  } else {
+    ok('the installed skill matches ship/skill/');
+  }
+}
+
 async function main() {
   console.log('\n=== ship doctor ===\n');
 
@@ -89,6 +134,7 @@ async function main() {
   }
 
   checkSchemaDrift();
+  checkSkillDrift();
 
   try {
     const l = ledgerLib.read();
