@@ -47,6 +47,14 @@ export const TABLE_COLUMNS = {
     // writable through /api/content/posts or the editor could only ever set a
     // schedule, never clear one — which is how a post gets stuck queued.
     'publish_at',
+    // Post language (migration 0014). Missing from this list until 2026-08-20,
+    // and the consequence was not cosmetic: src/lib/db.ts uses `lang` both to
+    // pick the render direction and to scope every public listing, so an Arabic
+    // post written in the admin took the column default of 'en', rendered
+    // left-to-right, and surfaced in the English blog index. The three Arabic
+    // posts already live were inserted by migration rather than through the
+    // admin, which is why nobody had hit it yet.
+    'lang',
   ],
   authors: ['name', 'slug', 'role', 'bio', 'avatar_url', 'profile_url', 'sort_order'],
   redirects: ['source', 'destination', 'code', 'created_at'],
@@ -125,6 +133,20 @@ export const POST_FIELDS: Record<string, FieldSpec> = {
     kind: 'datetime',
     label: 'Publish at',
     hint: 'Only used when status is “scheduled”. Entered in your local time, stored as UTC.',
+    group: 'content',
+  },
+  /*
+    The post's own language, which is not the language of the URL it is reached
+    through. It sets lang/dir on the article and decides which blog index the
+    post appears in, so getting it wrong publishes Arabic into the English feed
+    rendered left-to-right. Defaults to 'en' at the column level, so leaving
+    this alone keeps every existing post exactly as it was.
+  */
+  lang: {
+    kind: 'select',
+    label: 'Language',
+    options: ['en', 'ar'],
+    hint: 'Sets text direction and which blog index this post appears in.',
     group: 'content',
   },
   category: { kind: 'text', label: 'Category', group: 'content' },
