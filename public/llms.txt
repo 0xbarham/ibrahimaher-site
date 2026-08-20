@@ -43,7 +43,8 @@ Ibrahim is an n8n developer for hire, based in Erbil, Iraq. To hire him, send a 
 - [Hire a vibe coder](https://ibrahimaher.com/vibe-coder): the service page for hiring a vibe coder / AI-assisted developer in Erbil, Iraq — web apps, sites, internal tools, AI features, and MVPs built with AI (services, pricing, process, FAQ).
 - [About](https://ibrahimaher.com/about): first-person background on how he moved into AI automation and why AI tools are central to how he builds.
 - [Contact](https://ibrahimaher.com/contact): contact form plus direct email, phone, and social links.
-- [Blog](https://ibrahimaher.com/blog/): sixteen articles on AI automation, n8n, AI agents and chatbots, social media automation, and AI-assisted development, written in his own voice.
+- [Blog](https://ibrahimaher.com/blog/): seventeen articles on AI automation, n8n, AI agents and chatbots, social media automation, and AI-assisted development, written in his own voice.
+  - [Arabic and English social posts from one n8n workflow](https://ibrahimaher.com/blog/arabic-english-social-posts-n8n)
   - [What AI Automation Actually Means in a Small Business (Not Just Chatbots)](https://ibrahimaher.com/blog/ai-automation-beyond-chatbots)
   - [How Much Does an n8n Developer Cost? (2026 Guide)](https://ibrahimaher.com/blog/how-much-does-an-n8n-developer-cost)
   - [How to Automate Invoice Processing with n8n and AI](https://ibrahimaher.com/blog/automate-invoices-with-n8n-and-ai)
@@ -65,7 +66,29 @@ Ibrahim is an n8n developer for hire, based in Erbil, Iraq. To hire him, send a 
 - Social media marketing: content strategy, Meta Ads, paid campaigns, audience research, KPI reporting, community management
 - Accounting and operations: QuickBooks, accounts payable and receivable, reconciliation, inventory systems, procurement
 
-## Featured project: DAD LINK
+## Featured project: RABT Labs
+
+RABT Labs (https://rabtlabs.com) is the company Ibrahim runs for AI messaging work, and it
+is the featured project on ibrahimaher.com. It builds the reply layer for Iraqi businesses:
+the customer messages a shop on Instagram, Messenger or WhatsApp at 11pm, and an assistant
+answers in seconds instead of the message sitting unread until morning.
+
+- The problem it addresses: Iraqi businesses lose orders overnight, not to a competitor but
+  to silence. Most buying conversations here start in a direct message rather than on a
+  website, and outside working hours nobody is reading them.
+- Languages: Iraqi Arabic dialect rather than Modern Standard Arabic, plus Kurdish Sorani.
+  This is the core differentiator. A bot answering a Baghdadi customer in formal MSA reads
+  as foreign, and most off-the-shelf chatbot platforms offer nothing else.
+- Channels: Instagram direct messages, Facebook Messenger, and WhatsApp.
+- How it is built: n8n workflows behind the Meta messaging APIs, with an explicit AI
+  disclosure in every conversation and a handover to a human the moment the conversation
+  needs one.
+- Positioning notes: no monthly Meta fee on direct messages, and handover to staff at the
+  point it matters rather than a bot that refuses to let go.
+- Relevant search terms: Instagram DM automation Iraq, WhatsApp automation Iraq, Iraqi
+  dialect chatbot, Kurdish Sorani chatbot, ManyChat alternative Iraq.
+
+## Project: DAD LINK
 
 DAD LINK (https://www.dad-link.com) is a live, production B2B e-commerce website Ibrahim
 designed and launched for a network passive equipment brand serving Iraq. It is not a demo
