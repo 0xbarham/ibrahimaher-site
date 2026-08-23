@@ -1,0 +1,19 @@
+# Plain text has no in-band way to declare its encoding. HTML has <meta charset>
+# and XML has its declaration, which is why /ar/, sitemap.xml and rss.xml all
+# render Arabic correctly while llms.txt did not: the asset router served it as
+# bare `text/plain`, RFC 2046 defaults that to US-ASCII, and clients fall back to
+# Windows-1252. The UTF-8 bytes were always correct on the wire. Every Arabic
+# line arrived intact and rendered as mojibake anyway (الرئيسية -> Ø§Ù„Ø±Ø¦ÙŠØ³ÙŠØ©).
+#
+# llms.txt is the file AI crawlers read as the authoritative summary of this
+# site, and half of it is Arabic, so this was breaking the Arabic half for
+# exactly the audience the file exists for.
+#
+# robots.txt is pure ASCII today and so unaffected, but it is declared for the
+# same reason: the failure is silent and only shows up once someone adds a
+# non-ASCII character.
+/llms.txt
+  Content-Type: text/plain; charset=utf-8
+
+/robots.txt
+  Content-Type: text/plain; charset=utf-8
