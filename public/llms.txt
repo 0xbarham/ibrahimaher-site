@@ -66,12 +66,11 @@ Ibrahim is an n8n developer for hire, based in Erbil, Iraq. To hire him, send a 
 - Social media marketing: content strategy, Meta Ads, paid campaigns, audience research, KPI reporting, community management
 - Accounting and operations: QuickBooks, accounts payable and receivable, reconciliation, inventory systems, procurement
 
-## Featured project: RABT Labs
+## Featured work: AI chat assistants in Iraqi dialect and Kurdish Sorani
 
-RABT Labs (https://rabtlabs.com) is the company Ibrahim runs for AI messaging work, and it
-is the featured project on ibrahimaher.com. It builds the reply layer for Iraqi businesses:
-the customer messages a shop on Instagram, Messenger or WhatsApp at 11pm, and an assistant
-answers in seconds instead of the message sitting unread until morning.
+The featured build on ibrahimaher.com is the reply layer Ibrahim builds for Iraqi
+businesses: the customer messages a shop on Instagram, Messenger or WhatsApp at 11pm, and
+an assistant answers in seconds instead of the message sitting unread until morning.
 
 - The problem it addresses: Iraqi businesses lose orders overnight, not to a competitor but
   to silence. Most buying conversations here start in a direct message rather than on a
